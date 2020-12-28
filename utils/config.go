@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"chainmaker.org/wx-CRA-backend/loggers"
+	"chainmaker.org/wx-CRA-backend/models"
 	"github.com/spf13/viper"
 )
 
@@ -13,6 +14,8 @@ type Config struct {
 	LogConfig loggers.LogConifg
 	DBConfig  DBConfig
 }
+
+var logger = loggers.GetLogger()
 
 //InitConfig .
 func InitConfig() {
@@ -56,4 +59,14 @@ func GetDBConfig() string {
 	mysqlURL := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s&parseTime=True&loc=Local",
 		dbConfig.User, dbConfig.Password, dbConfig.IP, dbConfig.Port, dbConfig.DbName, "utf8")
 	return mysqlURL
+}
+
+//GetRootCaConfig 读取配置文件
+func GetRootCaConfig() (models.CaConfig, error) {
+	var rootCaConfig models.CaConfig
+	err := viper.UnmarshalKey("root_config", &rootCaConfig)
+	if err != nil {
+		return rootCaConfig, err
+	}
+	return rootCaConfig, nil
 }

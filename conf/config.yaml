@@ -14,22 +14,32 @@ db_config:
   port: 3306
   dbname: chainmaker
 
-  # CA 配置
-ca_config:
-  private_key_type:
-  hash_type:
-  cert_expiration_time:
+  # 根用户的初始化配置
+root_config:
+  private_key_type: AES
+  private_key_path: ./crypto-config/root
+  private_key_name: root.key
+  cert_path: ./crypto-config/root
+  cert_name: root.crt
+  hash_type: SHA256
+  expire_year: 1                     
+  country:                               
+  locality:                                
+  province:                              
+  O:                                      
+  OU:                             
+  CN:        
 
-# 信息配置
-root_info:
-  O:                              #组织
-  OU:                           #单位
-  CN:                            #常用名
-intermediaries_info:
-  O: 
-  OU:
-  CN:
-
-  # 读取证书路径
-
-  # 生成证书路径
+# 中间CA配置文件
+intermediaries_config:
+  csr_path:
+  csr_name: 
+  country:                                        
+  locality:                                         
+  province:                                      
+  O:                                                     
+  OU:                                                  
+  CN:                                                  
+  cert_path:
+  cert_name:
+  expire_year:
