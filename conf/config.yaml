@@ -1,0 +1,35 @@
+# 日志配置
+log_config:
+  level: debug
+  filename: ./log/default.log
+  max_size: 1
+  max_age: 30
+  max_backups: 5
+
+  # 数据库配置
+db_config:
+  user: root
+  password: 123456
+  ip: 127.0.0.1
+  port: 3306
+  dbname: chainmaker
+
+  # CA 配置
+ca_config:
+  private_key_type:
+  hash_type:
+  cert_expiration_time:
+
+# 信息配置
+root_info:
+  O:                              #组织
+  OU:                           #单位
+  CN:                            #常用名
+intermediaries_info:
+  O: 
+  OU:
+  CN:
+
+  # 读取证书路径
+
+  # 生成证书路径
