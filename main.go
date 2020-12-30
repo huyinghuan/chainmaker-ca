@@ -14,6 +14,7 @@ import (
 func init() {
 	utils.InitConfig()
 	db.InitDB()
+	services.InitServer()
 }
 func main() {
 	g := gin.New()
@@ -24,7 +25,6 @@ func main() {
 			"data":  "test!",
 		})
 	})
-	services.InitRootCA()
 	//加载中间件
 	g.Use(loggers.GinLogger(), loggers.GinRecovery(true))
 	//加载路由

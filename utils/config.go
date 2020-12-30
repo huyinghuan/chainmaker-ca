@@ -16,12 +16,10 @@ type Config struct {
 
 //CaConfig 根配置
 type CaConfig struct {
-	PrivateKeyType     string `mapstructure:"private_key_type"`
 	PrivateKeyPath     string `mapstructure:"private_key_path"`
 	PrivateKeyName     string `mapstructure:"private_key_name"`
 	CertName           string `mapstructure:"cert_name"`
 	CertPath           string `mapstructure:"cert_path"`
-	HashType           string `mapstructure:"hash_type"`
 	ExpireYear         int32  `mapstructure:"expire_year"`
 	Country            string `mapstructure:"country"`
 	Locality           string `mapstructure:"locality"`
@@ -29,8 +27,6 @@ type CaConfig struct {
 	OrganizationalUnit string `mapstructure:"OU"`
 	Organization       string `mapstructure:"O"`
 	CommonName         string `mapstructure:"CN"`
-	CsrPath            string `mapstructure:"csr_path"`
-	CsrName            string `mapstructure:"csr_name"`
 }
 
 //InitConfig .
@@ -85,4 +81,41 @@ func GetRootCaConfig() (CaConfig, error) {
 		return rootCaConfig, err
 	}
 	return rootCaConfig, nil
+}
+
+//GetIntermediaries 读取中间CA配置文件
+func GetIntermediaries() (CaConfig, error) {
+	var inmediaCaConfig CaConfig
+	err := viper.UnmarshalKey("intermediaries_config", &inmediaCaConfig)
+	if err != nil {
+		return inmediaCaConfig, err
+	}
+	return inmediaCaConfig, nil
+}
+
+//GetRootPrivateKey 获取根CA私钥
+func GetRootPrivateKey() (privKeyFilePath, certFilePath string) {
+	privKeyFilePath = viper.GetString("root_config.private_key_path") + "/" + viper.GetString("root_config.private_key_name")
+	certFilePath = viper.GetString("root_config.cert_path") + "/" + viper.GetString("root_config.cert_name")
+	return
+}
+
+//GetInitType 获取配置文件中需不需要init root ca
+func GetInitType() bool {
+	return viper.GetViper().GetBool("is_init_root_ca")
+}
+
+//GetPrivKeyType .
+func GetPrivKeyType() string {
+	return viper.GetString("private_key_type")
+}
+
+//GetHashType .
+func GetHashType() string {
+	return viper.GetString("hash_type")
+}
+
+//GetIssureExpirationTime .
+func GetIssureExpirationTime() string {
+	return viper.GetString("issure_expiration_time")
 }

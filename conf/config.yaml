@@ -14,14 +14,21 @@ db_config:
   port: 3306
   dbname: chainmaker
 
-  # 根用户的初始化配置
+#是否初始化根CA
+is_init_root_ca: true
+#密钥加密类型
+private_key_type: SM2
+#哈希类型
+hash_type: SHA256
+#签发证书的过期时间
+issure_expiration_time: 1
+
+  # 根CA的初始化配置
 root_config:
-  private_key_type: SM2
   private_key_path: ./crypto-config/root
   private_key_name: root.key
   cert_path: ./crypto-config/root
   cert_name: root.crt
-  hash_type: SHA256
   expire_year: 1                     
   country: China                   
   locality: Beijing               
@@ -32,17 +39,14 @@ root_config:
 
 # 中间CA配置文件
 intermediaries_config:
-  private_key_type: AES
   private_key_path: ./crypto-config/intermediaries
   private_key_name: intermediaries.key
-  csr_path: ./crypto-config/intermediaries
-  csr_name: intermediaries.csr
   country: China                               
   locality: Beijing                                   
   province: Beijing                              
   O: chainmaker                                              
   OU: wx.chainmaker                                         
-  CN: ca.wx.chainmaker                                       
+  CN: ca.wx.chainmaker                                     
   cert_path: ./crypto-config/intermediaries
   cert_name: ./intermediaries.crt
   expire_year: 1
