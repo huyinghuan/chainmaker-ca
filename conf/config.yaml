@@ -16,30 +16,33 @@ db_config:
 
   # 根用户的初始化配置
 root_config:
-  private_key_type: AES
+  private_key_type: SM2
   private_key_path: ./crypto-config/root
   private_key_name: root.key
   cert_path: ./crypto-config/root
   cert_name: root.crt
   hash_type: SHA256
   expire_year: 1                     
-  country:                               
-  locality:                                
-  province:                              
-  O:                                      
-  OU:                             
-  CN:        
+  country: China                   
+  locality: Beijing               
+  province: Beijing                      
+  O: chainmaker                       
+  OU: wx.chainmaker                 
+  CN: ca.wx.chainmaker
 
 # 中间CA配置文件
 intermediaries_config:
-  csr_path:
-  csr_name: 
-  country:                                        
-  locality:                                         
-  province:                                      
-  O:                                                     
-  OU:                                                  
-  CN:                                                  
-  cert_path:
-  cert_name:
-  expire_year:
+  private_key_type: AES
+  private_key_path: ./crypto-config/intermediaries
+  private_key_name: intermediaries.key
+  csr_path: ./crypto-config/intermediaries
+  csr_name: intermediaries.csr
+  country: China                               
+  locality: Beijing                                   
+  province: Beijing                              
+  O: chainmaker                                              
+  OU: wx.chainmaker                                         
+  CN: ca.wx.chainmaker                                       
+  cert_path: ./crypto-config/intermediaries
+  cert_name: ./intermediaries.crt
+  expire_year: 1

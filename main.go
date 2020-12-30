@@ -5,6 +5,7 @@ import (
 
 	"chainmaker.org/wx-CRA-backend/loggers"
 	"chainmaker.org/wx-CRA-backend/models/db"
+	"chainmaker.org/wx-CRA-backend/services"
 	"chainmaker.org/wx-CRA-backend/utils"
 	"github.com/gin-gonic/gin"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -23,6 +24,7 @@ func main() {
 			"data":  "test!",
 		})
 	})
+	services.InitRootCA()
 	//加载中间件
 	g.Use(loggers.GinLogger(), loggers.GinRecovery(true))
 	//加载路由

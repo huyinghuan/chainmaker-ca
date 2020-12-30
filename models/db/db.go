@@ -9,13 +9,13 @@ import (
 	"go.uber.org/zap"
 )
 
+var log *zap.Logger
+
 //DB 数据库db
 var DB *gorm.DB
 
 // GormLogger struct
 type GormLogger struct{}
-
-var log = loggers.GetLogger()
 
 // Print - Log Formatter
 func (*GormLogger) Print(v ...interface{}) {
@@ -43,6 +43,7 @@ func InitDB() {
 	if err != nil {
 		panic(err)
 	}
+	log = loggers.GetLogger()
 	gormLogger := &GormLogger{}
 	DB.SetLogger(gormLogger)
 	DB.LogMode(false)
@@ -51,4 +52,10 @@ func InitDB() {
 	DB.DB().SetConnMaxLifetime(time.Minute)
 	DB.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false)
 	DB.SingularTable(true)
+	err = DB.AutoMigrate(
+		&Cert{},
+	).Error
+	if err != nil {
+		log.Error("Create table failed!", zap.Error(err))
+	}
 }

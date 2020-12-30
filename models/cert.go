@@ -1,18 +1,13 @@
 package models
 
-//Cert 证书
-type Cert struct {
-	ID                 int    `gorm:"primary_key;AUTO_INCREMENT"`
-	Name               string `gorm:"unique_index:cert_name_index"`
-	PrivateKeyType     string
-	Content            []byte
-	HashTyep           string
-	ExpireYear         int32
-	Country            string
-	Locality           string
-	Province           string
-	Organization       string
-	OrganizationalUnit string
-	CommonName         string
-	CsrContent         []byte
+import (
+	"chainmaker.org/wx-CRA-backend/models/db"
+)
+
+//InsertCert 插入证书
+func InsertCert(cert *db.Cert) error {
+	if err := db.DB.Debug().Create(cert).Error; err != nil {
+		return err
+	}
+	return nil
 }
