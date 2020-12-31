@@ -8,16 +8,9 @@ import (
 	"github.com/spf13/viper"
 )
 
-//Config .
-type Config struct {
-	LogConfig loggers.LogConifg
-	DBConfig  DBConfig
-}
-
-//CaConfig 根配置
+//CaConfig 根和中间Ca配置
 type CaConfig struct {
 	PrivateKeyPath     string `mapstructure:"private_key_path"`
-	PrivateKeyName     string `mapstructure:"private_key_name"`
 	CertName           string `mapstructure:"cert_name"`
 	CertPath           string `mapstructure:"cert_path"`
 	ExpireYear         int32  `mapstructure:"expire_year"`
@@ -27,6 +20,8 @@ type CaConfig struct {
 	OrganizationalUnit string `mapstructure:"OU"`
 	Organization       string `mapstructure:"O"`
 	CommonName         string `mapstructure:"CN"`
+	Username           string `mapstructure:"username"`
+	PrivateKeyPwd      string `mapstructure:"private_key_pwd"`
 }
 
 //InitConfig .
@@ -95,9 +90,14 @@ func GetIntermediaries() (CaConfig, error) {
 
 //GetRootPrivateKey 获取根CA私钥
 func GetRootPrivateKey() (privKeyFilePath, certFilePath string) {
-	privKeyFilePath = viper.GetString("root_config.private_key_path") + "/" + viper.GetString("root_config.private_key_name")
+	privKeyFilePath = viper.GetString("root_config.private_key_path")
 	certFilePath = viper.GetString("root_config.cert_path") + "/" + viper.GetString("root_config.cert_name")
 	return
+}
+
+//GetRootCaPrivateKeyPwd 获取RootCa私钥密码
+func GetRootCaPrivateKeyPwd() string {
+	return viper.GetString("root_config.private_key_pwd")
 }
 
 //GetInitType 获取配置文件中需不需要init root ca

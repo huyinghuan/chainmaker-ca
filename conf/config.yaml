@@ -25,22 +25,24 @@ issure_expiration_time: 1
 
   # 根CA的初始化配置
 root_config:
-  private_key_path: ./crypto-config/root
-  private_key_name: root.key
+  username: root
+  private_key_pwd: wx123
+  private_key_path: ./crypto-config/root/root.key
   cert_path: ./crypto-config/root
   cert_name: root.crt
   expire_year: 1                     
   country: China                   
   locality: Beijing               
   province: Beijing                      
-  O: chainmaker                       
+  O: wx                       
   OU: wx.chainmaker                 
   CN: ca.wx.chainmaker
 
 # 中间CA配置文件
 intermediaries_config:
-  private_key_path: ./crypto-config/intermediaries
-  private_key_name: intermediaries.key
+  username: admin
+  private_key_pwd: admin
+  private_key_path: ./crypto-config/intermediaries/intermediaries.key
   country: China                               
   locality: Beijing                                   
   province: Beijing                              

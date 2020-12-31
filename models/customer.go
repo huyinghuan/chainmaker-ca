@@ -1,0 +1,23 @@
+package models
+
+import "chainmaker.org/wx-CRA-backend/models/db"
+
+//InsertCustomer .
+func InsertCustomer(customer *db.Customer) error {
+	if err := db.DB.Debug().Create(customer).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+//InsertPrivateKey /
+func InsertPrivateKey(customerID string, privKey, pubKey []byte, privKeyPwdHash string) error {
+	if err := db.DB.Model(&db.Customer{}).Where("id=?", customerID).Update(map[string]interface{}{
+		"private_key":          privKey,
+		"public_key":           pubKey,
+		"private_key_pwd_hash": privKeyPwdHash,
+	}).Error; err != nil {
+		return err
+	}
+	return nil
+}

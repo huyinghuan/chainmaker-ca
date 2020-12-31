@@ -146,25 +146,3 @@ func CreateCSR(privKey crypto.PrivateKey, country, locality, province,
 	}
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: data}), nil
 }
-
-//ParseCertificate Cert byte解析成证书
-func ParseCertificate(certBytes []byte) (*x509.Certificate, error) {
-	block, _ := pem.Decode(certBytes)
-	cert, err := bcx509.ParseCertificate(block.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("ParseCertificate cert failed, %s", err)
-	}
-
-	return bcx509.ChainMakerCertToX509Cert(cert)
-}
-
-//ParseCsr  CSR byte解析成CSR
-func ParseCsr(csrBytes []byte) (*x509.CertificateRequest, error) {
-	block, _ := pem.Decode(csrBytes)
-	csrBC, err := bcx509.ParseCertificateRequest(block.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("ParseCertificateRequest failed, %s", err)
-	}
-
-	return bcx509.ChainMakerCertCsrToX509CertCsr(csrBC)
-}

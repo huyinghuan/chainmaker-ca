@@ -54,6 +54,7 @@ func InitDB() {
 	DB.SingularTable(true)
 	err = DB.AutoMigrate(
 		&Cert{},
+		&Customer{},
 	).Error
 	if err != nil {
 		log.Error("Create table failed!", zap.Error(err))
