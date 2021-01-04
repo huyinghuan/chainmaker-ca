@@ -41,7 +41,7 @@ func InitRootCA() {
 		return
 	}
 	//私钥加密 密码:程序变量+读取密码
-	privKeyPwd := defaultPrivateKeyPwd + rootCaConfig.PrivateKeyPwd
+	privKeyPwd := DefaultPrivateKeyPwd + rootCaConfig.PrivateKeyPwd
 	hashPwd, err := hash.Get(hashType, []byte(privKeyPwd))
 	if err != nil {
 		logger.Error("Get private key pwd hash failed!", zap.Error(err))

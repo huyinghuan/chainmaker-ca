@@ -33,7 +33,7 @@ func CreateIntermediariesCert() {
 	}
 	//私钥加密
 	//私钥加密 密码:程序变量+读取密码
-	privKeyPwd := defaultPrivateKeyPwd + inmediaCaConfig.PrivateKeyPwd
+	privKeyPwd := DefaultPrivateKeyPwd + inmediaCaConfig.PrivateKeyPwd
 	hashPwd, err := hash.Get(hashType, []byte(privKeyPwd))
 	if err != nil {
 		logger.Error("Get private key pwd hash failed!", zap.Error(err))
@@ -75,7 +75,7 @@ func CreateIntermediariesCert() {
 		return
 	}
 	//私钥解密
-	privateKeyPwd := defaultPrivateKeyPwd + utils.GetRootCaPrivateKeyPwd()
+	privateKeyPwd := DefaultPrivateKeyPwd + utils.GetRootCaPrivateKeyPwd()
 	issureHashPwd, err := hash.Get(hashType, []byte(privateKeyPwd))
 	if err != nil {
 		logger.Error("Get issuer private key pwd hash failed!", zap.Error(err))

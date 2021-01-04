@@ -17,6 +17,7 @@ type Cert struct {
 	CommonName         string
 	CsrContent         []byte `gorm:"type:mediumblob"`
 	CaType             string
+	CustomerID         int
 }
 
 //TableName cert
@@ -26,8 +27,9 @@ func (table *Cert) TableName() string {
 
 //Customer 用户或者客户表
 type Customer struct {
-	ID            int `gorm:"primary_key;AUTO_INCREMENT"`
-	Name          string
+	ID            int    `gorm:"primary_key;AUTO_INCREMENT"`
+	Name          string `gorm:"UNIQUE_INDEX:customer_name_index"`
+	Password      string
 	PrivateKey    []byte `gorm:"type:mediumblob"`
 	PublicKey     []byte `gorm:"type:mediumblob"`
 	PrivateKeyPwd string //用户加密私钥所用密码

@@ -22,7 +22,8 @@ const (
 )
 
 const (
-	defaultPrivateKeyPwd = "wxliuxinfeng"
+	//DefaultPrivateKeyPwd 分片加密
+	DefaultPrivateKeyPwd = "wxliuxinfeng"
 )
 
 func dealSANS(sans []string) ([]string, []net.IP) {

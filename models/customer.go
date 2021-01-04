@@ -21,3 +21,29 @@ func InsertPrivateKey(customerID string, privKey, pubKey []byte, privKeyPwdHash 
 	}
 	return nil
 }
+
+//CustomerByNamePwd .
+func CustomerByNamePwd(name, password string) (*db.Customer, error) {
+	var customer db.Customer
+	if err := db.DB.Where("name=? AND password=?", name, password).First(&customer).Error; err != nil {
+		return nil, err
+	}
+	return &customer, nil
+}
+
+//UpdateCustomerByName .
+func UpdateCustomerByName(name string, customer db.Customer) error {
+	if err := db.DB.Model(&db.Customer{}).Updates(customer).Where("name=?", name).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+//GetCustomerByName .
+func GetCustomerByName(name string) (*db.Customer, error) {
+	var customer db.Customer
+	if err := db.DB.Model(&db.Customer{}).Where("name=?", name).First(&customer).Error; err != nil {
+		return nil, err
+	}
+	return &customer, nil
+}

@@ -119,3 +119,14 @@ func GetHashType() string {
 func GetIssureExpirationTime() string {
 	return viper.GetString("issure_expiration_time")
 }
+
+//GetIntermediariesPrkCert .
+func GetIntermediariesPrkCert() (privateKeyPath, certPath string) {
+	return viper.GetString("intermediaries_config.private_key_path"),
+		viper.GetString("intermediaries_config.cert_path") + "/" + viper.GetString("intermediaries_config.cert_name")
+}
+
+//GetIntermCAPrivateKeyPwd 获取RootCa私钥密码
+func GetIntermCAPrivateKeyPwd() string {
+	return viper.GetString("intermediaries_config.private_key_pwd")
+}
