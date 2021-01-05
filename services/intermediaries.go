@@ -22,7 +22,7 @@ func CreateIntermediariesCert() {
 	}
 	//创建中间Ca用户
 	var intermediaiesCustomer db.Customer
-	intermediaiesCustomer.Name = "admin"
+	intermediaiesCustomer.Name = inmediaCaConfig.Username
 	intermediaiesCustomer.CustomerType = "intermediaies"
 	keyType := crypto.Name2KeyTypeMap[utils.GetPrivKeyType()]
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
@@ -95,6 +95,11 @@ func CreateIntermediariesCert() {
 	certModel, err := IssueCertificate(hashType, true, issuerPrivKey, csrBytes, certBytes, inmediaCaConfig.ExpireYear, []string{}, "")
 	if err != nil {
 		logger.Error("Issue Cert failed!", zap.Error(err))
+		return
+	}
+	certModel.CustomerID, err = models.GetCustomerIDByName(intermediaiesCustomer.Name)
+	if err != nil {
+		logger.Error("Get customer id by name failed!", zap.Error(err))
 		return
 	}
 	//证书入库

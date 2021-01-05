@@ -47,3 +47,13 @@ func GetCustomerByName(name string) (*db.Customer, error) {
 	}
 	return &customer, nil
 }
+
+//GetCustomerIDByName .
+func GetCustomerIDByName(name string) (id int, err error) {
+	var customer db.Customer
+	if err = db.DB.Table(customer.TableName()).Where("name=?", name).First(&customer).Error; err != nil {
+		return id, err
+	}
+	id = customer.ID
+	return
+}

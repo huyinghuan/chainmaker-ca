@@ -78,6 +78,11 @@ func InitRootCA() {
 		logger.Error("Create CA certificate failed!", zap.Error(err))
 		return
 	}
+	certModel.CustomerID, err = models.GetCustomerIDByName(rootCustomer.Name)
+	if err != nil {
+		logger.Error("Get customer id by name failed!", zap.Error(err))
+		return
+	}
 
 	//证书入库
 	if err := models.InsertCert(certModel); err != nil {
