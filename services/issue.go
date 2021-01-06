@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"math/big"
@@ -105,28 +106,25 @@ func IssueCertificate(hashType crypto.HashType, isCA bool, issuerPrivKey crypto.
 		return nil, fmt.Errorf("issue certificate failed, %s", err)
 	}
 	if isCA == true {
-		certModel.CaType = "intermediaries"
+		certModel.CertType = db.INTERMRDIARY_CA
 	} else {
-		certModel.CaType = "user"
+		certModel.CertType = db.CUSTOMER
 	}
-	certModel.CertEncode = x509certEncode
+	certModel.CertEncode = hex.EncodeToString(x509certEncode)
 	certModel.CommonName = csr.Subject.CommonName
 	certModel.Content = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: x509certEncode})
 	certModel.Country = template.Subject.Country[0]
 	certModel.CsrContent = csrBytes
 	certModel.ExpireYear = int32(template.NotAfter.Year()) - int32(template.NotBefore.Year())
-	for i, v := range crypto.HashAlgoMap {
-		if v == hashType {
-			certModel.HashTyep = i
-			break
-		}
-	}
+	certModel.HashTyep = hashType
+	certModel.IssueDate = template.NotBefore.Unix()
+	certModel.InvalidDate = template.NotAfter.Unix()
 	certModel.Locality = template.Subject.Locality[0]
 	certModel.Organization = template.Subject.Organization[0]
 	certModel.OrganizationalUnit = template.Subject.OrganizationalUnit[0]
 	certModel.Province = template.Subject.Province[0]
 	certModel.SerialNumber = template.SerialNumber.Int64()
-	certModel.Signature = template.Signature
+	certModel.Signature = hex.EncodeToString(template.Signature)
 	return &certModel, nil
 }
 

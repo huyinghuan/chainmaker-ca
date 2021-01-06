@@ -8,7 +8,6 @@ import (
 
 	"chainmaker.org/chainmaker-go/common/cert"
 	"chainmaker.org/chainmaker-go/common/crypto"
-	"chainmaker.org/chainmaker-go/common/crypto/hash"
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
 	"chainmaker.org/wx-CRA-backend/loggers"
 	"chainmaker.org/wx-CRA-backend/models"
@@ -28,49 +27,14 @@ func InitRootCA() {
 		logger.Error("Get Root Ca Config Failed!", zap.Error(err))
 		return
 	}
-	//创建root用户
-	var rootCustomer db.Customer
-	rootCustomer.Name = rootCaConfig.Username
-	rootCustomer.CustomerType = "root"
-	//生成公私钥（可对接KMS）
-	keyType := crypto.Name2KeyTypeMap[utils.GetPrivKeyType()]
-	hashType := crypto.HashAlgoMap[utils.GetHashType()]
-	privKey, err := CreatePrivKey(keyType)
+	//生成公私钥
+	privKey, err := CreateKeyPairToDB(&rootCaConfig)
 	if err != nil {
-		logger.Error("Generate private key failed!", zap.Error(err))
+		logger.Error("Create key pair to db  Failed!", zap.Error(err))
 		return
 	}
-	//私钥加密 密码:程序变量+读取密码
-	privKeyPwd := DefaultPrivateKeyPwd + rootCaConfig.PrivateKeyPwd
-	hashPwd, err := hash.Get(hashType, []byte(privKeyPwd))
-	if err != nil {
-		logger.Error("Get private key pwd hash failed!", zap.Error(err))
-		return
-	}
-	//私钥加密
-	privKeyPemBytes, err := EncryptPrivKey(privKey, hashPwd)
-	if err != nil {
-		logger.Error("Private Encrypt failed!", zap.Error(err))
-		return
-	}
-	//将加密后私钥写入文件
-	err = WritePrivKeyFile(rootCaConfig.PrivateKeyPath, privKeyPemBytes)
-	if err != nil {
-		logger.Error("Write privatekey failed!", zap.Error(err))
-		return
-	}
-
-	//私钥入库
-	rootCustomer.PrivateKey = privKeyPemBytes
-	rootCustomer.PrivateKeyPwd = hex.EncodeToString(hashPwd)
-	rootCustomer.PublicKey, _ = privKey.PublicKey().Bytes()
-	err = models.InsertCustomer(&rootCustomer)
-	if err != nil {
-		logger.Error("Insert root customer failed!", zap.Error(err))
-		return
-	}
-
 	//构建证书结构体
+	hashType := crypto.HashAlgoMap[utils.GetHashType()]
 	certModel, err := CreateCACert(privKey, hashType,
 		rootCaConfig.Country, rootCaConfig.Locality, rootCaConfig.Province, rootCaConfig.OrganizationalUnit,
 		rootCaConfig.Organization, rootCaConfig.CommonName, rootCaConfig.ExpireYear, []string{})
@@ -78,7 +42,7 @@ func InitRootCA() {
 		logger.Error("Create CA certificate failed!", zap.Error(err))
 		return
 	}
-	certModel.CustomerID, err = models.GetCustomerIDByName(rootCustomer.Name)
+	certModel.CustomerID, err = models.GetCustomerIDByName(rootCaConfig.Username)
 	if err != nil {
 		logger.Error("Get customer id by name failed!", zap.Error(err))
 		return
@@ -91,7 +55,12 @@ func InitRootCA() {
 	}
 
 	//证书写入文件（也可以是传到浏览器提供下载）
-	if err := WirteCertToFile(rootCaConfig.CertPath, rootCaConfig.CertName, certModel.CertEncode); err != nil {
+	certContent, err := hex.DecodeString(certModel.CertEncode)
+	if err != nil {
+		logger.Error("hex decode failed!", zap.Error(err))
+		return
+	}
+	if err := WirteCertToFile(rootCaConfig.CertPath, rootCaConfig.CertName, certContent); err != nil {
 		logger.Error("Write cert file failed!", zap.Error(err))
 		return
 	}
@@ -117,14 +86,11 @@ func CreateCACert(privKey crypto.PrivateKey, hashType crypto.HashType,
 		return nil, err
 	}
 	certModel.SerialNumber = template.SerialNumber.Int64()
-	certModel.Signature = template.Signature
-	for i, v := range crypto.HashAlgoMap {
-		if v == hashType {
-			certModel.HashTyep = i
-			break
-		}
-	}
-	certModel.CertEncode = x509certEncode
+	certModel.Signature = hex.EncodeToString(template.Signature)
+	certModel.HashTyep = hashType
+	certModel.IssueDate = template.NotBefore.Unix()
+	certModel.InvalidDate = template.NotAfter.Unix()
+	certModel.CertEncode = hex.EncodeToString(x509certEncode)
 	certModel.Country = country
 	certModel.ExpireYear = expireYear
 	certModel.Locality = locality
@@ -132,7 +98,7 @@ func CreateCACert(privKey crypto.PrivateKey, hashType crypto.HashType,
 	certModel.Organization = organization
 	certModel.OrganizationalUnit = organizationalUnit
 	certModel.CommonName = commonName
-	certModel.CaType = "root"
+	certModel.CertType = db.ROOT_CA
 	certModel.Content = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: x509certEncode})
 	return &certModel, nil
 }

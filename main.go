@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"chainmaker.org/wx-CRA-backend/loggers"
@@ -17,6 +16,7 @@ import (
 func init() {
 	utils.InitConfig()
 	db.InitDB()
+	testData()
 	services.InitServer()
 }
 func main() {
@@ -28,17 +28,24 @@ func main() {
 			"data":  "test!",
 		})
 	})
-	var user db.Customer
-	user.Name = "user1"
-	user.Password = "12345"
-	user.CustomerType = "user"
-	err := models.InsertCustomer(&user)
-	if err != nil {
-		fmt.Printf("error: %s", err.Error())
-	}
 	//加载中间件
 	g.Use(loggers.GinLogger(), loggers.GinRecovery(true))
 	//加载路由
 	routers.LoadUserRouter(g)
 	g.Run(":8080")
+}
+func testData() {
+	var rootUser = &db.Customer{
+		Name: "root",
+	}
+	var adminUser = &db.Customer{
+		Name: "admin",
+	}
+	var userUser = &db.Customer{
+		Name:     "user1",
+		Password: "12345",
+	}
+	models.InsertCustomer(rootUser)
+	models.InsertCustomer(adminUser)
+	models.InsertCustomer(userUser)
 }

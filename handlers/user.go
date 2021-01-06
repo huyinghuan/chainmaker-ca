@@ -20,29 +20,11 @@ import (
 //GeneratePrivateKey .
 func GeneratePrivateKey(c *gin.Context) {
 	username := c.MustGet("username").(string)
-
-	//生成私钥
-	keyType := crypto.Name2KeyTypeMap[utils.GetPrivKeyType()]
-	privKey, err := services.CreatePrivKey(keyType)
+	_, err := CreateUserKeyPair(username)
 	if err != nil {
-		logger.Error("Generate private key failed!", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  500,
-			"msg":   "Generate private key failed!",
-			"error": err.Error(),
-		})
-		return
-	}
-	privKeyBytes, _ := privKey.Bytes()
-	var customer db.Customer
-	customer.PrivateKey = pem.EncodeToMemory(&pem.Block{Type: "PRIVATEKEY", Bytes: privKeyBytes})
-	customer.PublicKey, _ = privKey.PublicKey().Bytes()
-	err = models.UpdateCustomerByName(username, customer)
-	if err != nil {
-		logger.Error("update customer failed!", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":  500,
-			"msg":   "update customer failed!",
+			"msg":   "generate privatekey failed!",
 			"error": err.Error(),
 		})
 		return
@@ -66,16 +48,25 @@ func ApplyCert(c *gin.Context) {
 		})
 		return
 	}
-	customer, err := models.GetCustomerByName(username)
+	userID, err := models.GetCustomerIDByName(username)
 	if err != nil {
-		logger.Error("get customer failed!", zap.Error(err))
+		logger.Error("get userid failed!", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":   500,
-			"msg":    "get customer failed!",
+			"msg":    "get userid failed!",
 			"error:": err.Error(),
 		})
 	}
-	privateKeyBytes := customer.PrivateKey
+	keyPair, err := models.GetKeyPairByUserID(userID)
+	if err != nil {
+		logger.Error("get keypair by userid failed!", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":   500,
+			"msg":    "get keypair by userid failed!",
+			"error:": err.Error(),
+		})
+	}
+	privateKeyBytes := keyPair.PrivateKey
 	block, _ := pem.Decode(privateKeyBytes)
 	privateKey, err := asym.PrivateKeyFromDER(block.Bytes)
 	if err != nil {
@@ -153,7 +144,7 @@ func ApplyCert(c *gin.Context) {
 		})
 		return
 	}
-	certModel.CustomerID = customer.ID
+	certModel.CustomerID = userID
 	//证书入库
 	err = models.InsertCert(certModel)
 	if err != nil {
@@ -165,4 +156,31 @@ func ApplyCert(c *gin.Context) {
 		"msg":  "Apply user cert successfully!",
 	})
 	return
+}
+
+//CreateUserKeyPair .
+func CreateUserKeyPair(username string) (crypto.PrivateKey, error) {
+	keyType := crypto.Name2KeyTypeMap[utils.GetPrivKeyType()]
+	privKey, err := services.CreatePrivKey(keyType)
+	if err != nil {
+		logger.Error("create user keypair failed!", zap.Error(err))
+		return nil, err
+	}
+	privKeyBytes, _ := privKey.Bytes()
+	var keyPair db.KeyPair
+	keyPair.PrivateKey = pem.EncodeToMemory(&pem.Block{Type: "PRIVATEKEY", Bytes: privKeyBytes})
+	publicKeyBytes, _ := privKey.PublicKey().Bytes()
+	keyPair.PublicKey = pem.EncodeToMemory(&pem.Block{Type: "PUBLICKEY", Bytes: publicKeyBytes})
+	keyPair.KeyType = keyType
+	keyPair.UserID, err = models.GetCustomerIDByName(username)
+	if err != nil {
+		logger.Error("get user id by user name failed!", zap.Error(err))
+		return nil, err
+	}
+	err = models.InsertKeyPair(&keyPair)
+	if err != nil {
+		logger.Error("insert keypair to db failed!", zap.Error(err))
+		return nil, err
+	}
+	return privKey, nil
 }
