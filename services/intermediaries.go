@@ -5,8 +5,6 @@ import (
 	"io/ioutil"
 
 	"chainmaker.org/chainmaker-go/common/crypto"
-	"chainmaker.org/chainmaker-go/common/crypto/asym"
-	"chainmaker.org/chainmaker-go/common/crypto/hash"
 	"chainmaker.org/wx-CRA-backend/models"
 	"chainmaker.org/wx-CRA-backend/utils"
 	"go.uber.org/zap"
@@ -22,7 +20,6 @@ func CreateIntermediariesCert() {
 	//生成公私钥
 	privKey, err := CreateKeyPairToDB(&inmediaCaConfig)
 	if err != nil {
-		logger.Error("Create key pair to db  Failed!", zap.Error(err))
 		return
 	}
 	//生成CSR 不以文件形式存在，在内存和数据库中
@@ -41,15 +38,8 @@ func CreateIntermediariesCert() {
 		return
 	}
 	//私钥解密
-	privateKeyPwd := DefaultPrivateKeyPwd + utils.GetRootCaPrivateKeyPwd()
-	issureHashPwd, err := hash.Get(hashType, []byte(privateKeyPwd))
+	issuerPrivKey, err := DecryptPrivKey(privKeyRaw, hashType)
 	if err != nil {
-		logger.Error("Get issuer private key pwd hash failed!", zap.Error(err))
-		return
-	}
-	issuerPrivKey, err := asym.PrivateKeyFromPEM(privKeyRaw, issureHashPwd)
-	if err != nil {
-		logger.Error("PrivateKey Decrypt  failed!", zap.Error(err))
 		return
 	}
 	//读取签发者证书

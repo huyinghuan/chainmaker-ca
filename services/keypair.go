@@ -98,3 +98,19 @@ func CreateKeyPairToDB(caConifg *utils.CaConfig) (crypto.PrivateKey, error) {
 	}
 	return privKey, nil
 }
+
+//DecryptPrivKey 解密私钥
+func DecryptPrivKey(privKeyRaw []byte, hashType crypto.HashType) (crypto.PrivateKey, error) {
+	privateKeyPwd := DefaultPrivateKeyPwd + utils.GetIntermCAPrivateKeyPwd()
+	issureHashPwd, err := hash.Get(hashType, []byte(privateKeyPwd))
+	if err != nil {
+		logger.Error("Get issuer private key pwd hash failed!", zap.Error(err))
+		return nil, err
+	}
+	issuerPrivKey, err := asym.PrivateKeyFromPEM(privKeyRaw, issureHashPwd)
+	if err != nil {
+		logger.Error("PrivateKey Decrypt  failed!", zap.Error(err))
+		return nil, err
+	}
+	return issuerPrivKey, nil
+}

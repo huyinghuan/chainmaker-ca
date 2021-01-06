@@ -10,3 +10,9 @@ type ApplyCertReq struct {
 	CommonName         string `json:"common_name"`
 	ExpireYear         int32  `json:"expire_year"`
 }
+
+//UpdateCertReq .
+type UpdateCertReq struct {
+	CertID     int   `json:"certID"`
+	ExpireYear int32 `json:"expire_year"`
+}

@@ -15,7 +15,7 @@ db_config:
   dbname: chainmaker
 
 #是否初始化根CA
-is_init_root_ca: true
+is_init_root_ca: false
 #密钥加密类型
 private_key_type: SM2
 #哈希类型

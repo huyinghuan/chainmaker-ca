@@ -16,7 +16,7 @@ import (
 func init() {
 	utils.InitConfig()
 	db.InitDB()
-	testData()
+	//testData()
 	services.InitServer()
 }
 func main() {

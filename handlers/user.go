@@ -7,7 +7,6 @@ import (
 
 	"chainmaker.org/chainmaker-go/common/crypto"
 	"chainmaker.org/chainmaker-go/common/crypto/asym"
-	"chainmaker.org/chainmaker-go/common/crypto/hash"
 	"chainmaker.org/wx-CRA-backend/loggers"
 	"chainmaker.org/wx-CRA-backend/models"
 	"chainmaker.org/wx-CRA-backend/models/db"
@@ -102,23 +101,11 @@ func ApplyCert(c *gin.Context) {
 	}
 	//私钥解密
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
-	privateKeyPwd := services.DefaultPrivateKeyPwd + utils.GetIntermCAPrivateKeyPwd()
-	issureHashPwd, err := hash.Get(hashType, []byte(privateKeyPwd))
+	issuerPrivKey, err := services.DecryptPrivKey(privKeyRaw, hashType)
 	if err != nil {
-		logger.Error("Get issuer private key pwd hash failed!", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  500,
-			"msg":   "Get issuer private key pwd hash failed!",
-			"error": err.Error(),
-		})
-		return
-	}
-	issuerPrivKey, err := asym.PrivateKeyFromPEM(privKeyRaw, issureHashPwd)
-	if err != nil {
-		logger.Error("PrivateKey Decrypt  failed!", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":  500,
-			"msg":   "PrivateKey Decrypt  failed!",
+			"msg":   "Decrypt Private Key failed! ",
 			"error": err.Error(),
 		})
 		return
@@ -183,4 +170,95 @@ func CreateUserKeyPair(username string) (crypto.PrivateKey, error) {
 		return nil, err
 	}
 	return privKey, nil
+}
+
+//UpdateCert 更新证书
+func UpdateCert(c *gin.Context) {
+	logger = loggers.GetLogger()
+	username := c.MustGet("username").(string)
+	var updateCertReq models.UpdateCertReq
+	if err := c.ShouldBind(&updateCertReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code": 400,
+			"msg":  "Bad request!",
+		})
+		return
+	}
+	cert, err := models.GetCertByID(updateCertReq.CertID)
+	if err != nil {
+		logger.Error("Get cert by id failed!")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Get cert by id failed!",
+			"error": err.Error(),
+		})
+		return
+	}
+	userID, err := models.GetCustomerIDByName(username)
+	if err != nil {
+		logger.Error("Get customer id by name failed!")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Get customer id by name failed!",
+			"error": err.Error(),
+		})
+		return
+	}
+	certCSRBytes := cert.CsrContent
+	//读取签发者私钥
+	issuerPrivKeyFilePath, certFilePath := utils.GetIntermediariesPrkCert()
+	privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
+	if err != nil {
+		logger.Error("Read private key file failed!", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Read private key file failed!",
+			"error": err.Error(),
+		})
+		return
+	}
+	//私钥解密
+	hashType := crypto.HashAlgoMap[utils.GetHashType()]
+	issuerPrivKey, err := services.DecryptPrivKey(privKeyRaw, hashType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Decrypt Private Key failed! ",
+			"error": err.Error(),
+		})
+		return
+	}
+	//读取签发者证书
+	certBytes, err := ioutil.ReadFile(certFilePath)
+	if err != nil {
+		logger.Error("Read cert file failed!", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Read cert file failed!",
+			"error": err.Error(),
+		})
+		return
+	}
+	certModel, err := services.IssueCertificate(hashType, false, issuerPrivKey, certCSRBytes, certBytes, updateCertReq.ExpireYear, []string{}, "")
+	if err != nil {
+		logger.Error("Issue Cert failed!", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Issue Cert failed!",
+			"error": err.Error(),
+		})
+		return
+	}
+	certModel.CustomerID = userID
+	//证书入库
+	err = models.InsertCert(certModel)
+	if err != nil {
+		logger.Error("Insert Cert to db failed!", zap.Error(err))
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "update user cert successfully!",
+	})
+	return
 }
