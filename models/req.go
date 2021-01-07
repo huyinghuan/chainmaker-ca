@@ -16,3 +16,12 @@ type UpdateCertReq struct {
 	CertID     int   `json:"certID"`
 	ExpireYear int32 `json:"expire_year"`
 }
+
+//RevokedCertReq .
+type RevokedCertReq struct {
+	RevokedCertID    int    `json:"revokedCertId"`
+	RevokedCertSN    int64  `json:"revokedCertSN"`
+	Reason           string `json:"reason"`
+	RevokedStartTime int64  `json:"revokedStartTime"`
+	RevokedEndTime   int64  `json:"revokedEndTime"`
+}

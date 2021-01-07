@@ -9,7 +9,6 @@ import (
 	"chainmaker.org/chainmaker-go/common/cert"
 	"chainmaker.org/chainmaker-go/common/crypto"
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
-	"chainmaker.org/wx-CRA-backend/loggers"
 	"chainmaker.org/wx-CRA-backend/models"
 	"chainmaker.org/wx-CRA-backend/models/db"
 	"chainmaker.org/wx-CRA-backend/utils"
@@ -20,7 +19,6 @@ var logger *zap.Logger
 
 //InitRootCA 初始化根CA
 func InitRootCA() {
-	logger = loggers.GetLogger()
 	//读配置文件（可以升级为web传参）
 	rootCaConfig, err := utils.GetRootCaConfig()
 	if err != nil {
@@ -35,7 +33,7 @@ func InitRootCA() {
 	}
 	//构建证书结构体
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
-	certModel, err := CreateCACert(privKey, hashType,
+	certModel, err := createCACert(privKey, hashType,
 		rootCaConfig.Country, rootCaConfig.Locality, rootCaConfig.Province, rootCaConfig.OrganizationalUnit,
 		rootCaConfig.Organization, rootCaConfig.CommonName, rootCaConfig.ExpireYear, []string{})
 	if err != nil {
@@ -67,7 +65,7 @@ func InitRootCA() {
 }
 
 //CreateCACert 创建入库的证书结构
-func CreateCACert(privKey crypto.PrivateKey, hashType crypto.HashType,
+func createCACert(privKey crypto.PrivateKey, hashType crypto.HashType,
 	country, locality, province, organizationalUnit, organization, commonName string,
 	expireYear int32, sans []string) (*db.Cert, error) {
 	var certModel db.Cert

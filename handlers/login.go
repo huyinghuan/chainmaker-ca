@@ -3,13 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"chainmaker.org/wx-CRA-backend/loggers"
 	"chainmaker.org/wx-CRA-backend/models"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
-
-var logger *zap.Logger
 
 //UserInfo userinfo
 type UserInfo struct {
@@ -20,7 +16,6 @@ type UserInfo struct {
 //LoginHandle .
 func LoginHandle(c *gin.Context) {
 	var user UserInfo
-	logger = loggers.GetLogger()
 	if err := c.ShouldBind(&user); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 201,
@@ -30,7 +25,6 @@ func LoginHandle(c *gin.Context) {
 	}
 	customer, err := models.CustomerByNamePwd(user.Username, user.Password)
 	if err != nil {
-		logger.Error("Get customer failed!", zap.Error(err))
 		c.JSON(http.StatusOK, gin.H{
 			"code":  500,
 			"msg":   "Get customer failed!",
@@ -47,7 +41,6 @@ func LoginHandle(c *gin.Context) {
 	}
 	tokenString, err := GenerateToken(user.Username)
 	if err != nil {
-		logger.Error("Generate token failed!", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  500,
 			"msg":   "Generate token failed!",

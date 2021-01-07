@@ -1,6 +1,10 @@
 package db
 
-import "chainmaker.org/chainmaker-go/common/crypto"
+import (
+	"time"
+
+	"chainmaker.org/chainmaker-go/common/crypto"
+)
 
 //Cert 证书信息表
 type Cert struct {
@@ -55,4 +59,20 @@ type KeyPair struct {
 //TableName cert
 func (table *KeyPair) TableName() string {
 	return "key_pair"
+}
+
+//RevokedCert 撤销证书
+type RevokedCert struct {
+	ID               int `gorm:"primary_key;AUTO_INCREMENT"`
+	RevokedCertID    int
+	RevokedCertSN    int64
+	RevocationTime   time.Time
+	Reason           string `gorm:"type:longtext"`
+	RevokedStartTime int64
+	RevokedEndTime   int64
+}
+
+//TableName cert
+func (table *RevokedCert) TableName() string {
+	return "revoked_cert"
 }

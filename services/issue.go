@@ -129,7 +129,7 @@ func IssueCertificate(hashType crypto.HashType, isCA bool, issuerPrivKey crypto.
 }
 
 //CreateCSR 创建CSR
-func CreateCSR(privKey crypto.PrivateKey, country, locality, province,
+func createCSR(privKey crypto.PrivateKey, country, locality, province,
 	organizationalUnit, organization, commonName string) ([]byte, error) {
 	templateX509 := cert.GenerateCSRTemplate(privKey, country, locality, province, organizationalUnit, organization, commonName)
 

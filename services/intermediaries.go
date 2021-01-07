@@ -23,7 +23,7 @@ func CreateIntermediariesCert() {
 		return
 	}
 	//生成CSR 不以文件形式存在，在内存和数据库中
-	csrBytes, err := CreateCSR(privKey, inmediaCaConfig.Country, inmediaCaConfig.Locality, inmediaCaConfig.Province, inmediaCaConfig.OrganizationalUnit,
+	csrBytes, err := createCSR(privKey, inmediaCaConfig.Country, inmediaCaConfig.Locality, inmediaCaConfig.Province, inmediaCaConfig.OrganizationalUnit,
 		inmediaCaConfig.Organization, inmediaCaConfig.CommonName)
 	if err != nil {
 		logger.Error("Create CSR failed!", zap.Error(err))
@@ -38,7 +38,7 @@ func CreateIntermediariesCert() {
 		return
 	}
 	//私钥解密
-	issuerPrivKey, err := DecryptPrivKey(privKeyRaw, hashType)
+	issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetRootCaPrivateKeyPwd(), hashType)
 	if err != nil {
 		return
 	}

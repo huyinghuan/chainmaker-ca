@@ -56,6 +56,7 @@ func InitDB() {
 		&Cert{},
 		&Customer{},
 		&KeyPair{},
+		&RevokedCert{},
 	).Error
 	if err != nil {
 		log.Error("Create table failed!", zap.Error(err))

@@ -11,4 +11,5 @@ func LoadUserRouter(e *gin.Engine) {
 	e.POST("/api/generateprivkey", handlers.JWTAuthMiddleware(), handlers.GeneratePrivateKey)
 	e.POST("/api/applycert", handlers.JWTAuthMiddleware(), handlers.ApplyCert)
 	e.POST("/api/updatecert", handlers.JWTAuthMiddleware(), handlers.UpdateCert)
+	e.POST("/api/revokedcert", handlers.JWTAuthMiddleware())
 }
