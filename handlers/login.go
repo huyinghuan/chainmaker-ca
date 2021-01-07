@@ -17,9 +17,9 @@ type UserInfo struct {
 func LoginHandle(c *gin.Context) {
 	var user UserInfo
 	if err := c.ShouldBind(&user); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 201,
-			"msg":  "登录失败",
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code": 400,
+			"msg":  "Bad request!",
 		})
 		return
 	}
@@ -35,7 +35,7 @@ func LoginHandle(c *gin.Context) {
 	if customer == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 202,
-			"msg":  "用户不存在",
+			"msg":  "User does not exist! ",
 		})
 		return
 	}
@@ -50,7 +50,7 @@ func LoginHandle(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
-		"msg":  "success",
+		"msg":  "Login successfully!",
 		"data": gin.H{
 			"token": tokenString,
 		},

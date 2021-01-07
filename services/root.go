@@ -15,8 +15,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var logger *zap.Logger
-
 //InitRootCA 初始化根CA
 func InitRootCA() {
 	//读配置文件（可以升级为web传参）
