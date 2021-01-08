@@ -1,8 +1,6 @@
 package db
 
 import (
-	"time"
-
 	"chainmaker.org/chainmaker-go/common/crypto"
 )
 
@@ -21,12 +19,12 @@ type Cert struct {
 	Organization       string
 	OrganizationalUnit string
 	CommonName         string
-	CsrContent         []byte   `gorm:"type:mediumblob"` //证书csr
-	CertType           CertType //证书类型
-	CustomerID         int      //所属用户id
-	//CertStatus         CertStatus //证书状态
-	IssueDate   int64 //签发日期unix
-	InvalidDate int64 //到期时间unix
+	CsrContent         []byte     `gorm:"type:mediumblob"` //证书csr
+	CertType           CertType   //证书类型
+	CustomerID         int        //所属用户id
+	CertStatus         CertStatus //证书状态
+	IssueDate          int64      //签发日期unix
+	InvalidDate        int64      //到期时间unix
 }
 
 //TableName cert
@@ -64,9 +62,7 @@ func (table *KeyPair) TableName() string {
 //RevokedCert 撤销证书
 type RevokedCert struct {
 	ID               int `gorm:"primary_key;AUTO_INCREMENT"`
-	RevokedCertID    int
 	RevokedCertSN    int64
-	RevocationTime   time.Time
 	Reason           string `gorm:"type:longtext"`
 	RevokedStartTime int64
 	RevokedEndTime   int64

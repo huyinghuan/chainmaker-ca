@@ -6,6 +6,7 @@ import (
 
 	"chainmaker.org/chainmaker-go/common/crypto"
 	"chainmaker.org/wx-CRA-backend/models"
+	"chainmaker.org/wx-CRA-backend/models/db"
 	"chainmaker.org/wx-CRA-backend/utils"
 	"go.uber.org/zap"
 )
@@ -58,6 +59,7 @@ func CreateIntermediariesCert() {
 		logger.Error("Get customer id by name failed!", zap.Error(err))
 		return
 	}
+	certModel.CertStatus = db.EFFECTIVE
 	//证书入库
 	err = models.InsertCert(certModel)
 	if err != nil {

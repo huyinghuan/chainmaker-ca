@@ -43,7 +43,7 @@ func InitRootCA() {
 		logger.Error("Get customer id by name failed!", zap.Error(err))
 		return
 	}
-
+	certModel.CertStatus = db.EFFECTIVE
 	//证书入库
 	if err := models.InsertCert(certModel); err != nil {
 		logger.Error("Insert cert to db failed!", zap.Error(err))

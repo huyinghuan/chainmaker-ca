@@ -19,7 +19,6 @@ type UpdateCertReq struct {
 
 //RevokedCertReq .
 type RevokedCertReq struct {
-	RevokedCertID    int    `json:"revokedCertId"`
 	RevokedCertSN    int64  `json:"revokedCertSN"`
 	Reason           string `json:"reason"`
 	RevokedStartTime int64  `json:"revokedStartTime"`

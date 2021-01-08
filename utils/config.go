@@ -130,3 +130,8 @@ func GetIntermediariesPrkCert() (privateKeyPath, certPath string) {
 func GetIntermCAPrivateKeyPwd() string {
 	return viper.GetString("intermediaries_config.private_key_pwd")
 }
+
+//GetCRLNextTime .
+func GetCRLNextTime() int {
+	return viper.GetInt("crl_next_time")
+}

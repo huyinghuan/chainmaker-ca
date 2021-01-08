@@ -20,3 +20,11 @@ func GetCertByID(certID int) (*db.Cert, error) {
 	}
 	return &cert, nil
 }
+
+//UpdateCertStatusRevokedBySN 通过证书SN
+func UpdateCertStatusRevokedBySN(certSN int64) error {
+	if err := db.DB.Debug().Model(&db.Cert{}).Update("cert_status", db.REVOKED).Where("serial_number", certSN).Error; err != nil {
+		return err
+	}
+	return nil
+}

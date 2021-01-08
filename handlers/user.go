@@ -15,14 +15,14 @@ func GeneratePrivateKey(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  500,
-			"msg":   "generate privatekey failed!",
+			"msg":   "Generate privatekey failed!",
 			"error": err.Error(),
 		})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
-		"msg":  "generate private key successfully!",
+		"msg":  "Generate private key successfully!",
 	})
 	return
 }
@@ -79,6 +79,51 @@ func UpdateCert(c *gin.Context) {
 		"code": 200,
 		"msg":  "Update user cert successfully!",
 		"data": certContent,
+	})
+	return
+}
+
+//RevokedCert 撤销证书
+func RevokedCert(c *gin.Context) {
+	var revokedCertReq models.RevokedCertReq
+	if err := c.ShouldBind(&revokedCertReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code": 400,
+			"msg":  "Bad request!",
+		})
+		return
+	}
+	err := services.RevokedCert(&revokedCertReq)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Revoked Cert failed!",
+			"error": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "Revoked Cert successfully!",
+	})
+	return
+}
+
+//GetRevokedCertList .
+func GetRevokedCertList(c *gin.Context) {
+	revokedCertListBytes, err := services.GetRevokedCertList()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Get revoked cert list failed!",
+			"error": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "Get revoked cert list successfully!",
+		"data": revokedCertListBytes,
 	})
 	return
 }
