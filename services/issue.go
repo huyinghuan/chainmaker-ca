@@ -13,6 +13,7 @@ import (
 	"chainmaker.org/chainmaker-go/common/cert"
 	"chainmaker.org/chainmaker-go/common/crypto"
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
+	"chainmaker.org/chainmaker-go/common/json"
 	"chainmaker.org/wx-CRA-backend/models/db"
 )
 
@@ -108,7 +109,11 @@ func IssueCertificate(hashType crypto.HashType, isCA bool, issuerPrivKey crypto.
 	if isCA == true {
 		certModel.CertType = db.INTERMRDIARY_CA
 	} else {
-		certModel.CertType = db.CUSTOMER
+		if sans != nil {
+			certModel.CertType = db.NODE
+		} else {
+			certModel.CertType = db.CUSTOMER
+		}
 	}
 	certModel.CertEncode = hex.EncodeToString(x509certEncode)
 	certModel.CommonName = csr.Subject.CommonName
@@ -125,6 +130,21 @@ func IssueCertificate(hashType crypto.HashType, isCA bool, issuerPrivKey crypto.
 	certModel.Province = template.Subject.Province[0]
 	certModel.SerialNumber = template.SerialNumber.Int64()
 	certModel.Signature = hex.EncodeToString(template.Signature)
+	var ipAddrsstr []string
+	for _, ip := range ipAddrs {
+		ipstr := ip.String()
+		ipAddrsstr = append(ipAddrsstr, ipstr)
+	}
+	ipAddrsBytes, err := json.Marshal(ipAddrsstr)
+	if err != nil {
+		return nil, fmt.Errorf("Marshal ipAddress failed: %s", err)
+	}
+	certModel.IPAddresses = string(ipAddrsBytes)
+	dnsNameBytes, err := json.Marshal(dnsName)
+	if err != nil {
+		return nil, fmt.Errorf("Marshal DNSNames failed: %s", err)
+	}
+	certModel.DNSNames = string(dnsNameBytes)
 	return &certModel, nil
 }
 

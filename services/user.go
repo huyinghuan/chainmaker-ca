@@ -62,13 +62,16 @@ func ApplyCert(applyCertReq *models.ApplyCertReq, username string) ([]byte, erro
 		logger.Error("Read cert file failed!", zap.Error(err))
 		return []byte{}, err
 	}
-	certModel, err := IssueCertificate(hashType, false, issuerPrivKey, certCSR, certBytes, applyCertReq.ExpireYear, []string{}, "")
+	certModel, err := IssueCertificate(hashType, false, issuerPrivKey, certCSR, certBytes, applyCertReq.ExpireYear, applyCertReq.Sans, "")
 	if err != nil {
 		logger.Error("Issue Cert failed!", zap.Error(err))
 		return []byte{}, err
 	}
 	certModel.CustomerID = userID
 	certModel.CertStatus = db.EFFECTIVE
+	certModel.CertUsage = db.Name2CertUsageMap[applyCertReq.CertUsage]
+	certModel.PrivateKeyID = keyPair.ID
+	//certModel.ID = Getuuid()
 	//证书入库
 	err = models.InsertCert(certModel)
 	if err != nil {
@@ -80,7 +83,7 @@ func ApplyCert(applyCertReq *models.ApplyCertReq, username string) ([]byte, erro
 
 //UpdateCert 更新证书
 func UpdateCert(updateCertReq *models.UpdateCertReq, username string) ([]byte, error) {
-	cert, err := models.GetCertByID(updateCertReq.CertID)
+	cert, err := models.GetCertBySN(updateCertReq.CertSN)
 	if err != nil {
 		logger.Error("Get cert by id failed!", zap.Error(err))
 		return []byte{}, err
@@ -111,7 +114,7 @@ func UpdateCert(updateCertReq *models.UpdateCertReq, username string) ([]byte, e
 		logger.Error("Read cert file failed!", zap.Error(err))
 		return []byte{}, err
 	}
-	certModel, err := IssueCertificate(hashType, false, issuerPrivKey, certCSRBytes, certBytes, updateCertReq.ExpireYear, []string{}, "")
+	certModel, err := IssueCertificate(hashType, false, issuerPrivKey, certCSRBytes, certBytes, updateCertReq.ExpireYear, updateCertReq.Sans, "")
 	if err != nil {
 		logger.Error("Issue Cert failed!", zap.Error(err))
 		return []byte{}, err

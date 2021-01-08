@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
+	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -78,4 +79,10 @@ func ParseCsr(csrBytes []byte) (*x509.CertificateRequest, error) {
 	}
 
 	return bcx509.ChainMakerCertCsrToX509CertCsr(csrBC)
+}
+
+//Getuuid 获取UUID
+func Getuuid() string {
+	uuid := uuid.NewV4()
+	return uuid.String()
 }

@@ -32,6 +32,7 @@ func main() {
 	g.Use(loggers.GinLogger(), loggers.GinRecovery(true))
 	//加载路由
 	routers.LoadUserRouter(g)
+	routers.LoadChainMakerRouters(g)
 	g.Run(":8080")
 }
 func testData() {

@@ -19,7 +19,7 @@ func CreateIntermediariesCert() {
 		return
 	}
 	//生成公私钥
-	privKey, err := CreateKeyPairToDB(&inmediaCaConfig)
+	privKey, keyID, err := CreateKeyPairToDB(&inmediaCaConfig)
 	if err != nil {
 		return
 	}
@@ -60,6 +60,9 @@ func CreateIntermediariesCert() {
 		return
 	}
 	certModel.CertStatus = db.EFFECTIVE
+	certModel.PrivateKeyID = keyID
+	certModel.CertUsage = db.SIGN
+	//certModel.ID = Getuuid()
 	//证书入库
 	err = models.InsertCert(certModel)
 	if err != nil {

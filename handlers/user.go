@@ -11,7 +11,15 @@ import (
 //GeneratePrivateKey .
 func GeneratePrivateKey(c *gin.Context) {
 	username := c.MustGet("username").(string)
-	_, err := services.CreateUserKeyPair(username)
+	var generateKeyPairReq models.GenerateKeyPairReq
+	if err := c.ShouldBind(&generateKeyPairReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code": 400,
+			"msg":  "Bad request!",
+		})
+		return
+	}
+	_, _, err := services.CreateUserKeyPair(username, generateKeyPairReq.IsNodeKey, generateKeyPairReq.NodeName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  500,

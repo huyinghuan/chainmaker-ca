@@ -12,10 +12,10 @@ func InsertCert(cert *db.Cert) error {
 	return nil
 }
 
-//GetCertByID .
-func GetCertByID(certID int) (*db.Cert, error) {
+//GetCertBySN .
+func GetCertBySN(certSN int64) (*db.Cert, error) {
 	var cert db.Cert
-	if err := db.DB.Debug().Where("id=?", certID).First(&cert).Error; err != nil {
+	if err := db.DB.Debug().Where("serial_number=?", certSN).First(&cert).Error; err != nil {
 		return nil, err
 	}
 	return &cert, nil

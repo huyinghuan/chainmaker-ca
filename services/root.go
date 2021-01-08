@@ -24,7 +24,7 @@ func InitRootCA() {
 		return
 	}
 	//生成公私钥
-	privKey, err := CreateKeyPairToDB(&rootCaConfig)
+	privKey, keyID, err := CreateKeyPairToDB(&rootCaConfig)
 	if err != nil {
 		logger.Error("Create key pair to db  Failed!", zap.Error(err))
 		return
@@ -44,6 +44,9 @@ func InitRootCA() {
 		return
 	}
 	certModel.CertStatus = db.EFFECTIVE
+	certModel.PrivateKeyID = keyID
+	certModel.CertUsage = db.SIGN
+	//certModel.ID = Getuuid()
 	//证书入库
 	if err := models.InsertCert(certModel); err != nil {
 		logger.Error("Insert cert to db failed!", zap.Error(err))

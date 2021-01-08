@@ -19,12 +19,16 @@ type Cert struct {
 	Organization       string
 	OrganizationalUnit string
 	CommonName         string
+	IPAddresses        string //ip地址
+	DNSNames           string
 	CsrContent         []byte     `gorm:"type:mediumblob"` //证书csr
 	CertType           CertType   //证书类型
 	CustomerID         int        //所属用户id
 	CertStatus         CertStatus //证书状态
+	CertUsage          CertUsage  //证书用处（sign/tls）
 	IssueDate          int64      //签发日期unix
 	InvalidDate        int64      //到期时间unix
+	PrivateKeyID       string     //对应的私钥ID
 }
 
 //TableName cert
@@ -46,12 +50,14 @@ func (table *Customer) TableName() string {
 
 //KeyPair 公私钥
 type KeyPair struct {
-	ID            int    `gorm:"primary_key;AUTO_INCREMENT"`
+	ID            string `gorm:"primary_key"`
 	PrivateKey    []byte `gorm:"type:mediumblob"`
 	PublicKey     []byte `gorm:"type:mediumblob"`
 	PrivateKeyPwd string //用户加密私钥所用密码
 	KeyType       crypto.KeyType
 	UserID        int
+	IsNodeKey     bool
+	NodeName      string
 }
 
 //TableName cert

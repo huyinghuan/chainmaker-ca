@@ -50,15 +50,15 @@ func WritePrivKeyFile(privKeyFilePath string, data []byte) error {
 }
 
 //CreateKeyPairToDB 生成公私钥（可用KMS代替）
-func CreateKeyPairToDB(caConifg *utils.CaConfig) (crypto.PrivateKey, error) {
+func CreateKeyPairToDB(caConifg *utils.CaConfig) (privKey crypto.PrivateKey, keyID string, err error) {
 	var keyPair db.KeyPair
 	//生成公私钥（可对接KMS）
 	keyType := crypto.Name2KeyTypeMap[utils.GetPrivKeyType()]
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
-	privKey, err := createPrivKey(keyType)
+	privKey, err = createPrivKey(keyType)
 	if err != nil {
 		logger.Error("Generate private key failed!", zap.Error(err))
-		return nil, err
+		return
 	}
 	//私钥加密 密码:程序变量+读取密码
 	privKeyPwd := DefaultPrivateKeyPwd + caConifg.PrivateKeyPwd
@@ -66,19 +66,19 @@ func CreateKeyPairToDB(caConifg *utils.CaConfig) (crypto.PrivateKey, error) {
 	fmt.Println(hex.EncodeToString(hashPwd))
 	if err != nil {
 		logger.Error("Get private key pwd hash failed!", zap.Error(err))
-		return nil, err
+		return
 	}
 	//私钥加密
 	privKeyPemBytes, err := encryptPrivKey(privKey, hashPwd)
 	if err != nil {
 		logger.Error("Private Encrypt failed!", zap.Error(err))
-		return nil, err
+		return
 	}
 	//将加密后私钥写入文件
 	err = WritePrivKeyFile(caConifg.PrivateKeyPath, privKeyPemBytes)
 	if err != nil {
 		logger.Error("Write privatekey failed!", zap.Error(err))
-		return nil, err
+		return
 	}
 
 	//私钥入库
@@ -90,14 +90,16 @@ func CreateKeyPairToDB(caConifg *utils.CaConfig) (crypto.PrivateKey, error) {
 	keyPair.UserID, err = models.GetCustomerIDByName(caConifg.Username)
 	if err != nil {
 		logger.Error("Get userid by username failed!", zap.Error(err))
-		return nil, err
+		return
 	}
+	keyPair.ID = Getuuid()
 	err = models.InsertKeyPair(&keyPair)
 	if err != nil {
 		logger.Error("Insert keypair failed!", zap.Error(err))
-		return nil, err
+		return
 	}
-	return privKey, nil
+	keyID = keyPair.ID
+	return
 }
 
 //DecryptPrivKey 解密私钥
@@ -117,12 +119,12 @@ func decryptPrivKey(privKeyRaw []byte, privKeyPwd string, hashType crypto.HashTy
 }
 
 //CreateUserKeyPair .
-func CreateUserKeyPair(username string) (crypto.PrivateKey, error) {
+func CreateUserKeyPair(username string, IsNodeKey bool, nodeName ...string) (privKey crypto.PrivateKey, keyID string, err error) {
 	keyType := crypto.Name2KeyTypeMap[utils.GetPrivKeyType()]
-	privKey, err := createPrivKey(keyType)
+	privKey, err = createPrivKey(keyType)
 	if err != nil {
 		logger.Error("create user keypair failed!", zap.Error(err))
-		return nil, err
+		return
 	}
 	privKeyBytes, _ := privKey.Bytes()
 	var keyPair db.KeyPair
@@ -131,14 +133,19 @@ func CreateUserKeyPair(username string) (crypto.PrivateKey, error) {
 	keyPair.PublicKey = pem.EncodeToMemory(&pem.Block{Type: "PUBLICKEY", Bytes: publicKeyBytes})
 	keyPair.KeyType = keyType
 	keyPair.UserID, err = models.GetCustomerIDByName(username)
+	if IsNodeKey == true {
+		keyPair.NodeName = nodeName[0]
+	}
 	if err != nil {
 		logger.Error("get user id by user name failed!", zap.Error(err))
-		return nil, err
+		return
 	}
+	keyPair.ID = Getuuid()
 	err = models.InsertKeyPair(&keyPair)
 	if err != nil {
 		logger.Error("insert keypair to db failed!", zap.Error(err))
-		return nil, err
+		return
 	}
-	return privKey, nil
+	keyID = keyPair.ID
+	return
 }
