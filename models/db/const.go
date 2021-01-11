@@ -12,7 +12,8 @@ type CertUsage int
 const (
 	ROOT_CA CertType = iota
 	INTERMRDIARY_CA
-	CUSTOMER
+	CUSTOMER_ADMIN
+	CUSTOMER_USER
 	NODE
 )
 
@@ -30,7 +31,8 @@ const (
 var CertType2NameMap = map[CertType]string{
 	ROOT_CA:         "ROOT_CA",
 	INTERMRDIARY_CA: "INTERMRDIARY_CA",
-	CUSTOMER:        "CUSTOMER",
+	CUSTOMER_ADMIN:  "CUSTOMER_ADMIN",
+	CUSTOMER_USER:   "CUSTOMER_USER",
 	NODE:            "NODE",
 }
 
@@ -38,7 +40,8 @@ var CertType2NameMap = map[CertType]string{
 var Name2CertTypeMap = map[string]CertType{
 	"ROOT_CA":         ROOT_CA,
 	"INTERMRDIARY_CA": INTERMRDIARY_CA,
-	"CUSTOMER":        CUSTOMER,
+	"CUSTOMER_ADMIN":  CUSTOMER_ADMIN,
+	"CUSTOMER_USER":   CUSTOMER_USER,
 	"NODE":            NODE,
 }
 

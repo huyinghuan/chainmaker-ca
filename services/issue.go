@@ -18,7 +18,7 @@ import (
 )
 
 //IssueCertificate 签发证书
-func IssueCertificate(hashType crypto.HashType, isCA bool, issuerPrivKey crypto.PrivateKey,
+func IssueCertificate(hashType crypto.HashType, certType db.CertType, issuerPrivKey crypto.PrivateKey,
 	csrBytes, certBytes []byte, expireYear int32, sans []string, uuid string) (*db.Cert, error) {
 	var certModel db.Cert
 	issuerCert, err := ParseCertificate(certBytes)
@@ -44,8 +44,10 @@ func IssueCertificate(hashType crypto.HashType, isCA bool, issuerPrivKey crypto.
 	}
 
 	basicConstraintsValid := false
-	if isCA {
+	isCA := false
+	if certType == db.ROOT_CA || certType == db.INTERMRDIARY_CA {
 		basicConstraintsValid = true
+		isCA = true
 	}
 
 	if expireYear <= 0 {
@@ -106,15 +108,7 @@ func IssueCertificate(hashType crypto.HashType, isCA bool, issuerPrivKey crypto.
 	if err != nil {
 		return nil, fmt.Errorf("issue certificate failed, %s", err)
 	}
-	if isCA == true {
-		certModel.CertType = db.INTERMRDIARY_CA
-	} else {
-		if sans != nil {
-			certModel.CertType = db.NODE
-		} else {
-			certModel.CertType = db.CUSTOMER
-		}
-	}
+	certModel.CertType = certType
 	certModel.CertEncode = hex.EncodeToString(x509certEncode)
 	certModel.CommonName = csr.Subject.CommonName
 	certModel.Content = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: x509certEncode})

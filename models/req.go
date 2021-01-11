@@ -1,15 +1,10 @@
 package models
 
-import "chainmaker.org/wx-CRA-backend/models/db"
-
-//GenerateKeyPairReq .
-type GenerateKeyPairReq struct {
-	IsNodeKey bool   `json:"isNodeKey"`
-	NodeName  string `json:"nodeName"`
-}
-
 //ApplyCertReq .
 type ApplyCertReq struct {
+	CertType           string   `json:"certType"`
+	ChainID            string   `json:"chainID"`
+	ConsortiumID       string   `json:"consortiumID"`
 	Country            string   `json:"country"`
 	Locality           string   `json:"locality"`
 	Province           string   `json:"province"`
@@ -17,15 +12,15 @@ type ApplyCertReq struct {
 	OrganizationalUnit string   `json:"organization_unit"`
 	CommonName         string   `json:"common_name"`
 	ExpireYear         int32    `json:"expire_year"`
+	NodeName           string   `json:"nodeName"`
 	Sans               []string `json:"sans"`
 	CertUsage          string   `json:"certUsage"`
 }
 
 //UpdateCertReq .
 type UpdateCertReq struct {
-	CertSN     int64    `json:"certSN"`
-	ExpireYear int32    `json:"expire_year"`
-	Sans       []string `json:"sans"`
+	CertSN     int64 `json:"certSN"`
+	ExpireYear int32 `json:"expire_year"`
 }
 
 //RevokedCertReq .
@@ -38,7 +33,9 @@ type RevokedCertReq struct {
 
 //ChainMakerCertApplyReq .
 type ChainMakerCertApplyReq struct {
-	Orgs []Org `json:"orgs"`
+	Orgs         []Org  `json:"orgs"`
+	ChainID      string `json:"chainID"`
+	ConsortiumID string `json:"consortiumID"`
 }
 
 //Org 组织
@@ -55,7 +52,6 @@ type Org struct {
 
 //Node 节点
 type Node struct {
-	NodeName string      `json:"nodeName"`
-	NodeType db.NodeType `json:"nodeType"`
-	Sans     []string    `json:"sans"`
+	NodeName string   `json:"nodeName"`
+	Sans     []string `json:"sans"`
 }

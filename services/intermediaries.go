@@ -49,7 +49,7 @@ func CreateIntermediariesCert() {
 		logger.Error("Read cert file failed!", zap.Error(err))
 		return
 	}
-	certModel, err := IssueCertificate(hashType, true, issuerPrivKey, csrBytes, certBytes, inmediaCaConfig.ExpireYear, []string{}, "")
+	certModel, err := IssueCertificate(hashType, db.INTERMRDIARY_CA, issuerPrivKey, csrBytes, certBytes, inmediaCaConfig.ExpireYear, nil, "")
 	if err != nil {
 		logger.Error("Issue Cert failed!", zap.Error(err))
 		return

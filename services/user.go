@@ -62,16 +62,24 @@ func ApplyCert(applyCertReq *models.ApplyCertReq, username string) ([]byte, erro
 		logger.Error("Read cert file failed!", zap.Error(err))
 		return []byte{}, err
 	}
-	certModel, err := IssueCertificate(hashType, false, issuerPrivKey, certCSR, certBytes, applyCertReq.ExpireYear, applyCertReq.Sans, "")
+
+	certType, ok := db.Name2CertTypeMap[applyCertReq.CertType]
+	if !ok {
+		logger.Error("Cert type not exist!", zap.Error(err))
+		return []byte{}, nil
+	}
+	certModel, err := IssueCertificate(hashType, certType, issuerPrivKey, certCSR, certBytes, applyCertReq.ExpireYear, applyCertReq.Sans, "")
 	if err != nil {
 		logger.Error("Issue Cert failed!", zap.Error(err))
 		return []byte{}, err
 	}
+	certModel.ChainID = applyCertReq.ChainID
+	certModel.ConsortiumID = applyCertReq.ConsortiumID
 	certModel.CustomerID = userID
 	certModel.CertStatus = db.EFFECTIVE
 	certModel.CertUsage = db.Name2CertUsageMap[applyCertReq.CertUsage]
 	certModel.PrivateKeyID = keyPair.ID
-	//certModel.ID = Getuuid()
+	certModel.NodeName = applyCertReq.NodeName
 	//证书入库
 	err = models.InsertCert(certModel)
 	if err != nil {
@@ -82,15 +90,10 @@ func ApplyCert(applyCertReq *models.ApplyCertReq, username string) ([]byte, erro
 }
 
 //UpdateCert 更新证书
-func UpdateCert(updateCertReq *models.UpdateCertReq, username string) ([]byte, error) {
+func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
 	cert, err := models.GetCertBySN(updateCertReq.CertSN)
 	if err != nil {
 		logger.Error("Get cert by id failed!", zap.Error(err))
-		return []byte{}, err
-	}
-	userID, err := models.GetCustomerIDByName(username)
-	if err != nil {
-		logger.Error("Get customer id by name failed!", zap.Error(err))
 		return []byte{}, err
 	}
 	certCSRBytes := cert.CsrContent
@@ -114,13 +117,21 @@ func UpdateCert(updateCertReq *models.UpdateCertReq, username string) ([]byte, e
 		logger.Error("Read cert file failed!", zap.Error(err))
 		return []byte{}, err
 	}
-	certModel, err := IssueCertificate(hashType, false, issuerPrivKey, certCSRBytes, certBytes, updateCertReq.ExpireYear, updateCertReq.Sans, "")
+	//
+	var certSans []string
+	certSans = append(certSans, cert.IPAddresses)
+	certSans = append(certSans, cert.DNSNames)
+	certModel, err := IssueCertificate(hashType, cert.CertType, issuerPrivKey, certCSRBytes, certBytes, updateCertReq.ExpireYear, certSans, "")
 	if err != nil {
 		logger.Error("Issue Cert failed!", zap.Error(err))
 		return []byte{}, err
 	}
-	certModel.CertStatus = db.EFFECTIVE
-	certModel.CustomerID = userID
+	certModel.CertStatus = cert.CertStatus
+	certModel.CustomerID = cert.CustomerID
+	certModel.CertUsage = cert.CertUsage
+	certModel.ChainID = cert.ChainID
+	certModel.ConsortiumID = cert.ConsortiumID
+	certModel.NodeName = cert.NodeName
 	//证书入库
 	err = models.InsertCert(certModel)
 	if err != nil {

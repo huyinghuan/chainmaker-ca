@@ -42,6 +42,12 @@ func testData() {
 	var adminUser = &db.Customer{
 		Name: "admin",
 	}
+	var org1User = &db.Customer{
+		Name: "org1",
+	}
+	var org2User = &db.Customer{
+		Name: "org2",
+	}
 	var userUser = &db.Customer{
 		Name:     "user1",
 		Password: "12345",
@@ -49,4 +55,6 @@ func testData() {
 	models.InsertCustomer(rootUser)
 	models.InsertCustomer(adminUser)
 	models.InsertCustomer(userUser)
+	models.InsertCustomer(org1User)
+	models.InsertCustomer(org2User)
 }

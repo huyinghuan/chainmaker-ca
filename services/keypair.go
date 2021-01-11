@@ -63,7 +63,6 @@ func CreateKeyPairToDB(caConifg *utils.CaConfig) (privKey crypto.PrivateKey, key
 	//私钥加密 密码:程序变量+读取密码
 	privKeyPwd := DefaultPrivateKeyPwd + caConifg.PrivateKeyPwd
 	hashPwd, err := hash.Get(hashType, []byte(privKeyPwd))
-	fmt.Println(hex.EncodeToString(hashPwd))
 	if err != nil {
 		logger.Error("Get private key pwd hash failed!", zap.Error(err))
 		return
@@ -119,7 +118,7 @@ func decryptPrivKey(privKeyRaw []byte, privKeyPwd string, hashType crypto.HashTy
 }
 
 //CreateUserKeyPair .
-func CreateUserKeyPair(username string, IsNodeKey bool, nodeName ...string) (privKey crypto.PrivateKey, keyID string, err error) {
+func CreateUserKeyPair(username string) (privKey crypto.PrivateKey, keyID string, err error) {
 	keyType := crypto.Name2KeyTypeMap[utils.GetPrivKeyType()]
 	privKey, err = createPrivKey(keyType)
 	if err != nil {
@@ -133,9 +132,6 @@ func CreateUserKeyPair(username string, IsNodeKey bool, nodeName ...string) (pri
 	keyPair.PublicKey = pem.EncodeToMemory(&pem.Block{Type: "PUBLICKEY", Bytes: publicKeyBytes})
 	keyPair.KeyType = keyType
 	keyPair.UserID, err = models.GetCustomerIDByName(username)
-	if IsNodeKey == true {
-		keyPair.NodeName = nodeName[0]
-	}
 	if err != nil {
 		logger.Error("get user id by user name failed!", zap.Error(err))
 		return

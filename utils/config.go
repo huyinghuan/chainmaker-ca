@@ -116,8 +116,8 @@ func GetHashType() string {
 }
 
 //GetIssureExpirationTime .
-func GetIssureExpirationTime() string {
-	return viper.GetString("issure_expiration_time")
+func GetIssureExpirationTime() int32 {
+	return viper.GetInt32("issure_expiration_time")
 }
 
 //GetIntermediariesPrkCert .

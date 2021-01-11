@@ -29,6 +29,9 @@ type Cert struct {
 	IssueDate          int64      //签发日期unix
 	InvalidDate        int64      //到期时间unix
 	PrivateKeyID       string     //对应的私钥ID
+	ChainID            string     //子链ID
+	ConsortiumID       string     //联盟ID
+	NodeName           string     //节点名称
 }
 
 //TableName cert
@@ -56,8 +59,6 @@ type KeyPair struct {
 	PrivateKeyPwd string //用户加密私钥所用密码
 	KeyType       crypto.KeyType
 	UserID        int
-	IsNodeKey     bool
-	NodeName      string
 }
 
 //TableName cert

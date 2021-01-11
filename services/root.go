@@ -33,7 +33,7 @@ func InitRootCA() {
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
 	certModel, err := createCACert(privKey, hashType,
 		rootCaConfig.Country, rootCaConfig.Locality, rootCaConfig.Province, rootCaConfig.OrganizationalUnit,
-		rootCaConfig.Organization, rootCaConfig.CommonName, rootCaConfig.ExpireYear, []string{})
+		rootCaConfig.Organization, rootCaConfig.CommonName, rootCaConfig.ExpireYear, nil)
 	if err != nil {
 		logger.Error("Create CA certificate failed!", zap.Error(err))
 		return
