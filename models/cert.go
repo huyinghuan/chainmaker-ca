@@ -28,3 +28,30 @@ func UpdateCertStatusRevokedBySN(certSN int64) error {
 	}
 	return nil
 }
+
+//GetCertByUserType .
+func GetCertByUserType(userID int, certType db.CertType) (*db.Cert, error) {
+	var cert db.Cert
+	if err := db.DB.Debug().Where("customer_id=? AND cert_type=?", userID, certType).First(&cert).Error; err != nil {
+		return nil, err
+	}
+	return &cert, nil
+}
+
+//GetCertByNodeNameUsage .
+func GetCertByNodeNameUsage(nodeName string, usage db.CertUsage, chainID, consortiumID string) (*db.Cert, error) {
+	var cert db.Cert
+	if err := db.DB.Debug().Where("node_name=? AND cert_usage=? AND chain_id=? AND consortium_id=?", nodeName, usage, chainID, consortiumID).First(&cert).Error; err != nil {
+		return nil, err
+	}
+	return &cert, nil
+}
+
+//GetCertByUserTypeChain .
+func GetCertByUserTypeChain(userID int, certType db.CertType, usage db.CertUsage, chainID, consortiumID string) (*db.Cert, error) {
+	var cert db.Cert
+	if err := db.DB.Debug().Where("customer_id=? AND cert_type=? AND chain_id=? AND consortium_id=? AND cert_usage=?", userID, certType, chainID, consortiumID, usage).First(&cert).Error; err != nil {
+		return nil, err
+	}
+	return &cert, nil
+}

@@ -24,6 +24,8 @@ hash_type: SHA256
 issure_expiration_time: 1
 # 默认CRL更新时间（h）
 crl_next_time: 4
+# chainmaker证书路径
+chainmaker_cert_path: ./crypto-config/chainmaker
 
   # 根CA的初始化配置
 root_config:

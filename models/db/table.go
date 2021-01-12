@@ -19,19 +19,19 @@ type Cert struct {
 	Organization       string
 	OrganizationalUnit string
 	CommonName         string
-	IPAddresses        string //ip地址
-	DNSNames           string
 	CsrContent         []byte     `gorm:"type:mediumblob"` //证书csr
 	CertType           CertType   //证书类型
-	CustomerID         int        //所属用户id
 	CertStatus         CertStatus //证书状态
 	CertUsage          CertUsage  //证书用处（sign/tls）
 	IssueDate          int64      //签发日期unix
 	InvalidDate        int64      //到期时间unix
 	PrivateKeyID       string     //对应的私钥ID
-	ChainID            string     //子链ID
-	ConsortiumID       string     //联盟ID
-	NodeName           string     //节点名称
+	CustomerID         int        //组织ID
+	IPAddresses        string     //ip地址
+	DNSNames           string
+	ChainID            string //子链ID
+	ConsortiumID       string //联盟ID
+	NodeName           string //节点名
 }
 
 //TableName cert

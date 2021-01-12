@@ -86,3 +86,16 @@ func Getuuid() string {
 	uuid := uuid.NewV4()
 	return uuid.String()
 }
+
+//CreateDir 创建文件夹
+func CreateDir(dirPath string) error {
+	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		err := os.MkdirAll(dirPath, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	} else {
+		return err
+	}
+	return nil
+}

@@ -18,3 +18,12 @@ func GetKeyPairByUserID(userID int) (*db.KeyPair, error) {
 	}
 	return &keyPair, nil
 }
+
+//GetKeyPairByID .
+func GetKeyPairByID(id string) (*db.KeyPair, error) {
+	var keyPair db.KeyPair
+	if err := db.DB.Debug().Where("id=?", id).First(&keyPair).Error; err != nil {
+		return nil, err
+	}
+	return &keyPair, nil
+}

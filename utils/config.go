@@ -135,3 +135,8 @@ func GetIntermCAPrivateKeyPwd() string {
 func GetCRLNextTime() int {
 	return viper.GetInt("crl_next_time")
 }
+
+//GetChainMakerCertPath .
+func GetChainMakerCertPath() string {
+	return viper.GetString("chainmaker_cert_path")
+}
