@@ -11,7 +11,7 @@ type Cert struct {
 	Content            []byte          `gorm:"type:mediumblob"`            //证书内容
 	Signature          string          `gorm:"type:longtext"`              //证书签名
 	CertEncode         string          `gorm:"type:longtext"`              //证书编码前内容
-	HashTyep           crypto.HashType //哈希类型
+	HashType           crypto.HashType //哈希类型
 	ExpireYear         int32           //证书有效期
 	Country            string
 	Locality           string

@@ -84,7 +84,7 @@ func createCACert(privKey crypto.PrivateKey, hashType crypto.HashType,
 	}
 	certModel.SerialNumber = template.SerialNumber.Int64()
 	certModel.Signature = hex.EncodeToString(template.Signature)
-	certModel.HashTyep = hashType
+	certModel.HashType = hashType
 	certModel.IssueDate = template.NotBefore.Unix()
 	certModel.InvalidDate = template.NotAfter.Unix()
 	certModel.CertEncode = hex.EncodeToString(x509certEncode)

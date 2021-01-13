@@ -115,7 +115,7 @@ func IssueCertificate(hashType crypto.HashType, certType db.CertType, issuerPriv
 	certModel.Country = template.Subject.Country[0]
 	certModel.CsrContent = csrBytes
 	certModel.ExpireYear = int32(template.NotAfter.Year()) - int32(template.NotBefore.Year())
-	certModel.HashTyep = hashType
+	certModel.HashType = hashType
 	certModel.IssueDate = template.NotBefore.Unix()
 	certModel.InvalidDate = template.NotAfter.Unix()
 	certModel.Locality = template.Subject.Locality[0]
