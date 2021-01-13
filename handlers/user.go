@@ -10,8 +10,15 @@ import (
 
 //GeneratePrivateKey .
 func GeneratePrivateKey(c *gin.Context) {
-	username := c.MustGet("username").(string)
-	_, _, err := services.CreateUserKeyPair(username)
+	var generateKeyPairReq models.GenerateKeyPairReq
+	if err := c.ShouldBind(&generateKeyPairReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code": 400,
+			"msg":  "Bad request!",
+		})
+		return
+	}
+	_, _, err := services.CreateUserKeyPair(generateKeyPairReq.UserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  500,
@@ -29,7 +36,6 @@ func GeneratePrivateKey(c *gin.Context) {
 
 //ApplyCert 申请证书
 func ApplyCert(c *gin.Context) {
-	username := c.MustGet("username").(string)
 	var applyCertReq models.ApplyCertReq
 	if err := c.ShouldBind(&applyCertReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -38,7 +44,7 @@ func ApplyCert(c *gin.Context) {
 		})
 		return
 	}
-	certContent, err := services.ApplyCert(&applyCertReq, username)
+	certContent, err := services.ApplyCert(&applyCertReq)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  500,

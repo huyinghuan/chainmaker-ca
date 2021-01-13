@@ -54,7 +54,6 @@ func CreateIntermediariesCert() {
 		logger.Error("Issue Cert failed!", zap.Error(err))
 		return
 	}
-	certModel.CustomerID, err = models.GetCustomerIDByName(inmediaCaConfig.Username)
 	if err != nil {
 		logger.Error("Get customer id by name failed!", zap.Error(err))
 		return

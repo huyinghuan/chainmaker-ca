@@ -3,8 +3,10 @@ package models
 //ApplyCertReq .
 type ApplyCertReq struct {
 	CertType           string   `json:"certType"`
+	UserID             int      `json:"userID"`
 	ChainID            string   `json:"chainID"`
 	ConsortiumID       string   `json:"consortiumID"`
+	CertUsage          string   `json:"certUsage"`
 	Country            string   `json:"country"`
 	Locality           string   `json:"locality"`
 	Province           string   `json:"province"`
@@ -14,7 +16,11 @@ type ApplyCertReq struct {
 	ExpireYear         int32    `json:"expire_year"`
 	NodeName           string   `json:"nodeName"`
 	Sans               []string `json:"sans"`
-	CertUsage          string   `json:"certUsage"`
+}
+
+//GenerateKeyPairReq .
+type GenerateKeyPairReq struct {
+	UserID int `json:"userID"`
 }
 
 //UpdateCertReq .
@@ -40,7 +46,7 @@ type ChainMakerCertApplyReq struct {
 
 //Org 组织
 type Org struct {
-	Username           string `json:"username"`
+	UserID             int    `json:"userID"`
 	Country            string `json:"country"`
 	Locality           string `json:"locality"`
 	Province           string `json:"province"`

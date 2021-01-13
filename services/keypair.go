@@ -86,7 +86,6 @@ func CreateKeyPairToDB(caConifg *utils.CaConfig) (privKey crypto.PrivateKey, key
 	publicKeyBytes, _ := privKey.PublicKey().Bytes()
 	keyPair.PublicKey = pem.EncodeToMemory(&pem.Block{Type: "PUBLICKEY", Bytes: publicKeyBytes})
 	keyPair.KeyType = keyType
-	keyPair.UserID, err = models.GetCustomerIDByName(caConifg.Username)
 	if err != nil {
 		logger.Error("Get userid by username failed!", zap.Error(err))
 		return
@@ -118,7 +117,7 @@ func decryptPrivKey(privKeyRaw []byte, privKeyPwd string, hashType crypto.HashTy
 }
 
 //CreateUserKeyPair .
-func CreateUserKeyPair(username string) (privKey crypto.PrivateKey, keyID string, err error) {
+func CreateUserKeyPair(userID int) (privKey crypto.PrivateKey, keyID string, err error) {
 	keyType := crypto.Name2KeyTypeMap[utils.GetPrivKeyType()]
 	privKey, err = createPrivKey(keyType)
 	if err != nil {
@@ -131,7 +130,7 @@ func CreateUserKeyPair(username string) (privKey crypto.PrivateKey, keyID string
 	publicKeyBytes, _ := privKey.PublicKey().Bytes()
 	keyPair.PublicKey = pem.EncodeToMemory(&pem.Block{Type: "PUBLICKEY", Bytes: publicKeyBytes})
 	keyPair.KeyType = keyType
-	keyPair.UserID, err = models.GetCustomerIDByName(username)
+	keyPair.UserID = userID
 	if err != nil {
 		logger.Error("get user id by user name failed!", zap.Error(err))
 		return

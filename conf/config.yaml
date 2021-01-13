@@ -15,7 +15,7 @@ db_config:
   dbname: chainmaker
 
 #是否初始化根CA
-is_init_root_ca: true
+is_init_root_ca: false
 #密钥加密类型
 private_key_type: SM2
 #哈希类型
@@ -29,7 +29,6 @@ chainmaker_cert_path: ./crypto-config/chainmaker
 
   # 根CA的初始化配置
 root_config:
-  username: root
   private_key_pwd: wx123
   private_key_path: ./crypto-config/root/root.key
   cert_path: ./crypto-config/root
@@ -44,8 +43,7 @@ root_config:
 
 # 中间CA配置文件
 intermediaries_config:
-  username: admin
-  private_key_pwd: 123456
+  private_key_pwd:
   private_key_path: ./crypto-config/intermediaries/intermediaries.key
   country: China                               
   locality: Beijing                                   

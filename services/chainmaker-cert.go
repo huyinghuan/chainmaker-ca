@@ -19,14 +19,15 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) error
 	for _, org := range cmCertApplyReq.Orgs {
 		//生成公私钥
 		//暂时采用不加密方式（调用不加密接口）
-		privateKey, keyID, err := CreateUserKeyPair(org.Username)
+		privateKey, keyID, err := CreateUserKeyPair(org.UserID)
 		if err != nil {
 			logger.Error("Create ChainMaker org keypair failed!", zap.Error(err))
 			return err
 		}
 		//生成中间证书的CSR
+		CN := "ca." + org.CommonName
 		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, org.OrganizationalUnit,
-			org.Organization, org.CommonName)
+			org.Organization, CN)
 		if err != nil {
 			logger.Error("Create ChainMaker org CSR failed!", zap.Error(err))
 			return err
@@ -58,11 +59,7 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) error
 			logger.Error("Issue Cert failed!", zap.Error(err))
 			return err
 		}
-		certModel.CustomerID, err = models.GetCustomerIDByName(org.Username)
-		if err != nil {
-			logger.Error("Get user id by name failed!", zap.Error(err))
-			return err
-		}
+		certModel.UserID = org.UserID
 		certModel.CertStatus = db.EFFECTIVE
 		certModel.CertUsage = db.SIGN
 		certModel.PrivateKeyID = keyID
@@ -73,51 +70,27 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) error
 			return err
 		}
 		//签发节点sign证书
-		err = IssueNodeCert(cmCertApplyReq.ConsortiumID, cmCertApplyReq.ChainID, &org, &privateKey, certModel.SerialNumber, db.SIGN)
+		err = IssueNodeCert(cmCertApplyReq.ConsortiumID, cmCertApplyReq.ChainID, &org, &privateKey, certModel.Content, db.SIGN)
 		if err != nil {
 			logger.Error("Issue node sign cert failed!", zap.Error(err))
 			return err
 		}
 		//签发节点TLS证书
-		err = IssueNodeCert(cmCertApplyReq.ConsortiumID, cmCertApplyReq.ChainID, &org, &privateKey, certModel.SerialNumber, db.TLS)
+		err = IssueNodeCert(cmCertApplyReq.ConsortiumID, cmCertApplyReq.ChainID, &org, &privateKey, certModel.Content, db.TLS)
 		if err != nil {
 			logger.Error("Issue node tls cert failed!", zap.Error(err))
 			return err
 		}
-		//签发一个admin sign 证书
-		adminCert, err := IssueCertificate(hashType, db.CUSTOMER_ADMIN, issuerPrivKey, csrBytes, certBytes, utils.GetIssureExpirationTime(), nil, "")
-		adminCert.CustomerID, err = models.GetCustomerIDByName(org.Username)
+		//签发admin证书（使用ca用户）
+		err = IssueAdminCert(cmCertApplyReq.ChainID, cmCertApplyReq.ConsortiumID, &org, hashType, privateKey, keyID, certModel.Content, db.SIGN)
 		if err != nil {
-			logger.Error("Get user id by name failed!", zap.Error(err))
+			logger.Error("Issue admin sign cert failed!", zap.Error(err))
 			return err
 		}
-		adminCert.CertStatus = db.EFFECTIVE
-		adminCert.CertUsage = db.SIGN
-		adminCert.PrivateKeyID = keyID
-		adminCert.ChainID = cmCertApplyReq.ChainID
-		adminCert.ConsortiumID = cmCertApplyReq.ConsortiumID
-		//证书入库
-		err = models.InsertCert(adminCert)
+		//签发admin tls证书（使用ca用户）
+		err = IssueAdminCert(cmCertApplyReq.ChainID, cmCertApplyReq.ConsortiumID, &org, hashType, privateKey, keyID, certModel.Content, db.TLS)
 		if err != nil {
-			logger.Error("Insert cert to db failed!", zap.Error(err))
-			return err
-		}
-		//签发一个admin tls 证书
-		adminCert, err = IssueCertificate(hashType, db.CUSTOMER_ADMIN, issuerPrivKey, csrBytes, certBytes, utils.GetIssureExpirationTime(), nil, "")
-		adminCert.CustomerID, err = models.GetCustomerIDByName(org.Username)
-		if err != nil {
-			logger.Error("Get user id by name failed!", zap.Error(err))
-			return err
-		}
-		adminCert.CertStatus = db.EFFECTIVE
-		adminCert.CertUsage = db.TLS
-		adminCert.PrivateKeyID = keyID
-		adminCert.ChainID = cmCertApplyReq.ChainID
-		adminCert.ConsortiumID = cmCertApplyReq.ConsortiumID
-		//证书入库
-		err = models.InsertCert(adminCert)
-		if err != nil {
-			logger.Error("Insert cert to db failed!", zap.Error(err))
+			logger.Error("Issue admin tls cert failed!", zap.Error(err))
 			return err
 		}
 	}
@@ -125,36 +98,29 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) error
 }
 
 //IssueNodeCert 签发节点证书
-func IssueNodeCert(consortiumID, chainID string, org *models.Org, privateKey *crypto.PrivateKey, certSN int64, certUsage db.CertUsage) error {
+func IssueNodeCert(consortiumID, chainID string, org *models.Org, privateKey *crypto.PrivateKey, certBytes []byte, certUsage db.CertUsage) error {
 	for _, node := range org.Nodes {
 		//生成公私钥
-		privateKey, keyID, err := CreateUserKeyPair(org.Username)
+		privateKey, keyID, err := CreateUserKeyPair(org.UserID)
 		if err != nil {
 			return err
 		}
 		//生成CSR
-		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, org.OrganizationalUnit,
-			org.Organization, org.CommonName)
-		if err != nil {
-			return err
-		}
-		//拿到CA证书
-		cert, err := models.GetCertBySN(certSN)
+		OU := node.NodeName
+		CN := node.NodeName + "." + db.CertUsage2NameMap[certUsage] + "." + org.Organization
+		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
+			org.Organization, CN)
 		if err != nil {
 			return err
 		}
 		hashType := crypto.HashAlgoMap[utils.GetHashType()]
-		certModel, err := IssueCertificate(hashType, db.NODE, privateKey, csrBytes, cert.Content, utils.GetIssureExpirationTime(), node.Sans, "")
-		if err != nil {
-			return err
-		}
-		userID, err := models.GetCustomerIDByName(org.Username)
+		certModel, err := IssueCertificate(hashType, db.NODE, privateKey, csrBytes, certBytes, utils.GetIssureExpirationTime(), node.Sans, "")
 		if err != nil {
 			return err
 		}
 		certModel.ChainID = chainID
 		certModel.ConsortiumID = consortiumID
-		certModel.CustomerID = userID
+		certModel.UserID = org.UserID
 		certModel.CertStatus = db.EFFECTIVE
 		certModel.CertUsage = certUsage
 		certModel.PrivateKeyID = keyID
@@ -163,6 +129,31 @@ func IssueNodeCert(consortiumID, chainID string, org *models.Org, privateKey *cr
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+//IssueAdminCert .
+func IssueAdminCert(chainID, consortiumID string, org *models.Org, hashType crypto.HashType, caPrivKey crypto.PrivateKey, caKeyID string, caCertBytes []byte, certUsage db.CertUsage) error {
+	OU := "admin"
+	CN := OU + "." + db.CertUsage2NameMap[certUsage] + "." + org.Organization
+	csrBytes, err := createCSR(caPrivKey, org.Country, org.Locality, org.Province, OU,
+		org.Organization, CN)
+	if err != nil {
+		return err
+	}
+	adminCert, err := IssueCertificate(hashType, db.CUSTOMER_ADMIN, caPrivKey, csrBytes, caCertBytes, utils.GetIssureExpirationTime(), nil, "")
+	adminCert.UserID = org.UserID
+	adminCert.CertStatus = db.EFFECTIVE
+	adminCert.CertUsage = certUsage
+	adminCert.PrivateKeyID = caKeyID
+	adminCert.ChainID = chainID
+	adminCert.ConsortiumID = consortiumID
+	//证书入库
+	err = models.InsertCert(adminCert)
+	if err != nil {
+		logger.Error("Insert cert to db failed!", zap.Error(err))
+		return err
 	}
 	return nil
 }
@@ -242,11 +233,7 @@ func WriteNodeCertFile(orgPath string, org *models.Org, chainID, consortiumID st
 
 //WriteCaCertFile .
 func WriteCaCertFile(orgPath string, org *models.Org) error {
-	userID, err := models.GetCustomerIDByName(org.Username)
-	if err != nil {
-		return err
-	}
-	caCert, err := models.GetCertByUserType(userID, db.INTERMRDIARY_CA)
+	caCert, err := models.GetCertByUserType(org.UserID, db.INTERMRDIARY_CA)
 	if err != nil {
 		return err
 	}
@@ -270,16 +257,12 @@ func WriteCaCertFile(orgPath string, org *models.Org) error {
 
 //WriteUserCertFile .
 func WriteUserCertFile(orgPath string, org *models.Org, chainID, consortiumID string) error {
-	userCertPath := filepath.Join(orgPath, "user", org.Username)
+	userCertPath := filepath.Join(orgPath, "user", "admin")
 	err := CreateDir(userCertPath)
 	if err != nil {
 		return err
 	}
-	userID, err := models.GetCustomerIDByName(org.Username)
-	if err != nil {
-		return err
-	}
-	userSignCert, err := models.GetCertByUserTypeChain(userID, db.CUSTOMER_ADMIN, db.SIGN, chainID, consortiumID)
+	userSignCert, err := models.GetCertByUserTypeChain(org.UserID, db.CUSTOMER_ADMIN, db.SIGN, chainID, consortiumID)
 	if err != nil {
 		return err
 	}
@@ -287,7 +270,7 @@ func WriteUserCertFile(orgPath string, org *models.Org, chainID, consortiumID st
 	if err != nil {
 		return err
 	}
-	userTLSCert, err := models.GetCertByUserTypeChain(userID, db.CUSTOMER_ADMIN, db.TLS, chainID, consortiumID)
+	userTLSCert, err := models.GetCertByUserTypeChain(org.UserID, db.CUSTOMER_ADMIN, db.TLS, chainID, consortiumID)
 	if err != nil {
 		return err
 	}
@@ -295,22 +278,22 @@ func WriteUserCertFile(orgPath string, org *models.Org, chainID, consortiumID st
 	if err != nil {
 		return err
 	}
-	userSignCertPath := filepath.Join(userCertPath, org.Username+".sign.crt")
+	userSignCertPath := filepath.Join(userCertPath, "admin.sign.crt")
 	err = ioutil.WriteFile(userSignCertPath, userSignCert.Content, os.ModePerm)
 	if err != nil {
 		return err
 	}
-	userSignKeyPath := filepath.Join(userCertPath, org.Username+".sign.key")
+	userSignKeyPath := filepath.Join(userCertPath, "admin.sign.key")
 	err = ioutil.WriteFile(userSignKeyPath, userSignKey.PrivateKey, os.ModePerm)
 	if err != nil {
 		return err
 	}
-	userTLSCertPath := filepath.Join(userCertPath, org.Username+".tls.crt")
+	userTLSCertPath := filepath.Join(userCertPath, "admin.tls.crt")
 	err = ioutil.WriteFile(userTLSCertPath, userTLSCert.Content, os.ModePerm)
 	if err != nil {
 		return err
 	}
-	userTLSKeyPath := filepath.Join(userCertPath, org.Username+".tls.key")
+	userTLSKeyPath := filepath.Join(userCertPath, "admin.tls.key")
 	err = ioutil.WriteFile(userTLSKeyPath, userTLSKey.PrivateKey, os.ModePerm)
 	if err != nil {
 		return err

@@ -26,7 +26,7 @@ type Cert struct {
 	IssueDate          int64      //签发日期unix
 	InvalidDate        int64      //到期时间unix
 	PrivateKeyID       string     //对应的私钥ID
-	CustomerID         int        //组织ID
+	UserID             int        //组织ID
 	IPAddresses        string     //ip地址
 	DNSNames           string
 	ChainID            string //子链ID
@@ -41,8 +41,8 @@ func (table *Cert) TableName() string {
 
 //Customer 用户或者客户表
 type Customer struct {
-	ID       int    `gorm:"primary_key;AUTO_INCREMENT"`
-	Name     string `gorm:"UNIQUE_INDEX:customer_name_index"`
+	ID       int `gorm:"primary_key;AUTO_INCREMENT"`
+	Name     string
 	Password string
 }
 

@@ -33,28 +33,23 @@ func main() {
 	//加载路由
 	routers.LoadUserRouter(g)
 	routers.LoadChainMakerRouters(g)
-	g.Run(":8080")
+	g.Run(":8090")
 }
 func testData() {
-	var rootUser = &db.Customer{
-		Name: "root",
-	}
-	var adminUser = &db.Customer{
+	var org1User = &db.Customer{
 		Name: "admin",
 	}
-	var org1User = &db.Customer{
-		Name: "org1",
-	}
 	var org2User = &db.Customer{
-		Name: "org2",
+		Name: "admin",
 	}
-	var userUser = &db.Customer{
-		Name:     "user1",
-		Password: "12345",
+	var org3User = &db.Customer{
+		Name: "admin",
 	}
-	models.InsertCustomer(rootUser)
-	models.InsertCustomer(adminUser)
-	models.InsertCustomer(userUser)
+	var org4User = &db.Customer{
+		Name: "admin",
+	}
 	models.InsertCustomer(org1User)
 	models.InsertCustomer(org2User)
+	models.InsertCustomer(org3User)
+	models.InsertCustomer(org4User)
 }
