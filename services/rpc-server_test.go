@@ -11,7 +11,7 @@ import (
 )
 
 func TestGetChainMakerTar(t *testing.T) {
-	conn, err := grpc.Dial(":8972", grpc.WithInsecure())
+	conn, err := grpc.Dial(":2333", grpc.WithInsecure())
 
 	if err != nil {
 
@@ -30,6 +30,7 @@ func TestGetChainMakerTar(t *testing.T) {
 	req := new(pb.GetCertTarReq)
 
 	req.Filetarget = "./crypto-config/chainmaker-cert.tar.gz"
+	req.Filesource = "./crypto-config/test"
 
 	resp, err := client.GetCertTar(context.Background(), req)
 
@@ -43,7 +44,7 @@ func TestGetChainMakerTar(t *testing.T) {
 
 }
 func TestGenerateChainMakerCert(t *testing.T) {
-	conn, err := grpc.Dial(":8972", grpc.WithInsecure())
+	conn, err := grpc.Dial(":2333", grpc.WithInsecure())
 
 	if err != nil {
 
@@ -62,6 +63,7 @@ func TestGenerateChainMakerCert(t *testing.T) {
 	req := new(pb.ChainMakerCertApplyReq)
 
 	req.ChainId = "chain1"
+	req.Filetarget = "./crypto-config/test"
 	var org pb.Org
 	org.UserId = 1
 	org.Province = "Beijing"

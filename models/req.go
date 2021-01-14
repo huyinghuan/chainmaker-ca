@@ -38,8 +38,9 @@ type RevokedCertReq struct {
 
 //ChainMakerCertApplyReq .
 type ChainMakerCertApplyReq struct {
-	Orgs    []Org  `json:"orgs"`
-	ChainID string `json:"chainID"`
+	Orgs       []Org  `json:"orgs"`
+	ChainID    string `json:"chainID"`
+	Filetarget string `json:"filetarget"` //证书生成路径
 }
 
 //Org 组织
@@ -63,4 +64,5 @@ type Node struct {
 //GetTarCertFileReq .
 type GetTarCertFileReq struct {
 	Filetarget string `json:"filetarget"`
+	Filesource string `json:"filesource"`
 }

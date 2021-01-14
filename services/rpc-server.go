@@ -18,17 +18,17 @@ type ChainMakerCertService struct{}
 func (c *ChainMakerCertService) GenerateCert(ctx context.Context, req *pb.ChainMakerCertApplyReq) (*pb.GenerateResp, error) {
 	var resp pb.GenerateResp
 	modelReq := pbtransform(req)
-	err := GenerateChainMakerCert(modelReq)
+	certpath, err := GenerateChainMakerCert(modelReq)
 	if err != nil {
 		logger.Error("[rpc server] Generate chainmaker cert failed!", zap.Error(err))
-		resp.Resp = err.Error()
 		return nil, err
 	}
+	resp.Filepath = certpath
 	return &resp, nil
 }
 func (c *ChainMakerCertService) GetCertTar(ctx context.Context, req *pb.GetCertTarReq) (*pb.TarCertResp, error) {
 	var resp pb.TarCertResp
-	certFileBytes, err := GetChainMakerCertTar(req.Filetarget)
+	certFileBytes, err := GetChainMakerCertTar(req.Filetarget, req.Filesource)
 	if err != nil {
 		logger.Error("[rpc server] Get chainmaker cert failed!", zap.Error(err))
 		return nil, err
@@ -40,6 +40,7 @@ func pbtransform(req *pb.ChainMakerCertApplyReq) *models.ChainMakerCertApplyReq 
 	var modelReq models.ChainMakerCertApplyReq
 	var modelOrgs []models.Org
 	modelReq.ChainID = req.ChainId
+	modelReq.Filetarget = req.Filetarget
 	for _, org := range req.Orgs {
 		var modelOrg models.Org
 		var modelNodes []models.Node

@@ -34,7 +34,6 @@ func main() {
 	//加载路由
 	routers.LoadUserRouter(g)
 	routers.LoadChainMakerRouters(g)
-	services.InitRPCServer()
 	g.Run(":8090")
 }
 func testData() {

@@ -27,7 +27,7 @@ crl_next_time: 4
 # chainmaker证书路径
 chainmaker_cert_path: ./crypto-config/chainmaker
 # chainmaker cert rpc port
-chainmaker_cert_rpc_port: 8972
+chainmaker_cert_rpc_port: 2333
 
   # 根CA的初始化配置
 root_config:
@@ -36,23 +36,23 @@ root_config:
   cert_path: ./crypto-config/root
   cert_name: root.crt
   expire_year: 100                     
-  country: China                   
+  country: CN                  
   locality: Beijing               
   province: Beijing                      
-  O: wx                       
-  OU: wx.chainmaker                 
-  CN: ca.wx.chainmaker
+  O: wx.chainmaker                       
+  OU: ca.root      
+  CN: ca.root.wx.chainmaker
 
 # 中间CA配置文件
 intermediaries_config:
   private_key_pwd:
   private_key_path: ./crypto-config/intermediaries/intermediaries.key
-  country: China                               
+  country: CN                              
   locality: Beijing                                   
   province: Beijing                              
-  O: chainmaker                                              
-  OU: wx.chainmaker                                         
-  CN: ca.wx.chainmaker                                     
+  O: wx.chainmaker                                             
+  OU: ca.intermediaries                                      
+  CN: ca.intermediaries.wx.chainmaker                                   
   cert_path: ./crypto-config/intermediaries
   cert_name: ./intermediaries.crt
   expire_year: 10

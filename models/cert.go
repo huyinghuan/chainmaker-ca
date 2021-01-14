@@ -38,10 +38,10 @@ func GetCertByUserType(userID int, certType db.CertType) (*db.Cert, error) {
 	return &cert, nil
 }
 
-//GetCertByNodeNameUsage .
-func GetCertByNodeNameUsage(nodeName string, usage db.CertUsage, chainID string) (*db.Cert, error) {
+//GetCertByNodeNameUsageUser .
+func GetCertByNodeNameUsageUser(userID int, nodeName string, usage db.CertUsage, chainID string) (*db.Cert, error) {
 	var cert db.Cert
-	if err := db.DB.Debug().Where("node_name=? AND cert_usage=? AND chain_id=?", nodeName, usage, chainID).First(&cert).Error; err != nil {
+	if err := db.DB.Debug().Where("user_id=? AND node_name=? AND cert_usage=? AND chain_id=?", userID, nodeName, usage, chainID).First(&cert).Error; err != nil {
 		return nil, err
 	}
 	return &cert, nil

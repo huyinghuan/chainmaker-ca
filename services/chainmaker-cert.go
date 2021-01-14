@@ -18,26 +18,31 @@ import (
 )
 
 //GenerateChainMakerCert 生成chainmaker全套证书
-func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) error {
+func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) (string, error) {
 	//首先每个组织是root签发的一个中间CA
 	//循环签发出中间CA
+	var filepath string
 	if cmCertApplyReq.ChainID == "" {
 		err := fmt.Errorf("chainId can't be empty")
 		logger.Error("Generate chainmaker cert failed!", zap.Error(err))
-		return err
+		return filepath, err
 	}
 	if cmCertApplyReq.Orgs == nil {
 		err := fmt.Errorf("orgs can't be empty")
 		logger.Error("Generate chainmaker cert failed!", zap.Error(err))
-		return err
+		return filepath, err
 	}
 	for _, org := range cmCertApplyReq.Orgs {
+		if err := CheckOrgInfo(&org); err != nil {
+			logger.Error("orginfo is incomplete", zap.Error(err))
+			return filepath, err
+		}
 		//生成公私钥
 		//暂时采用不加密方式（调用不加密接口）
 		privateKey, keyID, err := CreateUserKeyPair(org.UserID)
 		if err != nil {
 			logger.Error("Create ChainMaker org keypair failed!", zap.Error(err))
-			return err
+			return filepath, err
 		}
 		//生成中间证书的CSR
 		CN := "ca." + org.CommonName
@@ -45,7 +50,7 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) error
 			org.Organization, CN)
 		if err != nil {
 			logger.Error("Create ChainMaker org CSR failed!", zap.Error(err))
-			return err
+			return filepath, err
 		}
 		//读取配置文件里的根证书
 		hashType := crypto.HashAlgoMap[utils.GetHashType()]
@@ -53,26 +58,26 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) error
 		privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
 		if err != nil {
 			logger.Error("Read private key file failed!", zap.Error(err))
-			return err
+			return filepath, err
 		}
 		//私钥解密
 		issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetRootCaPrivateKeyPwd(), hashType)
 		if err != nil {
 			logger.Error("Decrypt private key  failed!", zap.Error(err))
-			return err
+			return filepath, err
 		}
 		//读取根证书
 		certBytes, err := ioutil.ReadFile(certFilePath)
 		if err != nil {
 			logger.Error("Read cert file failed!", zap.Error(err))
-			return err
+			return filepath, err
 		}
 
 		//签发中间CA证书
 		certModel, err := IssueCertificate(hashType, db.INTERMRDIARY_CA, issuerPrivKey, csrBytes, certBytes, defaultExpireYear, nil, "")
 		if err != nil {
 			logger.Error("Issue Cert failed!", zap.Error(err))
-			return err
+			return filepath, err
 		}
 		certModel.UserID = org.UserID
 		certModel.CertStatus = db.EFFECTIVE
@@ -82,39 +87,39 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) error
 		err = models.InsertCert(certModel)
 		if err != nil {
 			logger.Error("Insert cert to db failed!", zap.Error(err))
-			return err
+			return filepath, err
 		}
 		//签发节点sign证书
 		err = IssueNodeCert(cmCertApplyReq.ChainID, &org, &privateKey, certModel.Content, db.SIGN)
 		if err != nil {
 			logger.Error("Issue node sign cert failed!", zap.Error(err))
-			return err
+			return filepath, err
 		}
 		//签发节点TLS证书
 		err = IssueNodeCert(cmCertApplyReq.ChainID, &org, &privateKey, certModel.Content, db.TLS)
 		if err != nil {
 			logger.Error("Issue node tls cert failed!", zap.Error(err))
-			return err
+			return filepath, err
 		}
 		//签发admin证书（使用ca用户）
 		err = IssueAdminCert(cmCertApplyReq.ChainID, &org, hashType, privateKey, keyID, certModel.Content, db.SIGN)
 		if err != nil {
 			logger.Error("Issue admin sign cert failed!", zap.Error(err))
-			return err
+			return filepath, err
 		}
 		//签发admin tls证书（使用ca用户）
 		err = IssueAdminCert(cmCertApplyReq.ChainID, &org, hashType, privateKey, keyID, certModel.Content, db.TLS)
 		if err != nil {
 			logger.Error("Issue admin tls cert failed!", zap.Error(err))
-			return err
+			return filepath, err
 		}
 	}
-	err := WriteChainMakerCertFile(cmCertApplyReq)
+	filepath, err := WriteChainMakerCertFile(cmCertApplyReq)
 	if err != nil {
 		logger.Error("Write chainmaker cert file failed!", zap.Error(err))
-		return err
+		return filepath, err
 	}
-	return nil
+	return filepath, nil
 }
 
 //IssueNodeCert 签发节点证书
@@ -177,30 +182,41 @@ func IssueAdminCert(chainID string, org *models.Org, hashType crypto.HashType, c
 }
 
 //WriteChainMakerCertFile 写证书文件
-func WriteChainMakerCertFile(req *models.ChainMakerCertApplyReq) error {
-	certBasePath := utils.GetChainMakerCertPath()
+func WriteChainMakerCertFile(req *models.ChainMakerCertApplyReq) (certBasePath string, err error) {
+	if req.Filetarget == "" {
+		certBasePath = utils.GetChainMakerCertPath()
+	} else {
+		certBasePath = req.Filetarget
+	}
 	for _, org := range req.Orgs {
 		orgPath := filepath.Join(certBasePath, org.CommonName)
-		err := WriteCaCertFile(orgPath, &org)
+		err = WriteCaCertFile(orgPath, &org)
 		if err != nil {
-			return err
+			return
 		}
 		err = WriteNodeCertFile(orgPath, &org, req.ChainID)
 		if err != nil {
-			return err
+			return
 		}
 		err = WriteUserCertFile(orgPath, &org, req.ChainID)
 		if err != nil {
-			return err
+			return
 		}
 	}
-	return nil
+	return
 }
 
 //GetChainMakerCertTar 获取证书压缩包
-func GetChainMakerCertTar(filetarget string) ([]byte, error) {
-	certBasePath := utils.GetChainMakerCertPath()
-	filesource := certBasePath
+func GetChainMakerCertTar(filetarget, filesource string) ([]byte, error) {
+	if filesource == "" {
+		filesource = utils.GetChainMakerCertPath()
+	}
+	if filetarget == "" {
+		filetarget = utils.GetChainMakerCertPath() + ".tar.gz"
+		defer func() {
+			os.RemoveAll(filetarget)
+		}()
+	}
 	err := Tar(filetarget, filesource)
 	if err != nil {
 		logger.Error("Tar chainmaker file failed!", zap.Error(err))
@@ -222,11 +238,11 @@ func WriteNodeCertFile(orgPath string, org *models.Org, chainID string) error {
 		if err != nil {
 			return err
 		}
-		nodeSignCert, err := models.GetCertByNodeNameUsage(node.NodeName, db.SIGN, chainID)
+		nodeSignCert, err := models.GetCertByNodeNameUsageUser(org.UserID, node.NodeName, db.SIGN, chainID)
 		if err != nil {
 			return err
 		}
-		nodeTLSCert, err := models.GetCertByNodeNameUsage(node.NodeName, db.TLS, chainID)
+		nodeTLSCert, err := models.GetCertByNodeNameUsageUser(org.UserID, node.NodeName, db.TLS, chainID)
 		if err != nil {
 			return err
 		}

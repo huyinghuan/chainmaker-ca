@@ -8,9 +8,11 @@ rpc GetCertTar(GetCertTarReq) returns (TarCertResp){}
 message ChainMakerCertApplyReq {
   string chain_id = 1;
   repeated Org orgs = 2;
+  string filetarget = 3;
 }
 message GetCertTarReq {
   string filetarget = 1;
+  string filesource = 2;
 }
 message Org {
   int64  user_id =1;
@@ -30,5 +32,5 @@ message TarCertResp {
 bytes certfile = 1;
 }
 message GenerateResp{
-  string resp =1;
+  string filepath =1;
 }

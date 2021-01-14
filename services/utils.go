@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
+	"chainmaker.org/wx-CRA-backend/models"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -96,6 +97,39 @@ func CreateDir(dirPath string) error {
 			return err
 		}
 	} else {
+		return err
+	}
+	return nil
+}
+
+//CheckOrgInfo 校验组织信息
+func CheckOrgInfo(org *models.Org) error {
+	if org.UserID == 0 {
+		err := fmt.Errorf("User id can't be empty")
+		return err
+	}
+	if org.CommonName == "" {
+		err := fmt.Errorf("Common name can't be empty")
+		return err
+	}
+	if org.Country == "" {
+		err := fmt.Errorf("Country can't be empty")
+		return err
+	}
+	if org.Locality == "" {
+		err := fmt.Errorf("Locality can't be empty")
+		return err
+	}
+	if org.Organization == "" {
+		err := fmt.Errorf("Organization can't be empty")
+		return err
+	}
+	if org.OrganizationalUnit == "" {
+		err := fmt.Errorf("OrganizationalUnit can't be empty")
+		return err
+	}
+	if org.Province == "" {
+		err := fmt.Errorf("Province can't be empty")
 		return err
 	}
 	return nil

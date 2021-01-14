@@ -19,7 +19,7 @@ func GenerateCert(c *gin.Context) {
 		})
 		return
 	}
-	err := services.GenerateChainMakerCert(&chainMakerCertApplyReq)
+	_, err := services.GenerateChainMakerCert(&chainMakerCertApplyReq)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  500,
@@ -45,7 +45,7 @@ func GenerateChainMakerCertFile(c *gin.Context) {
 		})
 		return
 	}
-	tarBytes, err := services.GetChainMakerCertTar(req.Filetarget)
+	tarBytes, err := services.GetChainMakerCertTar(req.Filetarget, req.Filesource)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  500,
