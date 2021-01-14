@@ -30,7 +30,6 @@ type Cert struct {
 	IPAddresses        string     //ip地址
 	DNSNames           string
 	ChainID            string //子链ID
-	ConsortiumID       string //联盟ID
 	NodeName           string //节点名
 }
 
@@ -39,16 +38,16 @@ func (table *Cert) TableName() string {
 	return "cert"
 }
 
-//Customer 用户或者客户表
-type Customer struct {
+//User 用户或者客户表
+type User struct {
 	ID       int `gorm:"primary_key;AUTO_INCREMENT"`
 	Name     string
 	Password string
 }
 
 //TableName cert
-func (table *Customer) TableName() string {
-	return "customer"
+func (table *User) TableName() string {
+	return "user"
 }
 
 //KeyPair 公私钥

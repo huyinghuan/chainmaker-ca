@@ -54,7 +54,7 @@ func InitDB() {
 	DB.SingularTable(true)
 	err = DB.AutoMigrate(
 		&Cert{},
-		&Customer{},
+		&User{},
 		&KeyPair{},
 		&RevokedCert{},
 	).Error

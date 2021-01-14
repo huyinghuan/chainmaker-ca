@@ -39,18 +39,18 @@ func GetCertByUserType(userID int, certType db.CertType) (*db.Cert, error) {
 }
 
 //GetCertByNodeNameUsage .
-func GetCertByNodeNameUsage(nodeName string, usage db.CertUsage, chainID, consortiumID string) (*db.Cert, error) {
+func GetCertByNodeNameUsage(nodeName string, usage db.CertUsage, chainID string) (*db.Cert, error) {
 	var cert db.Cert
-	if err := db.DB.Debug().Where("node_name=? AND cert_usage=? AND chain_id=? AND consortium_id=?", nodeName, usage, chainID, consortiumID).First(&cert).Error; err != nil {
+	if err := db.DB.Debug().Where("node_name=? AND cert_usage=? AND chain_id=?", nodeName, usage, chainID).First(&cert).Error; err != nil {
 		return nil, err
 	}
 	return &cert, nil
 }
 
 //GetCertByUserTypeChain .
-func GetCertByUserTypeChain(userID int, certType db.CertType, usage db.CertUsage, chainID, consortiumID string) (*db.Cert, error) {
+func GetCertByUserTypeChain(userID int, certType db.CertType, usage db.CertUsage, chainID string) (*db.Cert, error) {
 	var cert db.Cert
-	if err := db.DB.Debug().Where("user_id=? AND cert_type=? AND chain_id=? AND consortium_id=? AND cert_usage=?", userID, certType, chainID, consortiumID, usage).First(&cert).Error; err != nil {
+	if err := db.DB.Debug().Where("user_id=? AND cert_type=? AND chain_id=? AND cert_usage=?", userID, certType, chainID, usage).First(&cert).Error; err != nil {
 		return nil, err
 	}
 	return &cert, nil

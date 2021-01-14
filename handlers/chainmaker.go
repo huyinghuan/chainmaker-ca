@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"chainmaker.org/wx-CRA-backend/models"
@@ -36,7 +37,7 @@ func GenerateCert(c *gin.Context) {
 
 //GenerateChainMakerCertFile /
 func GenerateChainMakerCertFile(c *gin.Context) {
-	var req models.ChainMakerCertApplyReq
+	var req models.GetTarCertFileReq
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"code": 400,
@@ -44,7 +45,7 @@ func GenerateChainMakerCertFile(c *gin.Context) {
 		})
 		return
 	}
-	err := services.ChainMakerCertFile(&req)
+	tarBytes, err := services.GetChainMakerCertTar(req.Filetarget)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  500,
@@ -53,9 +54,9 @@ func GenerateChainMakerCertFile(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"code": 200,
-		"msg":  "Generate chainmaker cert file successfully!",
-	})
+	filename := "chainmake-cert.tar.gz"
+	c.Writer.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	c.Writer.Header().Add("Content-Type", "application/octet-stream")
+	c.Data(http.StatusOK, "application/octet-stream", tarBytes)
 	return
 }

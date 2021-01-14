@@ -140,3 +140,8 @@ func GetCRLNextTime() int {
 func GetChainMakerCertPath() string {
 	return viper.GetString("chainmaker_cert_path")
 }
+
+//GetChainMakerCertRPCServerPort .
+func GetChainMakerCertRPCServerPort() string {
+	return ":" + viper.GetString("chainmaker_cert_rpc_port")
+}

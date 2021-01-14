@@ -89,6 +89,7 @@ func Getuuid() string {
 
 //CreateDir 创建文件夹
 func CreateDir(dirPath string) error {
+	os.RemoveAll(dirPath)
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 		err := os.MkdirAll(dirPath, os.ModePerm)
 		if err != nil {

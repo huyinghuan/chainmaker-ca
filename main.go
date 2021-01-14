@@ -18,6 +18,7 @@ func init() {
 	db.InitDB()
 	testData()
 	services.InitServer()
+	go services.InitRPCServer()
 }
 func main() {
 	g := gin.New()
@@ -33,23 +34,24 @@ func main() {
 	//加载路由
 	routers.LoadUserRouter(g)
 	routers.LoadChainMakerRouters(g)
+	services.InitRPCServer()
 	g.Run(":8090")
 }
 func testData() {
-	var org1User = &db.Customer{
+	var org1User = &db.User{
 		Name: "admin",
 	}
-	var org2User = &db.Customer{
+	var org2User = &db.User{
 		Name: "admin",
 	}
-	var org3User = &db.Customer{
+	var org3User = &db.User{
 		Name: "admin",
 	}
-	var org4User = &db.Customer{
+	var org4User = &db.User{
 		Name: "admin",
 	}
-	models.InsertCustomer(org1User)
-	models.InsertCustomer(org2User)
-	models.InsertCustomer(org3User)
-	models.InsertCustomer(org4User)
+	models.InsertUser(org1User)
+	models.InsertUser(org2User)
+	models.InsertUser(org3User)
+	models.InsertUser(org4User)
 }

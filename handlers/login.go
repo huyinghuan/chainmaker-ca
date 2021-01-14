@@ -23,16 +23,16 @@ func LoginHandle(c *gin.Context) {
 		})
 		return
 	}
-	customer, err := models.CustomerByNamePwd(user.Username, user.Password)
+	User, err := models.UserByNamePwd(user.Username, user.Password)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"code":  500,
-			"msg":   "Get customer failed!",
+			"msg":   "Get User failed!",
 			"error": err.Error(),
 		})
 		return
 	}
-	if customer == nil {
+	if User == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 202,
 			"msg":  "User does not exist! ",

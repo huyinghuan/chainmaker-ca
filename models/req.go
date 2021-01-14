@@ -5,7 +5,6 @@ type ApplyCertReq struct {
 	CertType           string   `json:"certType"`
 	UserID             int      `json:"userID"`
 	ChainID            string   `json:"chainID"`
-	ConsortiumID       string   `json:"consortiumID"`
 	CertUsage          string   `json:"certUsage"`
 	Country            string   `json:"country"`
 	Locality           string   `json:"locality"`
@@ -39,9 +38,8 @@ type RevokedCertReq struct {
 
 //ChainMakerCertApplyReq .
 type ChainMakerCertApplyReq struct {
-	Orgs         []Org  `json:"orgs"`
-	ChainID      string `json:"chainID"`
-	ConsortiumID string `json:"consortiumID"`
+	Orgs    []Org  `json:"orgs"`
+	ChainID string `json:"chainID"`
 }
 
 //Org 组织
@@ -60,4 +58,9 @@ type Org struct {
 type Node struct {
 	NodeName string   `json:"nodeName"`
 	Sans     []string `json:"sans"`
+}
+
+//GetTarCertFileReq .
+type GetTarCertFileReq struct {
+	Filetarget string `json:"filetarget"`
 }

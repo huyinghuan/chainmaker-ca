@@ -70,7 +70,6 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 		return nil, err
 	}
 	certModel.ChainID = applyCertReq.ChainID
-	certModel.ConsortiumID = applyCertReq.ConsortiumID
 	certModel.UserID = applyCertReq.UserID
 	certModel.CertStatus = db.EFFECTIVE
 	certModel.CertUsage = db.Name2CertUsageMap[applyCertReq.CertUsage]
@@ -126,7 +125,6 @@ func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
 	certModel.UserID = cert.UserID
 	certModel.CertUsage = cert.CertUsage
 	certModel.ChainID = cert.ChainID
-	certModel.ConsortiumID = cert.ConsortiumID
 	certModel.NodeName = cert.NodeName
 	//证书入库
 	err = models.InsertCert(certModel)
