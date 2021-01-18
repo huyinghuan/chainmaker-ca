@@ -29,28 +29,10 @@ func UpdateCertStatusRevokedBySN(certSN int64) error {
 	return nil
 }
 
-//GetCertByUserType .
-func GetCertByUserType(userID int, certType db.CertType) (*db.Cert, error) {
+//GetCertByPrivateKeyID .
+func GetCertByPrivateKeyID(privateKeyID string) (*db.Cert, error) {
 	var cert db.Cert
-	if err := db.DB.Debug().Where("user_id=? AND cert_type=?", userID, certType).First(&cert).Error; err != nil {
-		return nil, err
-	}
-	return &cert, nil
-}
-
-//GetCertByNodeNameUsageUser .
-func GetCertByNodeNameUsageUser(userID int, nodeName string, usage db.CertUsage, chainID string) (*db.Cert, error) {
-	var cert db.Cert
-	if err := db.DB.Debug().Where("user_id=? AND node_name=? AND cert_usage=? AND chain_id=?", userID, nodeName, usage, chainID).First(&cert).Error; err != nil {
-		return nil, err
-	}
-	return &cert, nil
-}
-
-//GetCertByUserTypeChain .
-func GetCertByUserTypeChain(userID int, certType db.CertType, usage db.CertUsage, chainID string) (*db.Cert, error) {
-	var cert db.Cert
-	if err := db.DB.Debug().Where("user_id=? AND cert_type=? AND chain_id=? AND cert_usage=?", userID, certType, chainID, usage).First(&cert).Error; err != nil {
+	if err := db.DB.Debug().Where("private_key_id=?", privateKeyID).First(&cert).Error; err != nil {
 		return nil, err
 	}
 	return &cert, nil

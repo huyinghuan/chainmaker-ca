@@ -18,14 +18,28 @@ func CreateIntermediariesCert() {
 		logger.Error("Get Intermediaries CA config failed!", zap.Error(err))
 		return
 	}
+	var user db.KeyPairUser
+	user.CertUsage = db.SIGN
+	user.UserType = db.INTERMRDIARY_CA
+	user.OrgID = inmediaCaConfig.OrgID
 	//生成公私钥
-	privKey, keyID, err := CreateKeyPairToDB(&inmediaCaConfig)
+	privKey, keyID, err := CreateKeyPair(user, inmediaCaConfig.PrivateKeyPwd)
 	if err != nil {
 		return
 	}
+	//写私钥
+	keyPair, err := models.GetKeyPairByID(keyID)
+	if err != nil {
+		logger.Error("Get key pair from db  Failed!", zap.Error(err))
+		return
+	}
+	WritePrivKeyFile(inmediaCaConfig.PrivateKeyPath, keyPair.PrivateKey)
+	O := inmediaCaConfig.OrgID + DefaultCertOrgSuffix
+	OU := "ca." + O
+	CN := "ca." + db.CertUsage2NameMap[db.SIGN] + "." + O
 	//生成CSR 不以文件形式存在，在内存和数据库中
-	csrBytes, err := createCSR(privKey, inmediaCaConfig.Country, inmediaCaConfig.Locality, inmediaCaConfig.Province, inmediaCaConfig.OrganizationalUnit,
-		inmediaCaConfig.Organization, inmediaCaConfig.CommonName)
+	csrBytes, err := createCSR(privKey, inmediaCaConfig.Country, inmediaCaConfig.Locality, inmediaCaConfig.Province, OU,
+		O, CN)
 	if err != nil {
 		logger.Error("Create CSR failed!", zap.Error(err))
 		return
@@ -49,7 +63,7 @@ func CreateIntermediariesCert() {
 		logger.Error("Read cert file failed!", zap.Error(err))
 		return
 	}
-	certModel, err := IssueCertificate(hashType, db.INTERMRDIARY_CA, issuerPrivKey, csrBytes, certBytes, inmediaCaConfig.ExpireYear, nil, "")
+	certModel, err := IssueCertificate(hashType, true, issuerPrivKey, csrBytes, certBytes, inmediaCaConfig.ExpireYear, nil, "")
 	if err != nil {
 		logger.Error("Issue Cert failed!", zap.Error(err))
 		return
@@ -60,8 +74,6 @@ func CreateIntermediariesCert() {
 	}
 	certModel.CertStatus = db.EFFECTIVE
 	certModel.PrivateKeyID = keyID
-	certModel.CertUsage = db.SIGN
-	//certModel.ID = Getuuid()
 	//证书入库
 	err = models.InsertCert(certModel)
 	if err != nil {

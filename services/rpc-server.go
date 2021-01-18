@@ -44,21 +44,22 @@ func pbtransform(req *pb.ChainMakerCertApplyReq) *models.ChainMakerCertApplyReq 
 	for _, org := range req.Orgs {
 		var modelOrg models.Org
 		var modelNodes []models.Node
-		modelOrg.UserID = int(org.UserId)
-		modelOrg.CommonName = org.CommonName
+		modelOrg.AdminUserID = org.UserId
 		modelOrg.Country = org.Country
 		modelOrg.Locality = org.Locality
-		modelOrg.Organization = org.Organization
-		modelOrg.OrganizationalUnit = org.OrganizationUnit
 		modelOrg.Province = org.Province
+		modelOrg.OrgID = org.OrgId
 		for _, node := range org.Nodes {
 			var modelNode models.Node
-			modelNode.NodeName = node.NodeName
+			modelNode.NodeID = node.NodeId
 			modelNode.Sans = node.Sans
 			modelNodes = append(modelNodes, modelNode)
 		}
 		modelOrg.Nodes = modelNodes
 		modelOrgs = append(modelOrgs, modelOrg)
+		for _, userID := range org.Users {
+			modelOrg.Users = append(modelOrg.Users, userID)
+		}
 	}
 	modelReq.Orgs = modelOrgs
 	return &modelReq

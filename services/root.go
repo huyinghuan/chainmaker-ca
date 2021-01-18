@@ -23,17 +23,31 @@ func InitRootCA() {
 		logger.Error("Get Root Ca Config Failed!", zap.Error(err))
 		return
 	}
+	var user db.KeyPairUser
+	user.CertUsage = db.SIGN
+	user.UserType = db.ROOT_CA
+	user.OrgID = "wx-root"
 	//生成公私钥
-	privKey, keyID, err := CreateKeyPairToDB(&rootCaConfig)
+	privKey, keyID, err := CreateKeyPair(user, rootCaConfig.PrivateKeyPwd)
 	if err != nil {
 		logger.Error("Create key pair to db  Failed!", zap.Error(err))
 		return
 	}
+	//写私钥
+	keyPair, err := models.GetKeyPairByID(keyID)
+	if err != nil {
+		logger.Error("Get key pair from db  Failed!", zap.Error(err))
+		return
+	}
+	WritePrivKeyFile(rootCaConfig.PrivateKeyPath, keyPair.PrivateKey)
 	//构建证书结构体
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
+	O := DefaultRootOrg
+	OU := "ca.root"
+	CN := OU + "." + O
 	certModel, err := createCACert(privKey, hashType,
-		rootCaConfig.Country, rootCaConfig.Locality, rootCaConfig.Province, rootCaConfig.OrganizationalUnit,
-		rootCaConfig.Organization, rootCaConfig.CommonName, rootCaConfig.ExpireYear, nil)
+		rootCaConfig.Country, rootCaConfig.Locality, rootCaConfig.Province, OU,
+		O, CN, rootCaConfig.ExpireYear, nil)
 	if err != nil {
 		logger.Error("Create CA certificate failed!", zap.Error(err))
 		return
@@ -44,7 +58,6 @@ func InitRootCA() {
 	}
 	certModel.CertStatus = db.EFFECTIVE
 	certModel.PrivateKeyID = keyID
-	certModel.CertUsage = db.SIGN
 	//证书入库
 	if err := models.InsertCert(certModel); err != nil {
 		logger.Error("Insert cert to db failed!", zap.Error(err))
@@ -82,6 +95,7 @@ func createCACert(privKey crypto.PrivateKey, hashType crypto.HashType,
 	if err != nil {
 		return nil, err
 	}
+	certModel.IsCa = true
 	certModel.SerialNumber = template.SerialNumber.Int64()
 	certModel.Signature = hex.EncodeToString(template.Signature)
 	certModel.HashType = hashType
@@ -95,7 +109,6 @@ func createCACert(privKey crypto.PrivateKey, hashType crypto.HashType,
 	certModel.Organization = organization
 	certModel.OrganizationalUnit = organizationalUnit
 	certModel.CommonName = commonName
-	certModel.CertType = db.ROOT_CA
 	certModel.Content = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: x509certEncode})
 	return &certModel, nil
 }

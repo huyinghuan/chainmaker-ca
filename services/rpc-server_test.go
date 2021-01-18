@@ -65,24 +65,22 @@ func TestGenerateChainMakerCert(t *testing.T) {
 	req.ChainId = "chain1"
 	req.Filetarget = "./crypto-config/test"
 	var org pb.Org
-	org.UserId = 1
+	org.OrgId = "wx-org1"
+	org.UserId = "admin"
 	org.Province = "Beijing"
 	org.Country = "CN"
 	org.Locality = "Beijing"
-	org.Organization = "wx-org1.chainmaker.org"
-	org.OrganizationUnit = "ca"
-	org.CommonName = "wx-org1.chainmaker.org"
 	var node1 pb.Node
-	node1.NodeName = "common1"
+	node1.NodeId = "common1"
 	node1.Sans = []string{"192.168.1.10"}
 	var node2 pb.Node
-	node2.NodeName = "consensus1"
+	node2.NodeId = "consensus1"
 	node2.Sans = []string{"192.168.1.11"}
 	org.Nodes = append(org.Nodes, &node1)
 	org.Nodes = append(org.Nodes, &node2)
 	req.Orgs = append(req.Orgs, &org)
 	resp, err := client.GenerateCert(context.Background(), req)
-
+	org.Users = []string{"commonuser1", "commonuser2"}
 	if err != nil {
 
 		log.Fatalf("resp error: %v\n", err)

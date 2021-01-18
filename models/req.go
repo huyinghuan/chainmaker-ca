@@ -1,25 +1,25 @@
 package models
 
+import "chainmaker.org/wx-CRA-backend/models/db"
+
 //ApplyCertReq .
 type ApplyCertReq struct {
-	CertType           string   `json:"certType"`
-	UserID             int      `json:"userID"`
-	ChainID            string   `json:"chainID"`
-	CertUsage          string   `json:"certUsage"`
-	Country            string   `json:"country"`
-	Locality           string   `json:"locality"`
-	Province           string   `json:"province"`
-	Organization       string   `json:"organization"`
-	OrganizationalUnit string   `json:"organization_unit"`
-	CommonName         string   `json:"common_name"`
-	ExpireYear         int32    `json:"expire_year"`
-	NodeName           string   `json:"nodeName"`
-	Sans               []string `json:"sans"`
+	PrivateKeyID string   `json:"privateKeyID"`
+	Country      string   `json:"country"`
+	Locality     string   `json:"locality"`
+	Province     string   `json:"province"`
+	ExpireYear   int32    `json:"expire_year"`
+	NodeSans     []string `json:"nodeSans"`
 }
 
 //GenerateKeyPairReq .
 type GenerateKeyPairReq struct {
-	UserID int `json:"userID"`
+	UserType      db.UserType  `json:"userType"`
+	CertUsage     db.CertUsage `json:"certUsage"`
+	UserID        string       `json:"userID"`
+	OrgID         string       `json:"orgID"`
+	ChainID       string       `json:"chainID"`
+	PrivateKeyPwd string       `json:"privateKeyPwd"`
 }
 
 //UpdateCertReq .
@@ -45,20 +45,19 @@ type ChainMakerCertApplyReq struct {
 
 //Org 组织
 type Org struct {
-	UserID             int    `json:"userID"`
-	Country            string `json:"country"`
-	Locality           string `json:"locality"`
-	Province           string `json:"province"`
-	Organization       string `json:"organization"`
-	OrganizationalUnit string `json:"organization_unit"`
-	CommonName         string `json:"common_name"`
-	Nodes              []Node `json:"nodes"`
+	AdminUserID string   `json:"adminUserID"`
+	OrgID       string   `json:"orgID"`
+	Country     string   `json:"country"`
+	Locality    string   `json:"locality"`
+	Province    string   `json:"province"`
+	Nodes       []Node   `json:"nodes"`
+	Users       []string `json:"users"`
 }
 
 //Node 节点
 type Node struct {
-	NodeName string   `json:"nodeName"`
-	Sans     []string `json:"sans"`
+	NodeID string   `json:"nodeID"`
+	Sans   []string `json:"sans"`
 }
 
 //GetTarCertFileReq .

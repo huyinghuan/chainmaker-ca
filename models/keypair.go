@@ -10,19 +10,36 @@ func InsertKeyPair(keyPair *db.KeyPair) error {
 	return nil
 }
 
-//GetKeyPairByUserID .
-func GetKeyPairByUserID(userID int) (*db.KeyPair, error) {
+//GetKeyPairByID .
+func GetKeyPairByID(id string) (*db.KeyPair, error) {
 	var keyPair db.KeyPair
-	if err := db.DB.Debug().Where("user_id=?", userID).First(&keyPair).Error; err != nil {
+	if err := db.DB.Debug().Where("id=?", id).First(&keyPair).Error; err != nil {
 		return nil, err
 	}
 	return &keyPair, nil
 }
 
-//GetKeyPairByID .
-func GetKeyPairByID(id string) (*db.KeyPair, error) {
+//GetKeyPairByConditions .
+func GetKeyPairByConditions(userID, orgID, chainID string, userType db.UserType, usage db.CertUsage) (*db.KeyPair, error) {
 	var keyPair db.KeyPair
-	if err := db.DB.Debug().Where("id=?", id).First(&keyPair).Error; err != nil {
+	gorm := db.DB.Debug()
+	if userID != "" {
+		gorm = gorm.Where("user_id=?", userID)
+	}
+	if orgID != "" {
+		gorm = gorm.Where("org_id=?", orgID)
+	}
+	if chainID != "" {
+		gorm = gorm.Where("chain_id=?", chainID)
+	}
+	if userType != -1 {
+		gorm = gorm.Where("user_type=?", userType)
+	}
+	if usage != -1 {
+		gorm = gorm.Where("cert_usage=?", usage)
+	}
+	err := gorm.First(&keyPair).Error
+	if err != nil {
 		return nil, err
 	}
 	return &keyPair, nil

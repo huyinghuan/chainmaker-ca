@@ -46,7 +46,7 @@ func InitDB() {
 	log = loggers.GetLogger()
 	gormLogger := &GormLogger{}
 	DB.SetLogger(gormLogger)
-	DB.LogMode(false)
+	DB.LogMode(true)
 	DB.DB().SetMaxIdleConns(50)
 	DB.DB().SetMaxOpenConns(50)
 	DB.DB().SetConnMaxLifetime(time.Minute)
@@ -54,7 +54,6 @@ func InitDB() {
 	DB.SingularTable(true)
 	err = DB.AutoMigrate(
 		&Cert{},
-		&User{},
 		&KeyPair{},
 		&RevokedCert{},
 	).Error

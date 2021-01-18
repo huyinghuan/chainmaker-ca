@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"chainmaker.org/wx-CRA-backend/loggers"
-	"chainmaker.org/wx-CRA-backend/models"
 	"chainmaker.org/wx-CRA-backend/models/db"
 	"chainmaker.org/wx-CRA-backend/routers"
 	"chainmaker.org/wx-CRA-backend/services"
@@ -16,7 +15,6 @@ import (
 func init() {
 	utils.InitConfig()
 	db.InitDB()
-	testData()
 	services.InitServer()
 	go services.InitRPCServer()
 }
@@ -35,22 +33,4 @@ func main() {
 	routers.LoadUserRouter(g)
 	routers.LoadChainMakerRouters(g)
 	g.Run(":8090")
-}
-func testData() {
-	var org1User = &db.User{
-		Name: "admin",
-	}
-	var org2User = &db.User{
-		Name: "admin",
-	}
-	var org3User = &db.User{
-		Name: "admin",
-	}
-	var org4User = &db.User{
-		Name: "admin",
-	}
-	models.InsertUser(org1User)
-	models.InsertUser(org2User)
-	models.InsertUser(org3User)
-	models.InsertUser(org4User)
 }

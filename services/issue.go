@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/hex"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"math/big"
@@ -13,12 +14,11 @@ import (
 	"chainmaker.org/chainmaker-go/common/cert"
 	"chainmaker.org/chainmaker-go/common/crypto"
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
-	"chainmaker.org/chainmaker-go/common/json"
 	"chainmaker.org/wx-CRA-backend/models/db"
 )
 
 //IssueCertificate 签发证书
-func IssueCertificate(hashType crypto.HashType, certType db.CertType, issuerPrivKey crypto.PrivateKey,
+func IssueCertificate(hashType crypto.HashType, isCA bool, issuerPrivKey crypto.PrivateKey,
 	csrBytes, certBytes []byte, expireYear int32, sans []string, uuid string) (*db.Cert, error) {
 	var certModel db.Cert
 	issuerCert, err := ParseCertificate(certBytes)
@@ -44,10 +44,8 @@ func IssueCertificate(hashType crypto.HashType, certType db.CertType, issuerPriv
 	}
 
 	basicConstraintsValid := false
-	isCA := false
-	if certType == db.ROOT_CA || certType == db.INTERMRDIARY_CA {
+	if isCA == true {
 		basicConstraintsValid = true
-		isCA = true
 	}
 
 	if expireYear <= 0 {
@@ -108,13 +106,13 @@ func IssueCertificate(hashType crypto.HashType, certType db.CertType, issuerPriv
 	if err != nil {
 		return nil, fmt.Errorf("issue certificate failed, %s", err)
 	}
-	certModel.CertType = certType
+	certModel.IsCa = isCA
 	certModel.CertEncode = hex.EncodeToString(x509certEncode)
 	certModel.CommonName = csr.Subject.CommonName
 	certModel.Content = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: x509certEncode})
 	certModel.Country = template.Subject.Country[0]
 	certModel.CsrContent = csrBytes
-	certModel.ExpireYear = int32(template.NotAfter.Year()) - int32(template.NotBefore.Year())
+	certModel.ExpireYear = expireYear
 	certModel.HashType = hashType
 	certModel.IssueDate = template.NotBefore.Unix()
 	certModel.InvalidDate = template.NotAfter.Unix()
@@ -124,21 +122,11 @@ func IssueCertificate(hashType crypto.HashType, certType db.CertType, issuerPriv
 	certModel.Province = template.Subject.Province[0]
 	certModel.SerialNumber = template.SerialNumber.Int64()
 	certModel.Signature = hex.EncodeToString(template.Signature)
-	var ipAddrsstr []string
-	for _, ip := range ipAddrs {
-		ipstr := ip.String()
-		ipAddrsstr = append(ipAddrsstr, ipstr)
-	}
-	ipAddrsBytes, err := json.Marshal(ipAddrsstr)
+	sansstr, err := json.Marshal(sans)
 	if err != nil {
-		return nil, fmt.Errorf("Marshal ipAddress failed: %s", err)
+		return nil, fmt.Errorf("Marshal sans failed: %s", err.Error())
 	}
-	certModel.IPAddresses = string(ipAddrsBytes)
-	dnsNameBytes, err := json.Marshal(dnsName)
-	if err != nil {
-		return nil, fmt.Errorf("Marshal DNSNames failed: %s", err)
-	}
-	certModel.DNSNames = string(dnsNameBytes)
+	certModel.CertSans = string(sansstr)
 	return &certModel, nil
 }
 

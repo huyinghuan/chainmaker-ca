@@ -10,18 +10,15 @@ import (
 
 //CaConfig 根和中间Ca配置
 type CaConfig struct {
-	PrivateKeyPath     string `mapstructure:"private_key_path"`
-	CertName           string `mapstructure:"cert_name"`
-	CertPath           string `mapstructure:"cert_path"`
-	ExpireYear         int32  `mapstructure:"expire_year"`
-	Country            string `mapstructure:"country"`
-	Locality           string `mapstructure:"locality"`
-	Province           string `mapstructure:"province"`
-	OrganizationalUnit string `mapstructure:"OU"`
-	Organization       string `mapstructure:"O"`
-	CommonName         string `mapstructure:"CN"`
-	Username           string `mapstructure:"username"`
-	PrivateKeyPwd      string `mapstructure:"private_key_pwd"`
+	PrivateKeyPath string `mapstructure:"private_key_path"`
+	CertName       string `mapstructure:"cert_name"`
+	CertPath       string `mapstructure:"cert_path"`
+	ExpireYear     int32  `mapstructure:"expire_year"`
+	Country        string `mapstructure:"country"`
+	Locality       string `mapstructure:"locality"`
+	Province       string `mapstructure:"province"`
+	PrivateKeyPwd  string `mapstructure:"private_key_pwd"`
+	OrgID          string `mapstructure:"org_id"`
 }
 
 //InitConfig .

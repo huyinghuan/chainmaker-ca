@@ -15,17 +15,16 @@ message GetCertTarReq {
   string filesource = 2;
 }
 message Org {
-  int64  user_id =1;
+  string  user_id =1;
   string country = 2;
   string locality =3;
   string province =4;
-  string organization =5;
-  string organization_unit =6;
-  string common_name =7;
-  repeated Node nodes = 8;
+  repeated Node nodes = 5;
+  repeated string users = 6;
+  string org_id=7;
 }
 message Node {
-string node_name=1;
+string node_id=1;
 repeated string sans=2;
 }
 message TarCertResp {

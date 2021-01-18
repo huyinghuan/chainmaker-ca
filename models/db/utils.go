@@ -1,7 +1,7 @@
 package db
 
 //CertType .
-type CertType int
+type UserType int
 
 //CertStatus .
 type CertStatus int
@@ -10,10 +10,10 @@ type CertStatus int
 type CertUsage int
 
 const (
-	ROOT_CA CertType = iota
+	ROOT_CA UserType = iota
 	INTERMRDIARY_CA
-	CUSTOMER_ADMIN
-	CUSTOMER_USER
+	USER_ADMIN
+	USER_USER
 	NODE
 )
 
@@ -28,20 +28,20 @@ const (
 )
 
 //CertType2NameMap CertType to string name
-var CertType2NameMap = map[CertType]string{
+var CertType2NameMap = map[UserType]string{
 	ROOT_CA:         "ROOT_CA",
 	INTERMRDIARY_CA: "INTERMRDIARY_CA",
-	CUSTOMER_ADMIN:  "CUSTOMER_ADMIN",
-	CUSTOMER_USER:   "CUSTOMER_USER",
+	USER_ADMIN:      "CUSTOMER_ADMIN",
+	USER_USER:       "CUSTOMER_USER",
 	NODE:            "NODE",
 }
 
 //Name2CertTypeMap string name to cert type
-var Name2CertTypeMap = map[string]CertType{
+var Name2CertTypeMap = map[string]UserType{
 	"ROOT_CA":         ROOT_CA,
 	"INTERMRDIARY_CA": INTERMRDIARY_CA,
-	"CUSTOMER_ADMIN":  CUSTOMER_ADMIN,
-	"CUSTOMER_USER":   CUSTOMER_USER,
+	"CUSTOMER_ADMIN":  USER_ADMIN,
+	"CUSTOMER_USER":   USER_USER,
 	"NODE":            NODE,
 }
 
@@ -89,4 +89,13 @@ var NodeType2NameMap = map[NodeType]string{
 var Name2NodeTypeMap = map[string]NodeType{
 	"COMMON_NODE":    COMMON_NODE,
 	"CONSENSUS_NODE": CONSENSUS_NODE,
+}
+
+//KeyPairUser .
+type KeyPairUser struct {
+	UserType  UserType
+	CertUsage CertUsage
+	UserID    string
+	OrgID     string
+	ChainID   string
 }

@@ -18,36 +18,19 @@ type Cert struct {
 	Province           string
 	Organization       string
 	OrganizationalUnit string
-	CommonName         string
+	CommonName         string     `gorm:"unique_index:cert_commonname_index"`
 	CsrContent         []byte     `gorm:"type:mediumblob"` //证书csr
-	CertType           CertType   //证书类型
 	CertStatus         CertStatus //证书状态
-	CertUsage          CertUsage  //证书用处（sign/tls）
+	IsCa               bool       //是否能继续签发
 	IssueDate          int64      //签发日期unix
 	InvalidDate        int64      //到期时间unix
-	PrivateKeyID       string     //对应的私钥ID
-	UserID             int        //组织ID
-	IPAddresses        string     //ip地址
-	DNSNames           string
-	ChainID            string //子链ID
-	NodeName           string //节点名
+	CertSans           string
+	PrivateKeyID       string //对应的私钥ID
 }
 
 //TableName cert
 func (table *Cert) TableName() string {
 	return "cert"
-}
-
-//User 用户或者客户表
-type User struct {
-	ID       int `gorm:"primary_key;AUTO_INCREMENT"`
-	Name     string
-	Password string
-}
-
-//TableName cert
-func (table *User) TableName() string {
-	return "user"
 }
 
 //KeyPair 公私钥
@@ -57,7 +40,11 @@ type KeyPair struct {
 	PublicKey     []byte `gorm:"type:mediumblob"`
 	PrivateKeyPwd string //用户加密私钥所用密码
 	KeyType       crypto.KeyType
-	UserID        int
+	UserType      UserType
+	CertUsage     CertUsage
+	UserID        string
+	OrgID         string
+	ChainID       string
 }
 
 //TableName cert

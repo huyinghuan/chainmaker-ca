@@ -26,6 +26,10 @@ const (
 const (
 	//DefaultPrivateKeyPwd 分片加密
 	DefaultPrivateKeyPwd = "wxliuxinfeng"
+	//DefaultCertOrgSuffix .
+	DefaultCertOrgSuffix = ".chainmaker.org"
+	//DefaultRootOrg .
+	DefaultRootOrg = "wx-root"
 )
 
 func dealSANS(sans []string) ([]string, []net.IP) {
@@ -104,12 +108,12 @@ func CreateDir(dirPath string) error {
 
 //CheckOrgInfo 校验组织信息
 func CheckOrgInfo(org *models.Org) error {
-	if org.UserID == 0 {
+	if org.AdminUserID == "" {
 		err := fmt.Errorf("User id can't be empty")
 		return err
 	}
-	if org.CommonName == "" {
-		err := fmt.Errorf("Common name can't be empty")
+	if org.OrgID == "" {
+		err := fmt.Errorf("OrgID  can't be empty")
 		return err
 	}
 	if org.Country == "" {
@@ -118,14 +122,6 @@ func CheckOrgInfo(org *models.Org) error {
 	}
 	if org.Locality == "" {
 		err := fmt.Errorf("Locality can't be empty")
-		return err
-	}
-	if org.Organization == "" {
-		err := fmt.Errorf("Organization can't be empty")
-		return err
-	}
-	if org.OrganizationalUnit == "" {
-		err := fmt.Errorf("OrganizationalUnit can't be empty")
 		return err
 	}
 	if org.Province == "" {

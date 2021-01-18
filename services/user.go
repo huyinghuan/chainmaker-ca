@@ -3,6 +3,7 @@ package services
 import (
 	"crypto/rand"
 	"crypto/x509/pkix"
+	"encoding/json"
 	"encoding/pem"
 	"io/ioutil"
 	"math/big"
@@ -20,7 +21,7 @@ import (
 
 //ApplyCert 申请证书
 func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
-	keyPair, err := models.GetKeyPairByUserID(applyCertReq.UserID)
+	keyPair, err := models.GetKeyPairByID(applyCertReq.PrivateKeyID)
 	if err != nil {
 		logger.Error("Get keypair by userid failed!", zap.Error(err))
 		return nil, err
@@ -32,8 +33,11 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 		logger.Error("Private from der failed!", zap.Error(err))
 		return nil, err
 	}
+	O := keyPair.OrgID + DefaultCertOrgSuffix
+	OU := keyPair.UserID
+	CN := OU + "." + db.CertUsage2NameMap[keyPair.CertUsage] + "." + O
 	certCSR, err := createCSR(privateKey, applyCertReq.Country, applyCertReq.Locality, applyCertReq.Province,
-		applyCertReq.OrganizationalUnit, applyCertReq.Organization, applyCertReq.CommonName)
+		OU, O, CN)
 	if err != nil {
 		logger.Error("Create csr failed!", zap.Error(err))
 		return nil, err
@@ -58,23 +62,17 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 		logger.Error("Read cert file failed!", zap.Error(err))
 		return nil, err
 	}
-
-	certType, ok := db.Name2CertTypeMap[applyCertReq.CertType]
-	if !ok {
-		logger.Error("Cert type not exist!", zap.Error(err))
-		return nil, nil
+	var isCA bool
+	if keyPair.UserType == db.INTERMRDIARY_CA {
+		isCA = true
 	}
-	certModel, err := IssueCertificate(hashType, certType, issuerPrivKey, certCSR, certBytes, applyCertReq.ExpireYear, applyCertReq.Sans, "")
+	certModel, err := IssueCertificate(hashType, isCA, issuerPrivKey, certCSR, certBytes, applyCertReq.ExpireYear, applyCertReq.NodeSans, "")
 	if err != nil {
 		logger.Error("Issue Cert failed!", zap.Error(err))
 		return nil, err
 	}
-	certModel.ChainID = applyCertReq.ChainID
-	certModel.UserID = applyCertReq.UserID
 	certModel.CertStatus = db.EFFECTIVE
-	certModel.CertUsage = db.Name2CertUsageMap[applyCertReq.CertUsage]
 	certModel.PrivateKeyID = keyPair.ID
-	certModel.NodeName = applyCertReq.NodeName
 	//证书入库
 	err = models.InsertCert(certModel)
 	if err != nil {
@@ -112,20 +110,18 @@ func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
 		logger.Error("Read cert file failed!", zap.Error(err))
 		return nil, err
 	}
-	//
-	var certSans []string
-	certSans = append(certSans, cert.IPAddresses)
-	certSans = append(certSans, cert.DNSNames)
-	certModel, err := IssueCertificate(hashType, cert.CertType, issuerPrivKey, certCSRBytes, certBytes, updateCertReq.ExpireYear, certSans, "")
+	var nodeSans []string
+	err = json.Unmarshal([]byte(cert.CertSans), nodeSans)
+	if err != nil {
+		logger.Error("Nodesans unmarshal failed!", zap.Error(err))
+		return nil, err
+	}
+	certModel, err := IssueCertificate(hashType, cert.IsCa, issuerPrivKey, certCSRBytes, certBytes, updateCertReq.ExpireYear, nodeSans, "")
 	if err != nil {
 		logger.Error("Issue Cert failed!", zap.Error(err))
 		return nil, err
 	}
 	certModel.CertStatus = cert.CertStatus
-	certModel.UserID = cert.UserID
-	certModel.CertUsage = cert.CertUsage
-	certModel.ChainID = cert.ChainID
-	certModel.NodeName = cert.NodeName
 	//证书入库
 	err = models.InsertCert(certModel)
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"chainmaker.org/wx-CRA-backend/models"
+	"chainmaker.org/wx-CRA-backend/models/db"
 	"chainmaker.org/wx-CRA-backend/services"
 	"github.com/gin-gonic/gin"
 )
@@ -18,7 +19,13 @@ func GeneratePrivateKey(c *gin.Context) {
 		})
 		return
 	}
-	_, _, err := services.CreateUserKeyPair(generateKeyPairReq.UserID)
+	var user db.KeyPairUser
+	user.CertUsage = generateKeyPairReq.CertUsage
+	user.ChainID = generateKeyPairReq.ChainID
+	user.OrgID = generateKeyPairReq.OrgID
+	user.UserID = generateKeyPairReq.UserID
+	user.UserType = generateKeyPairReq.UserType
+	_, _, err := services.CreateKeyPair(user, generateKeyPairReq.PrivateKeyPwd)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  500,

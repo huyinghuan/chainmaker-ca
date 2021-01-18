@@ -38,21 +38,26 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) (stri
 			return filepath, err
 		}
 		//生成公私钥
-		//暂时采用不加密方式（调用不加密接口）
-		privateKey, keyID, err := CreateUserKeyPair(org.UserID)
+		var user db.KeyPairUser
+		user.CertUsage = db.SIGN
+		user.UserType = db.INTERMRDIARY_CA
+		user.OrgID = org.OrgID
+		privateKey, keyID, err := CreateKeyPair(user, "")
 		if err != nil {
 			logger.Error("Create ChainMaker org keypair failed!", zap.Error(err))
 			return filepath, err
 		}
 		//生成中间证书的CSR
-		CN := "ca." + org.CommonName
-		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, org.OrganizationalUnit,
-			org.Organization, CN)
+		O := org.OrgID + ".chainmaker.org"
+		OU := "ca." + org.OrgID
+		CN := "ca." + db.CertUsage2NameMap[user.CertUsage] + "." + O
+		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
+			O, CN)
 		if err != nil {
 			logger.Error("Create ChainMaker org CSR failed!", zap.Error(err))
 			return filepath, err
 		}
-		//读取配置文件里的根证书
+		//读取配置文件
 		hashType := crypto.HashAlgoMap[utils.GetHashType()]
 		issuerPrivKeyFilePath, certFilePath := utils.GetRootPrivateKey()
 		privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
@@ -74,14 +79,12 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) (stri
 		}
 
 		//签发中间CA证书
-		certModel, err := IssueCertificate(hashType, db.INTERMRDIARY_CA, issuerPrivKey, csrBytes, certBytes, defaultExpireYear, nil, "")
+		certModel, err := IssueCertificate(hashType, true, issuerPrivKey, csrBytes, certBytes, defaultExpireYear, nil, "")
 		if err != nil {
 			logger.Error("Issue Cert failed!", zap.Error(err))
 			return filepath, err
 		}
-		certModel.UserID = org.UserID
 		certModel.CertStatus = db.EFFECTIVE
-		certModel.CertUsage = db.SIGN
 		certModel.PrivateKeyID = keyID
 		//证书入库
 		err = models.InsertCert(certModel)
@@ -90,27 +93,36 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) (stri
 			return filepath, err
 		}
 		//签发节点sign证书
-		err = IssueNodeCert(cmCertApplyReq.ChainID, &org, &privateKey, certModel.Content, db.SIGN)
+		err = IssueNodeCert(cmCertApplyReq.ChainID, &org, privateKey, certModel.Content, db.SIGN)
 		if err != nil {
 			logger.Error("Issue node sign cert failed!", zap.Error(err))
 			return filepath, err
 		}
 		//签发节点TLS证书
-		err = IssueNodeCert(cmCertApplyReq.ChainID, &org, &privateKey, certModel.Content, db.TLS)
+		err = IssueNodeCert(cmCertApplyReq.ChainID, &org, privateKey, certModel.Content, db.TLS)
 		if err != nil {
 			logger.Error("Issue node tls cert failed!", zap.Error(err))
 			return filepath, err
 		}
-		//签发admin证书（使用ca用户）
-		err = IssueAdminCert(cmCertApplyReq.ChainID, &org, hashType, privateKey, keyID, certModel.Content, db.SIGN)
+		//签发AdminUser证书
+		err = IssueAdminUserCert(cmCertApplyReq.ChainID, &org, privateKey, certModel.Content, db.SIGN)
 		if err != nil {
-			logger.Error("Issue admin sign cert failed!", zap.Error(err))
+			logger.Error("Issue admin user sign cert failed!", zap.Error(err))
 			return filepath, err
 		}
-		//签发admin tls证书（使用ca用户）
-		err = IssueAdminCert(cmCertApplyReq.ChainID, &org, hashType, privateKey, keyID, certModel.Content, db.TLS)
+		err = IssueAdminUserCert(cmCertApplyReq.ChainID, &org, privateKey, certModel.Content, db.TLS)
 		if err != nil {
-			logger.Error("Issue admin tls cert failed!", zap.Error(err))
+			logger.Error("Issue admin user tls cert failed!", zap.Error(err))
+			return filepath, err
+		}
+		err = IssueUserCert(cmCertApplyReq.ChainID, &org, privateKey, certModel.Content, db.SIGN)
+		if err != nil {
+			logger.Error("Issue  user sign cert failed!", zap.Error(err))
+			return filepath, err
+		}
+		err = IssueUserCert(cmCertApplyReq.ChainID, &org, privateKey, certModel.Content, db.TLS)
+		if err != nil {
+			logger.Error("Issue  user tls cert failed!", zap.Error(err))
 			return filepath, err
 		}
 	}
@@ -123,32 +135,35 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) (stri
 }
 
 //IssueNodeCert 签发节点证书
-func IssueNodeCert(chainID string, org *models.Org, privateKey *crypto.PrivateKey, certBytes []byte, certUsage db.CertUsage) error {
+func IssueNodeCert(chainID string, org *models.Org, issurePrivateKey crypto.PrivateKey, certBytes []byte, certUsage db.CertUsage) error {
 	for _, node := range org.Nodes {
+		var user db.KeyPairUser
+		user.CertUsage = certUsage
+		user.ChainID = chainID
+		user.OrgID = org.OrgID
+		user.UserID = node.NodeID
+		user.UserType = db.NODE
 		//生成公私钥
-		privateKey, keyID, err := CreateUserKeyPair(org.UserID)
+		privateKey, keyID, err := CreateKeyPair(user, "")
 		if err != nil {
 			return err
 		}
 		//生成CSR
-		OU := node.NodeName
-		CN := node.NodeName + "." + db.CertUsage2NameMap[certUsage] + "." + org.Organization
+		O := org.OrgID + DefaultCertOrgSuffix
+		OU := node.NodeID
+		CN := node.NodeID + "." + db.CertUsage2NameMap[certUsage] + "." + O
 		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
-			org.Organization, CN)
+			O, CN)
 		if err != nil {
 			return err
 		}
 		hashType := crypto.HashAlgoMap[utils.GetHashType()]
-		certModel, err := IssueCertificate(hashType, db.NODE, privateKey, csrBytes, certBytes, utils.GetIssureExpirationTime(), node.Sans, "")
+		certModel, err := IssueCertificate(hashType, false, issurePrivateKey, csrBytes, certBytes, utils.GetIssureExpirationTime(), node.Sans, "")
 		if err != nil {
 			return err
 		}
-		certModel.ChainID = chainID
-		certModel.UserID = org.UserID
 		certModel.CertStatus = db.EFFECTIVE
-		certModel.CertUsage = certUsage
 		certModel.PrivateKeyID = keyID
-		certModel.NodeName = node.NodeName
 		err = models.InsertCert(certModel)
 		if err != nil {
 			return err
@@ -157,26 +172,72 @@ func IssueNodeCert(chainID string, org *models.Org, privateKey *crypto.PrivateKe
 	return nil
 }
 
-//IssueAdminCert .
-func IssueAdminCert(chainID string, org *models.Org, hashType crypto.HashType, caPrivKey crypto.PrivateKey, caKeyID string, caCertBytes []byte, certUsage db.CertUsage) error {
-	OU := "admin"
-	CN := OU + "." + db.CertUsage2NameMap[certUsage] + "." + org.Organization
-	csrBytes, err := createCSR(caPrivKey, org.Country, org.Locality, org.Province, OU,
-		org.Organization, CN)
+//IssueAdminUserCert .
+func IssueAdminUserCert(chainID string, org *models.Org, caPrivKey crypto.PrivateKey, caCertBytes []byte, usage db.CertUsage) error {
+	var user db.KeyPairUser
+	user.CertUsage = usage
+	user.ChainID = chainID
+	user.OrgID = org.OrgID
+	user.UserID = org.AdminUserID
+	user.UserType = db.USER_ADMIN
+	//生成公私钥
+	privateKey, keyID, err := CreateKeyPair(user, "")
 	if err != nil {
 		return err
 	}
-	adminCert, err := IssueCertificate(hashType, db.CUSTOMER_ADMIN, caPrivKey, csrBytes, caCertBytes, utils.GetIssureExpirationTime(), nil, "")
-	adminCert.UserID = org.UserID
+	O := org.OrgID + DefaultCertOrgSuffix
+	OU := org.AdminUserID
+	CN := OU + "." + db.CertUsage2NameMap[usage] + "." + O
+	csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
+		O, CN)
+	if err != nil {
+		return err
+	}
+	hashType := crypto.HashAlgoMap[utils.GetHashType()]
+	adminCert, err := IssueCertificate(hashType, false, caPrivKey, csrBytes, caCertBytes, utils.GetIssureExpirationTime(), nil, "")
 	adminCert.CertStatus = db.EFFECTIVE
-	adminCert.CertUsage = certUsage
-	adminCert.PrivateKeyID = caKeyID
-	adminCert.ChainID = chainID
+	adminCert.PrivateKeyID = keyID
 	//证书入库
 	err = models.InsertCert(adminCert)
 	if err != nil {
 		logger.Error("Insert cert to db failed!", zap.Error(err))
 		return err
+	}
+	return nil
+}
+
+//IssueUserCert .
+func IssueUserCert(chainID string, org *models.Org, caPrivKey crypto.PrivateKey, caCertBytes []byte, usage db.CertUsage) error {
+	for _, userid := range org.Users {
+		var user db.KeyPairUser
+		user.CertUsage = usage
+		user.ChainID = chainID
+		user.OrgID = org.OrgID
+		user.UserID = userid
+		user.UserType = db.USER_USER
+		//生成公私钥
+		privateKey, keyID, err := CreateKeyPair(user, "")
+		if err != nil {
+			return err
+		}
+		O := org.OrgID + DefaultCertOrgSuffix
+		OU := userid
+		CN := OU + "." + db.CertUsage2NameMap[usage] + "." + O
+		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
+			O, CN)
+		if err != nil {
+			return err
+		}
+		hashType := crypto.HashAlgoMap[utils.GetHashType()]
+		userCert, err := IssueCertificate(hashType, false, caPrivKey, csrBytes, caCertBytes, utils.GetIssureExpirationTime(), nil, "")
+		userCert.CertStatus = db.EFFECTIVE
+		userCert.PrivateKeyID = keyID
+		//证书入库
+		err = models.InsertCert(userCert)
+		if err != nil {
+			logger.Error("Insert cert to db failed!", zap.Error(err))
+			return err
+		}
 	}
 	return nil
 }
@@ -189,8 +250,8 @@ func WriteChainMakerCertFile(req *models.ChainMakerCertApplyReq) (certBasePath s
 		certBasePath = req.Filetarget
 	}
 	for _, org := range req.Orgs {
-		orgPath := filepath.Join(certBasePath, org.CommonName)
-		err = WriteCaCertFile(orgPath, &org)
+		orgPath := filepath.Join(certBasePath, org.OrgID)
+		err = WriteCaCertFile(orgPath, &org, req.ChainID)
 		if err != nil {
 			return
 		}
@@ -198,9 +259,16 @@ func WriteChainMakerCertFile(req *models.ChainMakerCertApplyReq) (certBasePath s
 		if err != nil {
 			return
 		}
-		err = WriteUserCertFile(orgPath, &org, req.ChainID)
+		err = WriteAdminUserCertFile(orgPath, &org, req.ChainID, org.AdminUserID)
 		if err != nil {
 			return
+		}
+		for _, userID := range org.Users {
+			fmt.Printf("user_id:%s", userID)
+			err = WriteUserCertFile(orgPath, &org, req.ChainID, userID)
+			if err != nil {
+				return
+			}
 		}
 	}
 	return
@@ -233,117 +301,163 @@ func GetChainMakerCertTar(filetarget, filesource string) ([]byte, error) {
 //WriteNodeCertFile .
 func WriteNodeCertFile(orgPath string, org *models.Org, chainID string) error {
 	for _, node := range org.Nodes {
-		nodePath := filepath.Join(orgPath, "node", node.NodeName)
+		nodePath := filepath.Join(orgPath, "node", node.NodeID)
 		err := CreateDir(nodePath)
 		if err != nil {
-			return err
+			return fmt.Errorf("Create node dir failed: %s", err.Error())
 		}
-		nodeSignCert, err := models.GetCertByNodeNameUsageUser(org.UserID, node.NodeName, db.SIGN, chainID)
+		nodeSignKey, err := models.GetKeyPairByConditions(node.NodeID, org.OrgID, chainID, db.NODE, db.SIGN)
 		if err != nil {
-			return err
+			return fmt.Errorf("Get node key by conditions failed: %s", err.Error())
 		}
-		nodeTLSCert, err := models.GetCertByNodeNameUsageUser(org.UserID, node.NodeName, db.TLS, chainID)
+		nodeSignCert, err := models.GetCertByPrivateKeyID(nodeSignKey.ID)
 		if err != nil {
-			return err
+			return fmt.Errorf("Get node cert failed: %s", err.Error())
 		}
-		nodeSignKey, err := models.GetKeyPairByID(nodeSignCert.PrivateKeyID)
+		nodeTLSKey, err := models.GetKeyPairByConditions(node.NodeID, org.OrgID, chainID, db.NODE, db.TLS)
 		if err != nil {
-			return err
+			return fmt.Errorf("Get node tls key by conditions failed: %s", err.Error())
 		}
-		nodeTLSKey, err := models.GetKeyPairByID(nodeTLSCert.PrivateKeyID)
+		nodeTLSCert, err := models.GetCertByPrivateKeyID(nodeTLSKey.ID)
 		if err != nil {
-			return err
+			return fmt.Errorf("Get node tls cert failed: %s", err.Error())
 		}
-		nodeSignCertPath := filepath.Join(nodePath, node.NodeName+".sign.crt")
+		nodeSignCertPath := filepath.Join(nodePath, node.NodeID+".sign.crt")
 		err = ioutil.WriteFile(nodeSignCertPath, nodeSignCert.Content, os.ModePerm)
 		if err != nil {
-			return err
+			return fmt.Errorf("Write node sign cert failed: %s", err.Error())
 		}
-		nodeSignKeyPath := filepath.Join(nodePath, node.NodeName+".sign.key")
+		nodeSignKeyPath := filepath.Join(nodePath, node.NodeID+".sign.key")
 		err = ioutil.WriteFile(nodeSignKeyPath, nodeSignKey.PrivateKey, os.ModePerm)
 		if err != nil {
-			return err
+			return fmt.Errorf("Write node sign key failed: %s", err.Error())
 		}
-		nodeTLSCertPath := filepath.Join(nodePath, node.NodeName+".tls.crt")
+		nodeTLSCertPath := filepath.Join(nodePath, node.NodeID+".tls.crt")
 		err = ioutil.WriteFile(nodeTLSCertPath, nodeTLSCert.Content, os.ModePerm)
 		if err != nil {
-			return err
+			return fmt.Errorf("Write node tls cert failed: %s", err.Error())
 		}
-		nodeTLSKeyPath := filepath.Join(nodePath, node.NodeName+".tls.key")
+		nodeTLSKeyPath := filepath.Join(nodePath, node.NodeID+".tls.key")
 		err = ioutil.WriteFile(nodeTLSKeyPath, nodeTLSKey.PrivateKey, os.ModePerm)
 		if err != nil {
-			return err
+			return fmt.Errorf("Write node tls key failed: %s", err.Error())
 		}
 	}
 	return nil
 }
 
 //WriteCaCertFile .
-func WriteCaCertFile(orgPath string, org *models.Org) error {
-	caCert, err := models.GetCertByUserType(org.UserID, db.INTERMRDIARY_CA)
+func WriteCaCertFile(orgPath string, org *models.Org, chainID string) error {
+	caKey, err := models.GetKeyPairByConditions("", org.OrgID, "", db.INTERMRDIARY_CA, -1)
 	if err != nil {
-		return err
+		return fmt.Errorf("Get ca key by conditions failed: %s", err.Error())
 	}
-	caPrivate, err := models.GetKeyPairByID(caCert.PrivateKeyID)
+	caCert, err := models.GetCertByPrivateKeyID(caKey.ID)
 	caPath := filepath.Join(orgPath, "ca")
 	caCertPath := filepath.Join(caPath, "ca.crt")
 	caKeyPath := filepath.Join(caPath, "ca.key")
 	if err := CreateDir(caPath); err != nil {
-		return err
+		return fmt.Errorf("Create ca dir failed: %s", err.Error())
 	}
 	err = ioutil.WriteFile(caCertPath, caCert.Content, os.ModePerm)
 	if err != nil {
-		return err
+		return fmt.Errorf("Write ca Cert file  failed: %s", err.Error())
 	}
-	err = ioutil.WriteFile(caKeyPath, caPrivate.PrivateKey, os.ModePerm)
+	err = ioutil.WriteFile(caKeyPath, caKey.PrivateKey, os.ModePerm)
 	if err != nil {
-		return err
+		return fmt.Errorf("Write ca key file by failed: %s", err.Error())
+	}
+	return nil
+}
+
+//WriteAdminUserCertFile .
+func WriteAdminUserCertFile(orgPath string, org *models.Org, chainID, userID string) error {
+	userCertPath := filepath.Join(orgPath, "user", "admin")
+	err := CreateDir(userCertPath)
+	if err != nil {
+		return fmt.Errorf("Create admin user dir failed: %s", err.Error())
+	}
+	userSignKey, err := models.GetKeyPairByConditions(userID, org.OrgID, chainID, db.USER_ADMIN, db.SIGN)
+	if err != nil {
+		return fmt.Errorf("Get admin sign key  failed: %s", err.Error())
+	}
+	userSignCert, err := models.GetCertByPrivateKeyID(userSignKey.ID)
+	if err != nil {
+		return fmt.Errorf("Get admin sign cert  failed: %s", err.Error())
+	}
+	userTLSKey, err := models.GetKeyPairByConditions(userID, org.OrgID, chainID, db.USER_ADMIN, db.TLS)
+	if err != nil {
+		return fmt.Errorf("Get admin tls key  failed: %s", err.Error())
+	}
+	userTLSCert, err := models.GetCertByPrivateKeyID(userTLSKey.ID)
+	if err != nil {
+		return fmt.Errorf("Get admin tls cert  failed: %s", err.Error())
+	}
+	userSignCertPath := filepath.Join(userCertPath, userID+".sign.crt")
+	err = ioutil.WriteFile(userSignCertPath, userSignCert.Content, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("Write admin user sign cert file failed: %s", err.Error())
+	}
+	userSignKeyPath := filepath.Join(userCertPath, userID+".sign.key")
+	err = ioutil.WriteFile(userSignKeyPath, userSignKey.PrivateKey, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("Write admin user sign key failed: %s", err.Error())
+	}
+	userTLSCertPath := filepath.Join(userCertPath, userID+".tls.crt")
+	err = ioutil.WriteFile(userTLSCertPath, userTLSCert.Content, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("Write admin user tls cert  file failed: %s", err.Error())
+	}
+	userTLSKeyPath := filepath.Join(userCertPath, userID+".tls.key")
+	err = ioutil.WriteFile(userTLSKeyPath, userTLSKey.PrivateKey, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("Write admin user tls  key failed: %s", err.Error())
 	}
 	return nil
 }
 
 //WriteUserCertFile .
-func WriteUserCertFile(orgPath string, org *models.Org, chainID string) error {
-	userCertPath := filepath.Join(orgPath, "user", "admin")
+func WriteUserCertFile(orgPath string, org *models.Org, chainID, userID string) error {
+	userCertPath := filepath.Join(orgPath, "user", "common", userID)
 	err := CreateDir(userCertPath)
 	if err != nil {
 		return err
 	}
-	userSignCert, err := models.GetCertByUserTypeChain(org.UserID, db.CUSTOMER_ADMIN, db.SIGN, chainID)
+	userSignKey, err := models.GetKeyPairByConditions(userID, org.OrgID, chainID, db.USER_USER, db.SIGN)
 	if err != nil {
-		return err
+		return fmt.Errorf("Get user sign key failed: %s", err.Error())
 	}
-	userSignKey, err := models.GetKeyPairByID(userSignCert.PrivateKeyID)
+	userSignCert, err := models.GetCertByPrivateKeyID(userSignKey.ID)
 	if err != nil {
-		return err
+		return fmt.Errorf("Get user sign cert failed: %s", err.Error())
 	}
-	userTLSCert, err := models.GetCertByUserTypeChain(org.UserID, db.CUSTOMER_ADMIN, db.TLS, chainID)
+	userTLSKey, err := models.GetKeyPairByConditions(userID, org.OrgID, chainID, db.USER_USER, db.TLS)
 	if err != nil {
-		return err
+		return fmt.Errorf("Get user tls key failed: %s", err.Error())
 	}
-	userTLSKey, err := models.GetKeyPairByID(userTLSCert.PrivateKeyID)
+	userTLSCert, err := models.GetCertByPrivateKeyID(userTLSKey.ID)
 	if err != nil {
-		return err
+		return fmt.Errorf("Get user tls cert failed: %s", err.Error())
 	}
-	userSignCertPath := filepath.Join(userCertPath, "admin.sign.crt")
+	userSignCertPath := filepath.Join(userCertPath, userID+".sign.crt")
 	err = ioutil.WriteFile(userSignCertPath, userSignCert.Content, os.ModePerm)
 	if err != nil {
-		return err
+		return fmt.Errorf("Write user sign key failed: %s", err.Error())
 	}
-	userSignKeyPath := filepath.Join(userCertPath, "admin.sign.key")
+	userSignKeyPath := filepath.Join(userCertPath, userID+".sign.key")
 	err = ioutil.WriteFile(userSignKeyPath, userSignKey.PrivateKey, os.ModePerm)
 	if err != nil {
-		return err
+		return fmt.Errorf("Write user sign cert failed: %s", err.Error())
 	}
-	userTLSCertPath := filepath.Join(userCertPath, "admin.tls.crt")
+	userTLSCertPath := filepath.Join(userCertPath, userID+".tls.crt")
 	err = ioutil.WriteFile(userTLSCertPath, userTLSCert.Content, os.ModePerm)
 	if err != nil {
-		return err
+		return fmt.Errorf("Write user tls key failed: %s", err.Error())
 	}
-	userTLSKeyPath := filepath.Join(userCertPath, "admin.tls.key")
+	userTLSKeyPath := filepath.Join(userCertPath, userID+".tls.key")
 	err = ioutil.WriteFile(userTLSKeyPath, userTLSKey.PrivateKey, os.ModePerm)
 	if err != nil {
-		return err
+		return fmt.Errorf("Write user tls cert failed: %s", err.Error())
 	}
 	return nil
 }

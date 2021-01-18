@@ -17,7 +17,7 @@ db_config:
 #是否初始化根CA
 is_init_root_ca: true
 #密钥加密类型
-private_key_type: SM2
+private_key_type: ECC_NISTP256
 #哈希类型
 hash_type: SHA256
 #签发证书的过期时间
@@ -31,7 +31,6 @@ chainmaker_cert_rpc_port: 2333
 
   # 根CA的初始化配置
 root_config:
-  private_key_pwd: wx123
   private_key_path: ./crypto-config/root/root.key
   cert_path: ./crypto-config/root
   cert_name: root.crt
@@ -39,20 +38,15 @@ root_config:
   country: CN                  
   locality: Beijing               
   province: Beijing                      
-  O: wx.chainmaker                       
-  OU: ca.root      
-  CN: ca.root.wx.chainmaker
 
 # 中间CA配置文件
 intermediaries_config:
-  private_key_pwd:
+  private_key_pwd: wx123
   private_key_path: ./crypto-config/intermediaries/intermediaries.key
   country: CN                              
   locality: Beijing                                   
-  province: Beijing                              
-  O: wx.chainmaker                                             
-  OU: ca.intermediaries                                      
-  CN: ca.intermediaries.wx.chainmaker                                   
+  province: Beijing                                                             
   cert_path: ./crypto-config/intermediaries
   cert_name: ./intermediaries.crt
   expire_year: 10
+  org_id: weixin
