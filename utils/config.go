@@ -11,7 +11,6 @@ import (
 //CaConfig 根和中间Ca配置
 type CaConfig struct {
 	PrivateKeyPath string `mapstructure:"private_key_path"`
-	CertName       string `mapstructure:"cert_name"`
 	CertPath       string `mapstructure:"cert_path"`
 	ExpireYear     int32  `mapstructure:"expire_year"`
 	Country        string `mapstructure:"country"`
@@ -88,7 +87,7 @@ func GetIntermediaries() (CaConfig, error) {
 //GetRootPrivateKey 获取根CA私钥
 func GetRootPrivateKey() (privKeyFilePath, certFilePath string) {
 	privKeyFilePath = viper.GetString("root_config.private_key_path")
-	certFilePath = viper.GetString("root_config.cert_path") + "/" + viper.GetString("root_config.cert_name")
+	certFilePath = viper.GetString("root_config.cert_path")
 	return
 }
 
@@ -120,7 +119,7 @@ func GetIssureExpirationTime() int32 {
 //GetIntermediariesPrkCert .
 func GetIntermediariesPrkCert() (privateKeyPath, certPath string) {
 	return viper.GetString("intermediaries_config.private_key_path"),
-		viper.GetString("intermediaries_config.cert_path") + "/" + viper.GetString("intermediaries_config.cert_name")
+		viper.GetString("intermediaries_config.cert_path")
 }
 
 //GetIntermCAPrivateKeyPwd 获取RootCa私钥密码

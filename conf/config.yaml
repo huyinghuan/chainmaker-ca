@@ -32,8 +32,7 @@ chainmaker_cert_rpc_port: 2333
   # 根CA的初始化配置
 root_config:
   private_key_path: ./crypto-config/root/root.key
-  cert_path: ./crypto-config/root
-  cert_name: root.crt
+  cert_path: ./crypto-config/root/root.crt
   expire_year: 100                     
   country: CN                  
   locality: Beijing               
@@ -46,7 +45,6 @@ intermediaries_config:
   country: CN                              
   locality: Beijing                                   
   province: Beijing                                                             
-  cert_path: ./crypto-config/intermediaries
-  cert_name: ./intermediaries.crt
+  cert_path: ./crypto-config/intermediaries/intermediaries.crt
   expire_year: 10
   org_id: weixin

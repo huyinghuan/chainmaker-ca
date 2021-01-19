@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path"
 	"path/filepath"
 
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
@@ -50,12 +51,13 @@ func dealSANS(sans []string) ([]string, []net.IP) {
 }
 
 //WirteCertToFile 将证书写入文件
-func WirteCertToFile(certPath, certFileName string, x509certEncode []byte) error {
-	if err := os.MkdirAll(certPath, os.ModePerm); err != nil {
-		return fmt.Errorf("mk cert dir failed, %s", err.Error())
+func WirteCertToFile(certPath string, x509certEncode []byte) error {
+	dir, file := path.Split(certPath)
+	err := CreateDir(dir)
+	if err != nil {
+		return fmt.Errorf("create dir failed,%s", err.Error())
 	}
-
-	f, err := os.Create(filepath.Join(certPath, certFileName))
+	f, err := os.Create(filepath.Join(dir, file))
 	if err != nil {
 		return fmt.Errorf("create file failed, %s", err.Error())
 	}
@@ -94,7 +96,6 @@ func Getuuid() string {
 
 //CreateDir 创建文件夹
 func CreateDir(dirPath string) error {
-	os.RemoveAll(dirPath)
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 		err := os.MkdirAll(dirPath, os.ModePerm)
 		if err != nil {

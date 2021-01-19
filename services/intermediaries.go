@@ -33,7 +33,11 @@ func CreateIntermediariesCert() {
 		logger.Error("Get key pair from db  Failed!", zap.Error(err))
 		return
 	}
-	WritePrivKeyFile(inmediaCaConfig.PrivateKeyPath, keyPair.PrivateKey)
+	err = WritePrivKeyFile(inmediaCaConfig.PrivateKeyPath, keyPair.PrivateKey)
+	if err != nil {
+		logger.Error("Write im key pair Failed!", zap.Error(err))
+		return
+	}
 	O := inmediaCaConfig.OrgID
 	OU := "ca"
 	CN := "ca." + O
@@ -87,7 +91,7 @@ func CreateIntermediariesCert() {
 		logger.Error("hex decode failed!", zap.Error(err))
 		return
 	}
-	if err := WirteCertToFile(inmediaCaConfig.CertPath, inmediaCaConfig.CertName, certContent); err != nil {
+	if err := WirteCertToFile(inmediaCaConfig.CertPath, certContent); err != nil {
 		logger.Error("Write cert file failed!", zap.Error(err))
 		return
 	}

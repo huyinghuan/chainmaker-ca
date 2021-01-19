@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 
 	"chainmaker.org/chainmaker-go/common/crypto"
 	"chainmaker.org/chainmaker-go/common/crypto/asym"
@@ -43,6 +44,11 @@ func encryptPrivKey(privKey crypto.PrivateKey, privKeyPwd []byte) ([]byte, error
 
 //WritePrivKeyFile 将密钥写入文件
 func WritePrivKeyFile(privKeyFilePath string, data []byte) error {
+	dir, _ := path.Split(privKeyFilePath)
+	err := CreateDir(dir)
+	if err != nil {
+		return fmt.Errorf("create dir failed,%s", err.Error())
+	}
 	if err := ioutil.WriteFile(privKeyFilePath, data, os.ModePerm); err != nil {
 		return fmt.Errorf("Write private key file failed: %s", err.Error())
 	}

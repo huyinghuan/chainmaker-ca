@@ -39,7 +39,11 @@ func InitRootCA() {
 		logger.Error("Get key pair from db  Failed!", zap.Error(err))
 		return
 	}
-	WritePrivKeyFile(rootCaConfig.PrivateKeyPath, keyPair.PrivateKey)
+	err = WritePrivKeyFile(rootCaConfig.PrivateKeyPath, keyPair.PrivateKey)
+	if err != nil {
+		logger.Error("Wirte root key pair  Failed!", zap.Error(err))
+		return
+	}
 	//构建证书结构体
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
 	O := DefaultRootOrg
@@ -70,7 +74,7 @@ func InitRootCA() {
 		logger.Error("hex decode failed!", zap.Error(err))
 		return
 	}
-	if err := WirteCertToFile(rootCaConfig.CertPath, rootCaConfig.CertName, certContent); err != nil {
+	if err := WirteCertToFile(rootCaConfig.CertPath, certContent); err != nil {
 		logger.Error("Write cert file failed!", zap.Error(err))
 		return
 	}
