@@ -15,7 +15,7 @@ db_config:
   dbname: chainmaker
 
 #是否初始化根CA
-is_init_root_ca: false
+is_init_root_ca: true
 #密钥加密类型
 private_key_type: ECC_NISTP256
 #哈希类型

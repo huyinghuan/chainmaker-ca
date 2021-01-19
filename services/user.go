@@ -35,7 +35,7 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 	}
 	O := keyPair.OrgID + DefaultCertOrgSuffix
 	OU := keyPair.UserID
-	CN := OU + "." + db.CertUsage2NameMap[keyPair.CertUsage] + "." + O
+	CN := OU + "." + O
 	certCSR, err := createCSR(privateKey, applyCertReq.Country, applyCertReq.Locality, applyCertReq.Province,
 		OU, O, CN)
 	if err != nil {
@@ -66,7 +66,7 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 	if keyPair.UserType == db.INTERMRDIARY_CA {
 		isCA = true
 	}
-	certModel, err := IssueCertificate(hashType, isCA, issuerPrivKey, certCSR, certBytes, applyCertReq.ExpireYear, applyCertReq.NodeSans, "")
+	certModel, err := IssueCertificate(hashType, isCA, issuerPrivKey, certCSR, certBytes, applyCertReq.ExpireYear, applyCertReq.NodeSans)
 	if err != nil {
 		logger.Error("Issue Cert failed!", zap.Error(err))
 		return nil, err
@@ -116,7 +116,7 @@ func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
 		logger.Error("Nodesans unmarshal failed!", zap.Error(err))
 		return nil, err
 	}
-	certModel, err := IssueCertificate(hashType, cert.IsCa, issuerPrivKey, certCSRBytes, certBytes, updateCertReq.ExpireYear, nodeSans, "")
+	certModel, err := IssueCertificate(hashType, cert.IsCa, issuerPrivKey, certCSRBytes, certBytes, updateCertReq.ExpireYear, nodeSans)
 	if err != nil {
 		logger.Error("Issue Cert failed!", zap.Error(err))
 		return nil, err

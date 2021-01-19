@@ -18,7 +18,7 @@ type Cert struct {
 	Province           string
 	Organization       string
 	OrganizationalUnit string
-	CommonName         string     `gorm:"unique_index:cert_commonname_index"`
+	CommonName         string
 	CsrContent         []byte     `gorm:"type:mediumblob"` //证书csr
 	CertStatus         CertStatus //证书状态
 	IsCa               bool       //是否能继续签发
@@ -40,11 +40,11 @@ type KeyPair struct {
 	PublicKey     []byte `gorm:"type:mediumblob"`
 	PrivateKeyPwd string //用户加密私钥所用密码
 	KeyType       crypto.KeyType
-	UserType      UserType
-	CertUsage     CertUsage
-	UserID        string
-	OrgID         string
-	ChainID       string
+	UserType      UserType  `gorm:"unique_index:chain_org_user_usage_type_index"`
+	CertUsage     CertUsage `gorm:"unique_index:chain_org_user_usage_type_index"`
+	UserID        string    `gorm:"unique_index:chain_org_user_usage_type_index"`
+	OrgID         string    `gorm:"unique_index:chain_org_user_usage_type_index"`
+	ChainID       string    `gorm:"unique_index:chain_org_user_usage_type_index"`
 }
 
 //TableName cert

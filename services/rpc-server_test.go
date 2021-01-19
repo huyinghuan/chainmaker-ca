@@ -27,12 +27,12 @@ func TestGetChainMakerTar(t *testing.T) {
 
 	// 调用服务
 
-	req := new(pb.GetCertTarReq)
+	var req pb.GetCertTarReq
 
 	req.Filetarget = "./crypto-config/chainmaker-cert.tar.gz"
 	req.Filesource = "./crypto-config/chainmaker"
 
-	resp, err := client.GetCertTar(context.Background(), req)
+	resp, err := client.GetCertTar(context.Background(), &req)
 
 	if err != nil {
 
@@ -60,12 +60,12 @@ func TestGenerateChainMakerCert(t *testing.T) {
 
 	// 调用服务
 
-	req := new(pb.ChainMakerCertApplyReq)
+	var req pb.ChainMakerCertApplyReq
 
 	req.ChainId = "chain1"
 	req.Filetarget = "./crypto-config/chainmaker"
 	var org pb.Org
-	org.OrgId = "wx-org5"
+	org.OrgId = "wx-org7"
 	org.UserId = "admin"
 	org.Province = "Beijing"
 	org.Country = "CN"
@@ -78,9 +78,9 @@ func TestGenerateChainMakerCert(t *testing.T) {
 	node2.Sans = []string{"192.168.1.11"}
 	org.Nodes = append(org.Nodes, &node1)
 	org.Nodes = append(org.Nodes, &node2)
-	req.Orgs = append(req.Orgs, &org)
-	resp, err := client.GenerateCert(context.Background(), req)
 	org.Users = []string{"user1", "user2"}
+	req.Orgs = append(req.Orgs, &org)
+	resp, err := client.GenerateCert(context.Background(), &req)
 	if err != nil {
 
 		log.Fatalf("resp error: %v\n", err)

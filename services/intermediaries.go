@@ -34,9 +34,9 @@ func CreateIntermediariesCert() {
 		return
 	}
 	WritePrivKeyFile(inmediaCaConfig.PrivateKeyPath, keyPair.PrivateKey)
-	O := inmediaCaConfig.OrgID + DefaultCertOrgSuffix
-	OU := "ca." + O
-	CN := "ca." + db.CertUsage2NameMap[db.SIGN] + "." + O
+	O := inmediaCaConfig.OrgID
+	OU := "ca"
+	CN := "ca." + O
 	//生成CSR 不以文件形式存在，在内存和数据库中
 	csrBytes, err := createCSR(privKey, inmediaCaConfig.Country, inmediaCaConfig.Locality, inmediaCaConfig.Province, OU,
 		O, CN)
@@ -63,7 +63,7 @@ func CreateIntermediariesCert() {
 		logger.Error("Read cert file failed!", zap.Error(err))
 		return
 	}
-	certModel, err := IssueCertificate(hashType, true, issuerPrivKey, csrBytes, certBytes, inmediaCaConfig.ExpireYear, nil, "")
+	certModel, err := IssueCertificate(hashType, true, issuerPrivKey, csrBytes, certBytes, inmediaCaConfig.ExpireYear, nil)
 	if err != nil {
 		logger.Error("Issue Cert failed!", zap.Error(err))
 		return

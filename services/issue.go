@@ -3,7 +3,6 @@ package services
 import (
 	"crypto/rand"
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
@@ -19,7 +18,7 @@ import (
 
 //IssueCertificate 签发证书
 func IssueCertificate(hashType crypto.HashType, isCA bool, issuerPrivKey crypto.PrivateKey,
-	csrBytes, certBytes []byte, expireYear int32, sans []string, uuid string) (*db.Cert, error) {
+	csrBytes, certBytes []byte, expireYear int32, sans []string) (*db.Cert, error) {
 	var certModel db.Cert
 	issuerCert, err := ParseCertificate(certBytes)
 	if err != nil {
@@ -54,16 +53,6 @@ func IssueCertificate(hashType crypto.HashType, isCA bool, issuerPrivKey crypto.
 
 	dnsName, ipAddrs := dealSANS(sans)
 
-	var extraExtensions []pkix.Extension
-	if uuid != "" {
-		extSubjectAltName := pkix.Extension{}
-		extSubjectAltName.Id = bcx509.OidNodeId
-		extSubjectAltName.Critical = false
-		extSubjectAltName.Value = []byte(uuid)
-
-		extraExtensions = append(extraExtensions, extSubjectAltName)
-	}
-
 	notBefore := time.Now().Add(-10 * time.Minute).UTC()
 	template := &x509.Certificate{
 		Signature:             csr.Signature,
@@ -80,11 +69,10 @@ func IssueCertificate(hashType crypto.HashType, isCA bool, issuerPrivKey crypto.
 			x509.KeyUsageKeyEncipherment |
 			x509.KeyUsageCertSign |
 			x509.KeyUsageCRLSign,
-		ExtKeyUsage:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
-		IPAddresses:     ipAddrs,
-		DNSNames:        dnsName,
-		ExtraExtensions: extraExtensions,
-		Subject:         csr.Subject,
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
+		IPAddresses: ipAddrs,
+		DNSNames:    dnsName,
+		Subject:     csr.Subject,
 	}
 
 	if issuerCert.SubjectKeyId != nil {

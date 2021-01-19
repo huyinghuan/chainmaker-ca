@@ -48,9 +48,9 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) (stri
 			return filepath, err
 		}
 		//生成中间证书的CSR
-		O := org.OrgID + ".chainmaker.org"
-		OU := "ca." + org.OrgID
-		CN := "ca." + db.CertUsage2NameMap[user.CertUsage] + "." + O
+		O := org.OrgID
+		OU := "ca"
+		CN := "ca." + O
 		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
 			O, CN)
 		if err != nil {
@@ -79,7 +79,7 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) (stri
 		}
 
 		//签发中间CA证书
-		certModel, err := IssueCertificate(hashType, true, issuerPrivKey, csrBytes, certBytes, defaultExpireYear, nil, "")
+		certModel, err := IssueCertificate(hashType, true, issuerPrivKey, csrBytes, certBytes, defaultExpireYear, nil)
 		if err != nil {
 			logger.Error("Issue Cert failed!", zap.Error(err))
 			return filepath, err
@@ -149,16 +149,16 @@ func IssueNodeCert(chainID string, org *models.Org, issurePrivateKey crypto.Priv
 			return err
 		}
 		//生成CSR
-		O := org.OrgID + DefaultCertOrgSuffix
+		O := org.OrgID
 		OU := node.NodeID
-		CN := node.NodeID + "." + db.CertUsage2NameMap[certUsage] + "." + O
+		CN := node.NodeID + "." + O
 		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
 			O, CN)
 		if err != nil {
 			return err
 		}
 		hashType := crypto.HashAlgoMap[utils.GetHashType()]
-		certModel, err := IssueCertificate(hashType, false, issurePrivateKey, csrBytes, certBytes, utils.GetIssureExpirationTime(), node.Sans, "")
+		certModel, err := IssueCertificate(hashType, false, issurePrivateKey, csrBytes, certBytes, utils.GetIssureExpirationTime(), node.Sans)
 		if err != nil {
 			return err
 		}
@@ -185,16 +185,16 @@ func IssueAdminUserCert(chainID string, org *models.Org, caPrivKey crypto.Privat
 	if err != nil {
 		return err
 	}
-	O := org.OrgID + DefaultCertOrgSuffix
+	O := org.OrgID
 	OU := org.AdminUserID
-	CN := OU + "." + db.CertUsage2NameMap[usage] + "." + O
+	CN := OU + "." + O
 	csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
 		O, CN)
 	if err != nil {
 		return err
 	}
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
-	adminCert, err := IssueCertificate(hashType, false, caPrivKey, csrBytes, caCertBytes, utils.GetIssureExpirationTime(), nil, "")
+	adminCert, err := IssueCertificate(hashType, false, caPrivKey, csrBytes, caCertBytes, utils.GetIssureExpirationTime(), nil)
 	adminCert.CertStatus = db.EFFECTIVE
 	adminCert.PrivateKeyID = keyID
 	//证书入库
@@ -220,16 +220,16 @@ func IssueUserCert(chainID string, org *models.Org, caPrivKey crypto.PrivateKey,
 		if err != nil {
 			return err
 		}
-		O := org.OrgID + DefaultCertOrgSuffix
+		O := org.OrgID
 		OU := userid
-		CN := OU + "." + db.CertUsage2NameMap[usage] + "." + O
+		CN := OU + "." + O
 		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
 			O, CN)
 		if err != nil {
 			return err
 		}
 		hashType := crypto.HashAlgoMap[utils.GetHashType()]
-		userCert, err := IssueCertificate(hashType, false, caPrivKey, csrBytes, caCertBytes, utils.GetIssureExpirationTime(), nil, "")
+		userCert, err := IssueCertificate(hashType, false, caPrivKey, csrBytes, caCertBytes, utils.GetIssureExpirationTime(), nil)
 		userCert.CertStatus = db.EFFECTIVE
 		userCert.PrivateKeyID = keyID
 		//证书入库
