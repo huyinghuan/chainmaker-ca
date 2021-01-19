@@ -53,6 +53,7 @@ func pbtransform(req *pb.ChainMakerCertApplyReq) *models.ChainMakerCertApplyReq 
 		for _, node := range org.Nodes {
 			var modelNode models.Node
 			modelNode.NodeID = node.NodeId
+			modelNode.NodeType = node.NodeType
 			modelNode.Sans = node.Sans
 			modelNodes = append(modelNodes, modelNode)
 		}

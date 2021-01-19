@@ -25,7 +25,8 @@ message Org {
 }
 message Node {
 string node_id=1;
-repeated string sans=2;
+string node_type=2;
+repeated string sans=3;
 }
 message TarCertResp {
 bytes certfile = 1;

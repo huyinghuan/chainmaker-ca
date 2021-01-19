@@ -56,8 +56,9 @@ type Org struct {
 
 //Node 节点
 type Node struct {
-	NodeID string   `json:"nodeID"`
-	Sans   []string `json:"sans"`
+	NodeID   string   `json:"nodeID"`
+	NodeType string   `json:"nodeType"`
+	Sans     []string `json:"sans"`
 }
 
 //GetTarCertFileReq .

@@ -33,9 +33,9 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 		logger.Error("Private from der failed!", zap.Error(err))
 		return nil, err
 	}
-	O := keyPair.OrgID + DefaultCertOrgSuffix
-	OU := keyPair.UserID
-	CN := OU + "." + O
+	O := keyPair.OrgID
+	OU := db.UserType2NameMap[keyPair.UserType]
+	CN := keyPair.UserID + "." + O
 	certCSR, err := createCSR(privateKey, applyCertReq.Country, applyCertReq.Locality, applyCertReq.Province,
 		OU, O, CN)
 	if err != nil {

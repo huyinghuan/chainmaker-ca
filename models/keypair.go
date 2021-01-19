@@ -20,7 +20,7 @@ func GetKeyPairByID(id string) (*db.KeyPair, error) {
 }
 
 //GetKeyPairByConditions .
-func GetKeyPairByConditions(userID, orgID, chainID string, userType db.UserType, usage db.CertUsage) (*db.KeyPair, error) {
+func GetKeyPairByConditions(userID, orgID, chainID string, usage db.CertUsage, userType ...db.UserType) (*db.KeyPair, error) {
 	var keyPair db.KeyPair
 	gorm := db.DB.Debug()
 	if userID != "" {
@@ -32,8 +32,8 @@ func GetKeyPairByConditions(userID, orgID, chainID string, userType db.UserType,
 	if chainID != "" {
 		gorm = gorm.Where("chain_id=?", chainID)
 	}
-	if userType != -1 {
-		gorm = gorm.Where("user_type=?", userType)
+	if userType != nil {
+		gorm = gorm.Where("user_type IN(?)", userType)
 	}
 	if usage != -1 {
 		gorm = gorm.Where("cert_usage=?", usage)

@@ -47,7 +47,7 @@ func InitRootCA() {
 	//构建证书结构体
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
 	O := DefaultRootOrg
-	OU := "ca.root"
+	OU := "root"
 	CN := OU + "." + O
 	certModel, err := createCACert(privKey, hashType,
 		rootCaConfig.Country, rootCaConfig.Locality, rootCaConfig.Province, OU,

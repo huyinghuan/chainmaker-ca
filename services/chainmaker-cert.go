@@ -142,7 +142,13 @@ func IssueNodeCert(chainID string, org *models.Org, issurePrivateKey crypto.Priv
 		user.ChainID = chainID
 		user.OrgID = org.OrgID
 		user.UserID = node.NodeID
-		user.UserType = db.NODE
+		if node.NodeType == "common" {
+			user.UserType = db.NODE_COMMON
+		} else if node.NodeType == "consensus" {
+			user.UserType = db.NODE_CONSENSUS
+		} else {
+			return fmt.Errorf("Node type is invalid")
+		}
 		//生成公私钥
 		privateKey, keyID, err := CreateKeyPair(user, "")
 		if err != nil {
@@ -150,7 +156,7 @@ func IssueNodeCert(chainID string, org *models.Org, issurePrivateKey crypto.Priv
 		}
 		//生成CSR
 		O := org.OrgID
-		OU := node.NodeID
+		OU := db.UserType2NameMap[user.UserType]
 		CN := node.NodeID + "." + O
 		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
 			O, CN)
@@ -186,8 +192,8 @@ func IssueAdminUserCert(chainID string, org *models.Org, caPrivKey crypto.Privat
 		return err
 	}
 	O := org.OrgID
-	OU := org.AdminUserID
-	CN := OU + "." + O
+	OU := db.UserType2NameMap[user.UserType]
+	CN := org.AdminUserID + "." + O
 	csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
 		O, CN)
 	if err != nil {
@@ -221,8 +227,8 @@ func IssueUserCert(chainID string, org *models.Org, caPrivKey crypto.PrivateKey,
 			return err
 		}
 		O := org.OrgID
-		OU := userid
-		CN := OU + "." + O
+		OU := db.UserType2NameMap[user.UserType]
+		CN := user.UserID + "." + O
 		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
 			O, CN)
 		if err != nil {
@@ -264,7 +270,6 @@ func WriteChainMakerCertFile(req *models.ChainMakerCertApplyReq) (certBasePath s
 			return
 		}
 		for _, userID := range org.Users {
-			fmt.Printf("user_id:%s", userID)
 			err = WriteUserCertFile(orgPath, &org, req.ChainID, userID)
 			if err != nil {
 				return
@@ -306,7 +311,7 @@ func WriteNodeCertFile(orgPath string, org *models.Org, chainID string) error {
 		if err != nil {
 			return fmt.Errorf("Create node dir failed: %s", err.Error())
 		}
-		nodeSignKey, err := models.GetKeyPairByConditions(node.NodeID, org.OrgID, chainID, db.NODE, db.SIGN)
+		nodeSignKey, err := models.GetKeyPairByConditions(node.NodeID, org.OrgID, chainID, db.SIGN, db.NODE_COMMON, db.NODE_CONSENSUS)
 		if err != nil {
 			return fmt.Errorf("Get node key by conditions failed: %s", err.Error())
 		}
@@ -314,7 +319,7 @@ func WriteNodeCertFile(orgPath string, org *models.Org, chainID string) error {
 		if err != nil {
 			return fmt.Errorf("Get node cert failed: %s", err.Error())
 		}
-		nodeTLSKey, err := models.GetKeyPairByConditions(node.NodeID, org.OrgID, chainID, db.NODE, db.TLS)
+		nodeTLSKey, err := models.GetKeyPairByConditions(node.NodeID, org.OrgID, chainID, db.TLS, db.NODE_COMMON, db.NODE_CONSENSUS)
 		if err != nil {
 			return fmt.Errorf("Get node tls key by conditions failed: %s", err.Error())
 		}
@@ -348,7 +353,7 @@ func WriteNodeCertFile(orgPath string, org *models.Org, chainID string) error {
 
 //WriteCaCertFile .
 func WriteCaCertFile(orgPath string, org *models.Org, chainID string) error {
-	caKey, err := models.GetKeyPairByConditions("", org.OrgID, "", db.INTERMRDIARY_CA, -1)
+	caKey, err := models.GetKeyPairByConditions("", org.OrgID, "", -1, db.INTERMRDIARY_CA)
 	if err != nil {
 		return fmt.Errorf("Get ca key by conditions failed: %s", err.Error())
 	}
@@ -377,7 +382,7 @@ func WriteAdminUserCertFile(orgPath string, org *models.Org, chainID, userID str
 	if err != nil {
 		return fmt.Errorf("Create admin user dir failed: %s", err.Error())
 	}
-	userSignKey, err := models.GetKeyPairByConditions(userID, org.OrgID, chainID, db.USER_ADMIN, db.SIGN)
+	userSignKey, err := models.GetKeyPairByConditions(userID, org.OrgID, chainID, db.SIGN, db.USER_ADMIN)
 	if err != nil {
 		return fmt.Errorf("Get admin sign key  failed: %s", err.Error())
 	}
@@ -385,7 +390,7 @@ func WriteAdminUserCertFile(orgPath string, org *models.Org, chainID, userID str
 	if err != nil {
 		return fmt.Errorf("Get admin sign cert  failed: %s", err.Error())
 	}
-	userTLSKey, err := models.GetKeyPairByConditions(userID, org.OrgID, chainID, db.USER_ADMIN, db.TLS)
+	userTLSKey, err := models.GetKeyPairByConditions(userID, org.OrgID, chainID, db.TLS, db.USER_ADMIN)
 	if err != nil {
 		return fmt.Errorf("Get admin tls key  failed: %s", err.Error())
 	}
@@ -423,7 +428,7 @@ func WriteUserCertFile(orgPath string, org *models.Org, chainID, userID string) 
 	if err != nil {
 		return err
 	}
-	userSignKey, err := models.GetKeyPairByConditions(userID, org.OrgID, chainID, db.USER_USER, db.SIGN)
+	userSignKey, err := models.GetKeyPairByConditions(userID, org.OrgID, chainID, db.SIGN, db.USER_USER)
 	if err != nil {
 		return fmt.Errorf("Get user sign key failed: %s", err.Error())
 	}
@@ -431,7 +436,7 @@ func WriteUserCertFile(orgPath string, org *models.Org, chainID, userID string) 
 	if err != nil {
 		return fmt.Errorf("Get user sign cert failed: %s", err.Error())
 	}
-	userTLSKey, err := models.GetKeyPairByConditions(userID, org.OrgID, chainID, db.USER_USER, db.TLS)
+	userTLSKey, err := models.GetKeyPairByConditions(userID, org.OrgID, chainID, db.TLS, db.USER_USER)
 	if err != nil {
 		return fmt.Errorf("Get user tls key failed: %s", err.Error())
 	}

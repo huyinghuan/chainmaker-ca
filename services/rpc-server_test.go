@@ -72,9 +72,11 @@ func TestGenerateChainMakerCert(t *testing.T) {
 	org.Locality = "Beijing"
 	var node1 pb.Node
 	node1.NodeId = "common1"
+	node1.NodeType = "common"
 	node1.Sans = []string{"192.168.1.10"}
 	var node2 pb.Node
 	node2.NodeId = "consensus1"
+	node2.NodeType = "consensus"
 	node2.Sans = []string{"192.168.1.11"}
 	org.Nodes = append(org.Nodes, &node1)
 	org.Nodes = append(org.Nodes, &node2)

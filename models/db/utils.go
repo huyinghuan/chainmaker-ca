@@ -14,7 +14,8 @@ const (
 	INTERMRDIARY_CA
 	USER_ADMIN
 	USER_USER
-	NODE
+	NODE_CONSENSUS
+	NODE_COMMON
 )
 
 const (
@@ -27,22 +28,24 @@ const (
 	TLS
 )
 
-//CertType2NameMap CertType to string name
-var CertType2NameMap = map[UserType]string{
-	ROOT_CA:         "ROOT_CA",
-	INTERMRDIARY_CA: "INTERMRDIARY_CA",
-	USER_ADMIN:      "CUSTOMER_ADMIN",
-	USER_USER:       "CUSTOMER_USER",
-	NODE:            "NODE",
+//UserType2NameMap CertType to string name
+var UserType2NameMap = map[UserType]string{
+	ROOT_CA:         "root",
+	INTERMRDIARY_CA: "ca",
+	USER_ADMIN:      "admin",
+	USER_USER:       "client",
+	NODE_CONSENSUS:  "consensus",
+	NODE_COMMON:     "common",
 }
 
-//Name2CertTypeMap string name to cert type
-var Name2CertTypeMap = map[string]UserType{
-	"ROOT_CA":         ROOT_CA,
-	"INTERMRDIARY_CA": INTERMRDIARY_CA,
-	"CUSTOMER_ADMIN":  USER_ADMIN,
-	"CUSTOMER_USER":   USER_USER,
-	"NODE":            NODE,
+//Name2UserTypeMap string name to cert type
+var Name2UserTypeMap = map[string]UserType{
+	"root":      ROOT_CA,
+	"ca":        INTERMRDIARY_CA,
+	"admin":     USER_ADMIN,
+	"client":    USER_USER,
+	"consensus": NODE_CONSENSUS,
+	"common":    NODE_COMMON,
 }
 
 //CertStatus2NameMap CertStatus to string name
