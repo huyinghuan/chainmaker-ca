@@ -26,6 +26,8 @@ func (c *ChainMakerCertService) GenerateCert(ctx context.Context, req *pb.ChainM
 	resp.Filepath = certpath
 	return &resp, nil
 }
+
+//GetCertTar .
 func (c *ChainMakerCertService) GetCertTar(ctx context.Context, req *pb.GetCertTarReq) (*pb.TarCertResp, error) {
 	var resp pb.TarCertResp
 	certFileBytes, err := GetChainMakerCertTar(req.Filetarget, req.Filesource)

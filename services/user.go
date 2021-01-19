@@ -111,7 +111,7 @@ func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
 		return nil, err
 	}
 	var nodeSans []string
-	err = json.Unmarshal([]byte(cert.CertSans), nodeSans)
+	err = json.Unmarshal([]byte(cert.CertSans), &nodeSans)
 	if err != nil {
 		logger.Error("Nodesans unmarshal failed!", zap.Error(err))
 		return nil, err
