@@ -30,7 +30,7 @@ func TestGetChainMakerTar(t *testing.T) {
 	req := new(pb.GetCertTarReq)
 
 	req.Filetarget = "./crypto-config/chainmaker-cert.tar.gz"
-	req.Filesource = "./crypto-config/test"
+	req.Filesource = "./crypto-config/chainmaker"
 
 	resp, err := client.GetCertTar(context.Background(), req)
 
@@ -63,9 +63,9 @@ func TestGenerateChainMakerCert(t *testing.T) {
 	req := new(pb.ChainMakerCertApplyReq)
 
 	req.ChainId = "chain1"
-	req.Filetarget = "./crypto-config/test"
+	req.Filetarget = "./crypto-config/chainmaker"
 	var org pb.Org
-	org.OrgId = "wx-org1"
+	org.OrgId = "wx-org5"
 	org.UserId = "admin"
 	org.Province = "Beijing"
 	org.Country = "CN"
@@ -80,7 +80,7 @@ func TestGenerateChainMakerCert(t *testing.T) {
 	org.Nodes = append(org.Nodes, &node2)
 	req.Orgs = append(req.Orgs, &org)
 	resp, err := client.GenerateCert(context.Background(), req)
-	org.Users = []string{"commonuser1", "commonuser2"}
+	org.Users = []string{"user1", "user2"}
 	if err != nil {
 
 		log.Fatalf("resp error: %v\n", err)
