@@ -6,6 +6,7 @@ import (
 
 	pb "chainmaker.org/wx-CRA-backend/cmservice"
 	"chainmaker.org/wx-CRA-backend/models"
+	"chainmaker.org/wx-CRA-backend/models/db"
 	"chainmaker.org/wx-CRA-backend/utils"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -46,20 +47,26 @@ func pbtransform(req *pb.ChainMakerCertApplyReq) *models.ChainMakerCertApplyReq 
 	for _, org := range req.Orgs {
 		var modelOrg models.Org
 		var modelNodes []models.Node
-		modelOrg.AdminUserID = org.UserId
+		var modelUsers []models.User
 		modelOrg.Country = org.Country
 		modelOrg.Locality = org.Locality
 		modelOrg.Province = org.Province
 		modelOrg.OrgID = org.OrgId
-		modelOrg.Users = org.Users
 		for _, node := range org.Nodes {
 			var modelNode models.Node
 			modelNode.NodeID = node.NodeId
-			modelNode.NodeType = node.NodeType
+			modelNode.NodeType = db.Name2UserTypeMap[node.Type.String()]
 			modelNode.Sans = node.Sans
 			modelNodes = append(modelNodes, modelNode)
 		}
+		for _, user := range org.Users {
+			var modelUser models.User
+			modelUser.UserName = user.UserName
+			modelUser.UserType = db.Name2UserTypeMap[user.Type.String()]
+			modelUsers = append(modelUsers, modelUser)
+		}
 		modelOrg.Nodes = modelNodes
+		modelOrg.Users = modelUsers
 		modelOrgs = append(modelOrgs, modelOrg)
 	}
 	modelReq.Orgs = modelOrgs

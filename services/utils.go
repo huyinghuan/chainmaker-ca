@@ -109,10 +109,6 @@ func CreateDir(dirPath string) error {
 
 //CheckOrgInfo 校验组织信息
 func CheckOrgInfo(org *models.Org) error {
-	if org.AdminUserID == "" {
-		err := fmt.Errorf("User id can't be empty")
-		return err
-	}
 	if org.OrgID == "" {
 		err := fmt.Errorf("OrgID  can't be empty")
 		return err

@@ -45,20 +45,25 @@ type ChainMakerCertApplyReq struct {
 
 //Org 组织
 type Org struct {
-	AdminUserID string   `json:"adminUserID"`
-	OrgID       string   `json:"orgID"`
-	Country     string   `json:"country"`
-	Locality    string   `json:"locality"`
-	Province    string   `json:"province"`
-	Nodes       []Node   `json:"nodes"`
-	Users       []string `json:"users"`
+	OrgID    string `json:"orgID"`
+	Country  string `json:"country"`
+	Locality string `json:"locality"`
+	Province string `json:"province"`
+	Nodes    []Node `json:"nodes"`
+	Users    []User `json:"users"`
 }
 
 //Node 节点
 type Node struct {
-	NodeID   string   `json:"nodeID"`
-	NodeType string   `json:"nodeType"`
-	Sans     []string `json:"sans"`
+	NodeID   string      `json:"nodeID"`
+	NodeType db.UserType `json:"nodeType"`
+	Sans     []string    `json:"sans"`
+}
+
+//User .
+type User struct {
+	UserName string      `json:"userName"`
+	UserType db.UserType `json:"userType"`
 }
 
 //GetTarCertFileReq .

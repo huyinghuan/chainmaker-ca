@@ -65,23 +65,29 @@ func TestGenerateChainMakerCert(t *testing.T) {
 	req.ChainId = "chain1"
 	req.Filetarget = "./crypto-config/chainmaker"
 	var org pb.Org
-	org.OrgId = "wx-org7"
-	org.UserId = "admin"
+	org.OrgId = "wx-org5"
 	org.Province = "Beijing"
 	org.Country = "CN"
 	org.Locality = "Beijing"
 	var node1 pb.Node
 	node1.NodeId = "common1"
-	node1.NodeType = "common"
-	node1.Sans = []string{"192.168.1.10"}
+	node1.Type = pb.NodeType_common
+	node1.Sans = []string{"chainmaker.org"}
 	var node2 pb.Node
 	node2.NodeId = "consensus1"
-	node2.NodeType = "consensus"
-	node2.Sans = []string{"192.168.1.11"}
+	node2.Type = pb.NodeType_consensus
+	node2.Sans = []string{"chainmaker.org"}
 	org.Nodes = append(org.Nodes, &node1)
 	org.Nodes = append(org.Nodes, &node2)
-	org.Users = []string{"user1", "user2"}
+	var admin pb.User
+	var user pb.User
+	admin.UserName = "admin1"
+	admin.Type = pb.UserType_admin
+	org.Users = append(org.Users, &admin)
 	req.Orgs = append(req.Orgs, &org)
+	user.UserName = "user1"
+	user.Type = pb.UserType_client
+	org.Users = append(org.Users, &user)
 	resp, err := client.GenerateCert(context.Background(), &req)
 	if err != nil {
 
