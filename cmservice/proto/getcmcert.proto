@@ -27,6 +27,7 @@ message GetCertReq {
 }
 message CertContent {
   bytes cert_bytes =1;
+  bytes key_bytes= 2;
 }
 message Org {
   string country = 1;

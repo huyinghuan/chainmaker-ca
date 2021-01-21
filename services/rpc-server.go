@@ -43,7 +43,7 @@ func (c *ChainMakerCertService) GetCertTar(ctx context.Context, req *pb.GetCertT
 //GetCertByConditions .
 func (c *ChainMakerCertService) GetCertByConditions(ctx context.Context, req *pb.GetCertReq) (*pb.CertContent, error) {
 	var (
-		certContent *pb.CertContent
+		certContent pb.CertContent
 		err         error
 		usage       db.CertUsage
 		userType    db.UserType
@@ -58,12 +58,12 @@ func (c *ChainMakerCertService) GetCertByConditions(ctx context.Context, req *pb
 	} else {
 		userType = db.Name2UserTypeMap[req.Type.String()]
 	}
-	certContent.CertBytes, err = GetCert(req.UserId, req.OrgId, req.ChainId, usage, userType)
+	certContent.CertBytes, certContent.KeyBytes, err = GetCert(req.UserId, req.OrgId, req.ChainId, usage, userType)
 	if err != nil {
 		logger.Error("Get cert content failed!", zap.Error(err))
 		return nil, err
 	}
-	return certContent, nil
+	return &certContent, nil
 }
 func pbtransform(req *pb.ChainMakerCertApplyReq) *models.ChainMakerCertApplyReq {
 	var modelReq models.ChainMakerCertApplyReq

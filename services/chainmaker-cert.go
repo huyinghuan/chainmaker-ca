@@ -277,7 +277,7 @@ func WriteCaCertFile(orgPath string, org *models.Org, chainID string) error {
 func WriteUserCertFile(orgPath string, org *models.Org, chainID string) error {
 	for _, v := range org.Users {
 
-		userCertPath := filepath.Join(orgPath, "user", db.UserType2NameMap[v.UserType], v.UserName)
+		userCertPath := filepath.Join(orgPath, "user", v.UserName)
 		err := CreateDir(userCertPath)
 		if err != nil {
 			return err

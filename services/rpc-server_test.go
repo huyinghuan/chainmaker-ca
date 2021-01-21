@@ -11,7 +11,7 @@ import (
 )
 
 func TestGetChainMakerTar(t *testing.T) {
-	conn, err := grpc.Dial("192.168.1.121:2333", grpc.WithInsecure())
+	conn, err := grpc.Dial(":2333", grpc.WithInsecure())
 
 	if err != nil {
 
@@ -44,7 +44,7 @@ func TestGetChainMakerTar(t *testing.T) {
 
 }
 func TestGenerateChainMakerCert(t *testing.T) {
-	conn, err := grpc.Dial("192.168.1.121:2333", grpc.WithInsecure())
+	conn, err := grpc.Dial(":2333", grpc.WithInsecure())
 
 	if err != nil {
 
@@ -97,4 +97,24 @@ func TestGenerateChainMakerCert(t *testing.T) {
 
 	fmt.Printf("Recevied: %v\n", resp)
 
+}
+func TestGetCert(t *testing.T) {
+	conn, err := grpc.Dial(":2333", grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("dial error: %v\n", err)
+	}
+	defer conn.Close()
+	//实例化 UserInfoService 微服务的客户端
+	client := pb.NewChainMakerCertApplyClient(conn)
+	var getCertReq pb.GetCertReq
+	getCertReq.ChainId = "chain1"
+	getCertReq.OrgId = "wx-org1"
+	getCertReq.Type = pb.UserType_admin
+	getCertReq.Usage = pb.CertUsage_sign
+	getCertReq.UserId = "admin"
+	resp, err := client.GetCertByConditions(context.Background(), &getCertReq)
+	if err != nil {
+		fmt.Printf("err: %v", err.Error())
+	}
+	fmt.Println(resp)
 }

@@ -156,5 +156,5 @@ func IssueOrgCACert(orgID, country, locality, province string) error {
 	if err != nil {
 		return err
 	}
-	return fmt.Errorf("Org CA is  exist")
+	return nil
 }
