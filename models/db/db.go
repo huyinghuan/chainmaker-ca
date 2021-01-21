@@ -14,6 +14,9 @@ var log *zap.Logger
 //DB 数据库db
 var DB *gorm.DB
 
+//GormErrRNF .
+var GormErrRNF = gorm.ErrRecordNotFound
+
 // GormLogger struct
 type GormLogger struct{}
 

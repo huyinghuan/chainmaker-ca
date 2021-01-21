@@ -4,6 +4,7 @@ option go_package = ".;cmservice";
 service ChainMakerCertApply {
 rpc GenerateCert(ChainMakerCertApplyReq)returns(GenerateResp){}
 rpc GetCertTar(GetCertTarReq) returns (TarCertResp){}
+rpc GetCertByConditions(GetCertReq) returns (CertContent){}
 }
 message ChainMakerCertApplyReq {
   string chain_id = 1;
@@ -13,6 +14,19 @@ message ChainMakerCertApplyReq {
 message GetCertTarReq {
   string filetarget = 1;
   string filesource = 2;
+}
+
+//无条件 string 传""
+// enum 传 -1
+message GetCertReq {
+  string user_id =1; //user_name 或者 node_id
+  string org_id =2;
+  string chain_id =3;
+  CertUsage usage = 4;
+  UserType type = 5;
+}
+message CertContent {
+  bytes cert_bytes =1;
 }
 message Org {
   string country = 1;
@@ -24,7 +38,7 @@ message Org {
 }
 message Node {
 string node_id=1;
-NodeType type=2;
+UserType type=2;
 repeated string sans=3;
 }
 message User {
@@ -32,14 +46,17 @@ message User {
   UserType type=2;
 }
 enum UserType{
-  admin=0;
-  client=1;
+  root = 0;
+  ca=1;
+  admin=2;
+  client=3;
+  consensus=4;
+  common=5;
 }
-enum NodeType {
-  consensus=0;
-  common=1;
+enum CertUsage {
+  sign=0;
+  tls=1;
 }
-
 message TarCertResp {
 bytes certfile = 1;
 }

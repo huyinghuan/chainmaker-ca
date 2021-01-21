@@ -9,8 +9,11 @@ import (
 	"path"
 	"path/filepath"
 
+	"chainmaker.org/chainmaker-go/common/crypto"
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
 	"chainmaker.org/wx-CRA-backend/models"
+	"chainmaker.org/wx-CRA-backend/models/db"
+	"chainmaker.org/wx-CRA-backend/utils"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -126,4 +129,26 @@ func CheckOrgInfo(org *models.Org) error {
 		return err
 	}
 	return nil
+}
+
+//GetCertByConditions .
+func GetCertByConditions(userID, orgID, chainID string, usage db.CertUsage, userType ...db.UserType) (*db.Cert, crypto.PrivateKey, error) {
+	keyPair, err := models.GetKeyPairByConditions(userID, orgID, chainID, usage, userType...)
+	if err != nil {
+		return nil, nil, err
+	}
+	if keyPair.ID == "" {
+		return nil, nil, fmt.Errorf("Org CA is not exist")
+	}
+	cert, err := models.GetCertByPrivateKeyID(keyPair.ID)
+	if err != nil {
+		return nil, nil, err
+	}
+	//私钥解密
+	hashType := crypto.HashAlgoMap[utils.GetHashType()]
+	issuerPrivKey, err := decryptPrivKey(keyPair.PrivateKey, keyPair.PrivateKeyPwd, hashType)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cert, issuerPrivKey, nil
 }

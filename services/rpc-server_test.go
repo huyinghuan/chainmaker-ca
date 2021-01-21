@@ -11,7 +11,7 @@ import (
 )
 
 func TestGetChainMakerTar(t *testing.T) {
-	conn, err := grpc.Dial(":2333", grpc.WithInsecure())
+	conn, err := grpc.Dial("192.168.1.121:2333", grpc.WithInsecure())
 
 	if err != nil {
 
@@ -44,7 +44,7 @@ func TestGetChainMakerTar(t *testing.T) {
 
 }
 func TestGenerateChainMakerCert(t *testing.T) {
-	conn, err := grpc.Dial(":2333", grpc.WithInsecure())
+	conn, err := grpc.Dial("192.168.1.121:2333", grpc.WithInsecure())
 
 	if err != nil {
 
@@ -71,11 +71,11 @@ func TestGenerateChainMakerCert(t *testing.T) {
 	org.Locality = "Beijing"
 	var node1 pb.Node
 	node1.NodeId = "common1"
-	node1.Type = pb.NodeType_common
+	node1.Type = pb.UserType_common
 	node1.Sans = []string{"chainmaker.org"}
 	var node2 pb.Node
 	node2.NodeId = "consensus1"
-	node2.Type = pb.NodeType_consensus
+	node2.Type = pb.UserType_consensus
 	node2.Sans = []string{"chainmaker.org"}
 	org.Nodes = append(org.Nodes, &node1)
 	org.Nodes = append(org.Nodes, &node2)

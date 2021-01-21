@@ -71,3 +71,12 @@ type GetTarCertFileReq struct {
 	Filetarget string `json:"filetarget"`
 	Filesource string `json:"filesource"`
 }
+
+//GetCertByConditionsReq .
+type GetCertByConditionsReq struct {
+	UserID    string       `json:"userID"` //nodeID/userName
+	OrgID     string       `json:"orgID"`
+	ChainID   string       `json:"chainID"`
+	CertUsage db.CertUsage `json:"certUsage"`
+	Type      db.UserType  `json:"type"`
+}

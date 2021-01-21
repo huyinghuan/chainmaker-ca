@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/hex"
+	"fmt"
 	"io/ioutil"
 
 	"chainmaker.org/chainmaker-go/common/crypto"
@@ -95,4 +96,65 @@ func CreateIntermediariesCert() {
 		logger.Error("Write cert file failed!", zap.Error(err))
 		return
 	}
+}
+
+//IssueOrgCACert .
+func IssueOrgCACert(orgID, country, locality, province string) error {
+	//判断OrgCA存不存在
+	_, err := models.GetKeyPairByConditions("", orgID, "", -1, db.INTERMRDIARY_CA)
+	if err == db.GormErrRNF {
+		var user db.KeyPairUser
+		user.CertUsage = db.SIGN
+		user.UserType = db.INTERMRDIARY_CA
+		user.OrgID = orgID
+		//生成公私钥
+		privKey, keyID, err := CreateKeyPair(user, "")
+		if err != nil {
+			return fmt.Errorf("Create key pair failed: %v", err.Error())
+		}
+		O := orgID
+		OU := "ca"
+		CN := "ca." + O
+		//生成CSR 不以文件形式存在，在内存和数据库中
+		csrBytes, err := createCSR(privKey, country, locality, province, OU, O, CN)
+		if err != nil {
+			return fmt.Errorf("Create CSR failed: %v", err.Error())
+		}
+		//读取签发者私钥（文件或者web端形式）
+		hashType := crypto.HashAlgoMap[utils.GetHashType()]
+		issuerPrivKeyFilePath, certFilePath := utils.GetRootPrivateKey()
+		privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
+		if err != nil {
+			return fmt.Errorf("Read private key file failed: %v", err.Error())
+		}
+		//私钥解密
+		issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetRootCaPrivateKeyPwd(), hashType)
+		if err != nil {
+			return fmt.Errorf("Decrypt private key failed: %v", err.Error())
+		}
+		//读取签发者证书
+		certBytes, err := ioutil.ReadFile(certFilePath)
+		if err != nil {
+			return fmt.Errorf("Read cert file failed: %v", err.Error())
+		}
+		certModel, err := IssueCertificate(hashType, true, issuerPrivKey, csrBytes, certBytes, defaultExpireYear, nil)
+		if err != nil {
+			return fmt.Errorf("Issue Cert failed: %v", err.Error())
+		}
+		if err != nil {
+			return fmt.Errorf("Get customer id by name failed: %v", err.Error())
+		}
+		certModel.CertStatus = db.EFFECTIVE
+		certModel.PrivateKeyID = keyID
+		//证书入库
+		err = models.InsertCert(certModel)
+		if err != nil {
+			return fmt.Errorf("Insert Cert to db failed: %v", err.Error())
+		}
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	return fmt.Errorf("Org CA is  exist")
 }

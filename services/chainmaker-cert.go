@@ -22,94 +22,35 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) (stri
 	//首先每个组织是root签发的一个中间CA
 	//循环签发出中间CA
 	var filepath string
-	if cmCertApplyReq.ChainID == "" {
-		err := fmt.Errorf("chainId can't be empty")
-		logger.Error("Generate chainmaker cert failed!", zap.Error(err))
-		return filepath, err
-	}
-	if cmCertApplyReq.Orgs == nil {
-		err := fmt.Errorf("orgs can't be empty")
-		logger.Error("Generate chainmaker cert failed!", zap.Error(err))
-		return filepath, err
-	}
 	for _, org := range cmCertApplyReq.Orgs {
-		if err := CheckOrgInfo(&org); err != nil {
-			logger.Error("orginfo is incomplete", zap.Error(err))
+		err := CheckOrgInfo(&org)
+		if err != nil {
+			logger.Error("Org info can't be empty")
 			return filepath, err
 		}
-		//生成公私钥
-		var user db.KeyPairUser
-		user.CertUsage = db.SIGN
-		user.UserType = db.INTERMRDIARY_CA
-		user.OrgID = org.OrgID
-		privateKey, keyID, err := CreateKeyPair(user, "")
+		err = IssueOrgCACert(org.OrgID, org.Country, org.Locality, org.Province)
 		if err != nil {
-			logger.Error("Create ChainMaker org keypair failed!", zap.Error(err))
-			return filepath, err
-		}
-		//生成中间证书的CSR
-		O := org.OrgID
-		OU := "ca"
-		CN := "ca." + O
-		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
-			O, CN)
-		if err != nil {
-			logger.Error("Create ChainMaker org CSR failed!", zap.Error(err))
-			return filepath, err
-		}
-		//读取配置文件
-		hashType := crypto.HashAlgoMap[utils.GetHashType()]
-		issuerPrivKeyFilePath, certFilePath := utils.GetRootPrivateKey()
-		privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
-		if err != nil {
-			logger.Error("Read private key file failed!", zap.Error(err))
-			return filepath, err
-		}
-		//私钥解密
-		issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetRootCaPrivateKeyPwd(), hashType)
-		if err != nil {
-			logger.Error("Decrypt private key  failed!", zap.Error(err))
-			return filepath, err
-		}
-		//读取根证书
-		certBytes, err := ioutil.ReadFile(certFilePath)
-		if err != nil {
-			logger.Error("Read cert file failed!", zap.Error(err))
-			return filepath, err
-		}
-
-		//签发中间CA证书
-		certModel, err := IssueCertificate(hashType, true, issuerPrivKey, csrBytes, certBytes, defaultExpireYear, nil)
-		if err != nil {
-			logger.Error("Issue Cert failed!", zap.Error(err))
-			return filepath, err
-		}
-		certModel.CertStatus = db.EFFECTIVE
-		certModel.PrivateKeyID = keyID
-		//证书入库
-		err = models.InsertCert(certModel)
-		if err != nil {
-			logger.Error("Insert cert to db failed!", zap.Error(err))
+			logger.Error("Issue org ca cert failed!", zap.Error(err))
 			return filepath, err
 		}
 		//签发节点sign证书
-		err = IssueNodeCert(cmCertApplyReq.ChainID, &org, privateKey, certModel.Content, db.SIGN)
+		err = IssueNodeCert(cmCertApplyReq.ChainID, &org, db.SIGN)
 		if err != nil {
 			logger.Error("Issue node sign cert failed!", zap.Error(err))
 			return filepath, err
 		}
 		//签发节点TLS证书
-		err = IssueNodeCert(cmCertApplyReq.ChainID, &org, privateKey, certModel.Content, db.TLS)
+		err = IssueNodeCert(cmCertApplyReq.ChainID, &org, db.TLS)
 		if err != nil {
 			logger.Error("Issue node tls cert failed!", zap.Error(err))
 			return filepath, err
 		}
-		err = IssueUserCert(cmCertApplyReq.ChainID, &org, privateKey, certModel.Content, db.SIGN)
+		err = IssueUserCert(cmCertApplyReq.ChainID, &org, db.SIGN)
 		if err != nil {
 			logger.Error("Issue  user sign cert failed!", zap.Error(err))
 			return filepath, err
 		}
-		err = IssueUserCert(cmCertApplyReq.ChainID, &org, privateKey, certModel.Content, db.TLS)
+		err = IssueUserCert(cmCertApplyReq.ChainID, &org, db.TLS)
 		if err != nil {
 			logger.Error("Issue  user tls cert failed!", zap.Error(err))
 			return filepath, err
@@ -124,8 +65,15 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) (stri
 }
 
 //IssueNodeCert 签发节点证书
-func IssueNodeCert(chainID string, org *models.Org, issurePrivateKey crypto.PrivateKey, certBytes []byte, certUsage db.CertUsage) error {
+func IssueNodeCert(chainID string, org *models.Org, certUsage db.CertUsage) error {
+	issueCert, issuerPrivKey, err := GetCertByConditions("", org.OrgID, "", -1, db.INTERMRDIARY_CA)
+	if err != nil {
+		return err
+	}
 	for _, node := range org.Nodes {
+		if node.NodeID == "" || (node.NodeType != db.NODE_COMMON && node.NodeType != db.NODE_CONSENSUS) {
+			return fmt.Errorf("[node: %v]There is a problem with node information", node)
+		}
 		var user db.KeyPairUser
 		user.CertUsage = certUsage
 		user.ChainID = chainID
@@ -147,7 +95,7 @@ func IssueNodeCert(chainID string, org *models.Org, issurePrivateKey crypto.Priv
 			return err
 		}
 		hashType := crypto.HashAlgoMap[utils.GetHashType()]
-		certModel, err := IssueCertificate(hashType, false, issurePrivateKey, csrBytes, certBytes, utils.GetIssureExpirationTime(), node.Sans)
+		certModel, err := IssueCertificate(hashType, false, issuerPrivKey, csrBytes, issueCert.Content, utils.GetIssureExpirationTime(), node.Sans)
 		if err != nil {
 			return err
 		}
@@ -162,8 +110,15 @@ func IssueNodeCert(chainID string, org *models.Org, issurePrivateKey crypto.Priv
 }
 
 //IssueUserCert .
-func IssueUserCert(chainID string, org *models.Org, caPrivKey crypto.PrivateKey, caCertBytes []byte, usage db.CertUsage) error {
+func IssueUserCert(chainID string, org *models.Org, usage db.CertUsage) error {
+	issueCert, issuerPrivKey, err := GetCertByConditions("", org.OrgID, "", -1, db.INTERMRDIARY_CA)
+	if err != nil {
+		return err
+	}
 	for _, v := range org.Users {
+		if v.UserName == "" || (v.UserType != db.USER_ADMIN && v.UserType != db.USER_USER) {
+			return fmt.Errorf("[user: %v]There is a problem with node information", v)
+		}
 		var user db.KeyPairUser
 		user.CertUsage = usage
 		user.ChainID = chainID
@@ -184,7 +139,7 @@ func IssueUserCert(chainID string, org *models.Org, caPrivKey crypto.PrivateKey,
 			return err
 		}
 		hashType := crypto.HashAlgoMap[utils.GetHashType()]
-		userCert, err := IssueCertificate(hashType, false, caPrivKey, csrBytes, caCertBytes, utils.GetIssureExpirationTime(), nil)
+		userCert, err := IssueCertificate(hashType, false, issuerPrivKey, csrBytes, issueCert.Content, utils.GetIssureExpirationTime(), nil)
 		userCert.CertStatus = db.EFFECTIVE
 		userCert.PrivateKeyID = keyID
 		//证书入库
@@ -381,7 +336,7 @@ func Tar(filetarget, filesource string) (err error) {
 	gw := gzip.NewWriter(fw)
 	defer gw.Close()
 	// 创建 tar.Writer，执行打包操作
-	tw := tar.NewWriter(fw)
+	tw := tar.NewWriter(gw)
 	defer func() {
 		// 这里要判断 tw 是否关闭成功，如果关闭失败，则 .tar 文件可能不完整
 		if er := tw.Close(); er != nil {
