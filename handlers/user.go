@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"io/ioutil"
 	"net/http"
+	"os"
 
 	"chainmaker.org/wx-CRA-backend/models"
 	"chainmaker.org/wx-CRA-backend/models/db"
 	"chainmaker.org/wx-CRA-backend/services"
+	"chainmaker.org/wx-CRA-backend/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,7 +28,8 @@ func GeneratePrivateKey(c *gin.Context) {
 	user.OrgID = generateKeyPairReq.OrgID
 	user.UserID = generateKeyPairReq.UserID
 	user.UserType = generateKeyPairReq.UserType
-	_, _, err := services.CreateKeyPair(user, generateKeyPairReq.PrivateKeyPwd)
+	isKms := utils.GetGenerateKeyPairType()
+	privateKey, keyID, err := services.CreateKeyPair(user, generateKeyPairReq.PrivateKeyPwd, isKms)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  500,
@@ -34,9 +38,20 @@ func GeneratePrivateKey(c *gin.Context) {
 		})
 		return
 	}
+	privateKeyStr, _ := privateKey.String()
+	err = ioutil.WriteFile("./crypto-config/user.key", []byte(privateKeyStr), os.ModePerm)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code":  500,
+			"msg":   "Write key file failed!",
+			"error": err.Error(),
+		})
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
-		"msg":  "Generate private key successfully!",
+		"msg": gin.H{
+			"keyID": keyID,
+		},
 	})
 	return
 }
@@ -60,6 +75,7 @@ func ApplyCert(c *gin.Context) {
 		})
 		return
 	}
+	ioutil.WriteFile("./crypto-config/user.crt", certContent, os.ModePerm)
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
 		"msg":  "Apply user cert successfully!",

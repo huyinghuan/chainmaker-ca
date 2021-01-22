@@ -24,7 +24,7 @@ func CreateIntermediariesCert() {
 	user.UserType = db.INTERMRDIARY_CA
 	user.OrgID = inmediaCaConfig.OrgID
 	//生成公私钥
-	privKey, keyID, err := CreateKeyPair(user, inmediaCaConfig.PrivateKeyPwd)
+	privKey, keyID, err := CreateKeyPair(user, inmediaCaConfig.PrivateKeyPwd, false)
 	if err != nil {
 		return
 	}
@@ -58,8 +58,9 @@ func CreateIntermediariesCert() {
 		return
 	}
 	//私钥解密
-	issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetRootCaPrivateKeyPwd(), hashType)
+	issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetRootCaPrivateKeyPwd(), hashType, false)
 	if err != nil {
+		logger.Error("Decrypt PrivateKey failed!", zap.Error(err))
 		return
 	}
 	//读取签发者证书
@@ -108,7 +109,7 @@ func IssueOrgCACert(orgID, country, locality, province string) error {
 		user.UserType = db.INTERMRDIARY_CA
 		user.OrgID = orgID
 		//生成公私钥
-		privKey, keyID, err := CreateKeyPair(user, "")
+		privKey, keyID, err := CreateKeyPair(user, "", false)
 		if err != nil {
 			return fmt.Errorf("Create key pair failed: %v", err.Error())
 		}
@@ -128,7 +129,7 @@ func IssueOrgCACert(orgID, country, locality, province string) error {
 			return fmt.Errorf("Read private key file failed: %v", err.Error())
 		}
 		//私钥解密
-		issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetRootCaPrivateKeyPwd(), hashType)
+		issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetRootCaPrivateKeyPwd(), hashType, false)
 		if err != nil {
 			return fmt.Errorf("Decrypt private key failed: %v", err.Error())
 		}

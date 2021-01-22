@@ -141,3 +141,25 @@ func GetChainMakerCertPath() string {
 func GetChainMakerCertRPCServerPort() string {
 	return ":" + viper.GetString("chainmaker_cert_rpc_port")
 }
+
+//GetGenerateKeyPairType .
+func GetGenerateKeyPairType() bool {
+	return viper.GetBool("is_kms_keypair")
+}
+
+type KmsConfig struct {
+	KmsServer string `mapstructure:"kms_server"`
+	KmsRegion string `mapstructure:"kms_region"`
+	SecretID string `mapstructure:"secret_id"`
+	SecretKey string `mapstructure:"secret_key"`
+}
+
+//GetKmsClientConfig 读取中间CA配置文件
+func GetKmsClientConfig() (*KmsConfig, error) {
+	var kmsConfig KmsConfig
+	err := viper.UnmarshalKey("kms_config", &kmsConfig)
+	if err != nil {
+		return nil, err
+	}
+	return &kmsConfig, nil
+}

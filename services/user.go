@@ -5,6 +5,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"io/ioutil"
 	"math/big"
 	"os"
@@ -26,9 +27,13 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 		logger.Error("Get keypair by userid failed!", zap.Error(err))
 		return nil, err
 	}
-	privateKeyBytes := keyPair.PrivateKey
-	block, _ := pem.Decode(privateKeyBytes)
-	privateKey, err := asym.PrivateKeyFromDER(block.Bytes)
+	hashType := crypto.HashAlgoMap[utils.GetHashType()]
+	isKms := utils.GetGenerateKeyPairType()
+	//私钥解密
+	privateKey, err := decryptPrivKey(keyPair.PrivateKey, "", hashType, isKms)
+	if err != nil {
+		return nil, fmt.Errorf("Decrypt private key failed: %v", err.Error())
+	}
 	if err != nil {
 		logger.Error("Private from der failed!", zap.Error(err))
 		return nil, err
@@ -50,8 +55,7 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 		return nil, err
 	}
 	//私钥解密
-	hashType := crypto.HashAlgoMap[utils.GetHashType()]
-	issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetIntermCAPrivateKeyPwd(), hashType)
+	issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetIntermCAPrivateKeyPwd(), hashType, false)
 	if err != nil {
 		logger.Error("Decrypt Private Key failed!", zap.Error(err))
 		return nil, err
@@ -99,7 +103,8 @@ func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
 	}
 	//私钥解密
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
-	issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetIntermCAPrivateKeyPwd(), hashType)
+	isKms := utils.GetGenerateKeyPairType()
+	issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetIntermCAPrivateKeyPwd(), hashType, isKms)
 	if err != nil {
 		logger.Error(" Decrypt private key  failed!", zap.Error(err))
 		return nil, err
@@ -178,7 +183,8 @@ func GetRevokedCertList() ([]byte, error) {
 	var issuerPrivKey crypto.PrivateKey
 	if utils.GetIntermCAPrivateKeyPwd() != "" {
 		hashType := crypto.HashAlgoMap[utils.GetHashType()]
-		issuerPrivKey, err = decryptPrivKey(privKeyRaw, utils.GetIntermCAPrivateKeyPwd(), hashType)
+		isKms := utils.GetGenerateKeyPairType()
+		issuerPrivKey, err = decryptPrivKey(privKeyRaw, utils.GetIntermCAPrivateKeyPwd(), hashType, isKms)
 		if err != nil {
 			logger.Error(" Decrypt private key  failed!", zap.Error(err))
 			return nil, err

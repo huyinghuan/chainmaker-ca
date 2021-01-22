@@ -146,7 +146,7 @@ func GetCertByConditions(userID, orgID, chainID string, usage db.CertUsage, user
 	}
 	//私钥解密
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
-	issuerPrivKey, err := decryptPrivKey(keyPair.PrivateKey, keyPair.PrivateKeyPwd, hashType)
+	issuerPrivKey, err := decryptPrivKey(keyPair.PrivateKey, keyPair.PrivateKeyPwd, hashType, false)
 	if err != nil {
 		return nil, nil, err
 	}

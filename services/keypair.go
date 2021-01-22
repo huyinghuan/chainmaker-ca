@@ -10,6 +10,8 @@ import (
 	"os"
 	"path"
 
+	"chainmaker.org/chainmaker-go/common/crypto/tencentcloudkms"
+
 	"chainmaker.org/chainmaker-go/common/crypto"
 	"chainmaker.org/chainmaker-go/common/crypto/asym"
 	"chainmaker.org/chainmaker-go/common/crypto/hash"
@@ -20,7 +22,19 @@ import (
 )
 
 //CreatePrivKey 生成公私钥
-func createPrivKey(keyType crypto.KeyType) (crypto.PrivateKey, error) {
+func createPrivKey(keyType crypto.KeyType, isKms bool, keyAlias string) (crypto.PrivateKey, error) {
+	if isKms == true {
+		kmsConfig, kmsKeyType := GetKmsConfig()
+		client, err := tencentcloudkms.CreateConnection(kmsConfig)
+		if err != nil {
+			return nil, fmt.Errorf("get kms client failed,%s", err.Error())
+		}
+		privKey, err := tencentcloudkms.GenerateKeyPairFromKMS(client, keyAlias, kmsKeyType)
+		if err != nil {
+			return nil, fmt.Errorf("generate keypair from kms failed, %s", err.Error())
+		}
+		return privKey, nil
+	}
 	algoName, ok := crypto.KeyType2NameMap[keyType]
 	if !ok {
 		return nil, fmt.Errorf("unknown key algo type [%d]", keyType)
@@ -56,7 +70,19 @@ func WritePrivKeyFile(privKeyFilePath string, data []byte) error {
 }
 
 //DecryptPrivKey 解密私钥
-func decryptPrivKey(privKeyRaw []byte, privKeyPwd string, hashType crypto.HashType) (crypto.PrivateKey, error) {
+func decryptPrivKey(privKeyRaw []byte, privKeyPwd string, hashType crypto.HashType, isKms bool) (crypto.PrivateKey, error) {
+	if isKms == true {
+		kmsConfig, _ := GetKmsConfig()
+		client, err := tencentcloudkms.CreateConnection(kmsConfig)
+		if err != nil {
+			return nil, fmt.Errorf("get kms client failed,%s", err.Error())
+		}
+		privateKey, err := tencentcloudkms.LoadPrivateKey(client, privKeyRaw)
+		if err != nil {
+			return nil, fmt.Errorf("load private key failed,%s", err.Error())
+		}
+		return privateKey, nil
+	}
 	privateKeyPwd := DefaultPrivateKeyPwd + privKeyPwd
 	issureHashPwd, err := hash.Get(hashType, []byte(privateKeyPwd))
 	if err != nil {
@@ -72,19 +98,19 @@ func decryptPrivKey(privKeyRaw []byte, privKeyPwd string, hashType crypto.HashTy
 }
 
 //CreateKeyPair .
-func CreateKeyPair(user db.KeyPairUser, privateKeyPwd string) (privKey crypto.PrivateKey, keyID string, err error) {
+func CreateKeyPair(user db.KeyPairUser, privateKeyPwd string, isKms bool) (privKey crypto.PrivateKey, keyID string, err error) {
 	var keyPair db.KeyPair
 	//生成公私钥（可对接KMS）
 	keyType := crypto.Name2KeyTypeMap[utils.GetPrivKeyType()]
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
-	privKey, err = createPrivKey(keyType)
+	privKey, err = createPrivKey(keyType, isKms, user.UserID)
 	if err != nil {
 		logger.Error("Generate private key failed!", zap.Error(err))
 		return
 	}
 	var privKeyPemBytes, hashPwd []byte
 	//私钥加密 密码:程序变量+读取密码
-	if privateKeyPwd != "" {
+	if privateKeyPwd != "" && isKms == false {
 		privKeyPwd := DefaultPrivateKeyPwd + privateKeyPwd
 		hashPwd, err = hash.Get(hashType, []byte(privKeyPwd))
 		if err != nil {
@@ -124,5 +150,22 @@ func CreateKeyPair(user db.KeyPairUser, privateKeyPwd string) (privKey crypto.Pr
 		return
 	}
 	keyID = keyPair.ID
+	return
+}
+
+//GetKmsConfig .
+func GetKmsConfig() (kmsConfig *tencentcloudkms.KMSConfig, kmsKeyType string) {
+	config, err := utils.GetKmsClientConfig()
+	if err != nil {
+		logger.Error("get ksm config failed!", zap.Error(err))
+	}
+	kmsKeyType = utils.GetPrivKeyType()
+	kmsConfig = &tencentcloudkms.KMSConfig{
+		ServerAddress: config.KmsServer,
+		ServerRegion:  config.KmsRegion,
+		SecretId:      config.SecretID,
+		SecretKey:     config.SecretKey,
+	}
+	fmt.Println(config.KmsRegion)
 	return
 }

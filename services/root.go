@@ -28,7 +28,7 @@ func InitRootCA() {
 	user.UserType = db.ROOT_CA
 	user.OrgID = "wx-root"
 	//生成公私钥
-	privKey, keyID, err := CreateKeyPair(user, rootCaConfig.PrivateKeyPwd)
+	privKey, keyID, err := CreateKeyPair(user, rootCaConfig.PrivateKeyPwd, false)
 	if err != nil {
 		logger.Error("Create key pair to db  Failed!", zap.Error(err))
 		return

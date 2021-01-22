@@ -81,7 +81,7 @@ func IssueNodeCert(chainID string, org *models.Org, certUsage db.CertUsage) erro
 		user.UserID = node.NodeID
 		user.UserType = node.NodeType
 		//生成公私钥
-		privateKey, keyID, err := CreateKeyPair(user, "")
+		privateKey, keyID, err := CreateKeyPair(user, "", false)
 		if err != nil {
 			return err
 		}
@@ -126,7 +126,7 @@ func IssueUserCert(chainID string, org *models.Org, usage db.CertUsage) error {
 		user.UserID = v.UserName
 		user.UserType = v.UserType
 		//生成公私钥
-		privateKey, keyID, err := CreateKeyPair(user, "")
+		privateKey, keyID, err := CreateKeyPair(user, "", false)
 		if err != nil {
 			return err
 		}
