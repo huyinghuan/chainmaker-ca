@@ -19,7 +19,7 @@ is_init_root_ca: false
 #密钥加密类型
 private_key_type: SM2
 #哈希类型
-hash_type: SHA256
+hash_type: SM3
 #签发证书的过期时间
 issure_expiration_time: 1
 # 默认CRL更新时间（h）

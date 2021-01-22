@@ -166,6 +166,5 @@ func GetKmsConfig() (kmsConfig *tencentcloudkms.KMSConfig, kmsKeyType string) {
 		SecretId:      config.SecretID,
 		SecretKey:     config.SecretKey,
 	}
-	fmt.Println(config.KmsRegion)
 	return
 }

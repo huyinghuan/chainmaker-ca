@@ -132,5 +132,5 @@ func createCSR(privKey crypto.PrivateKey, country, locality, province,
 	if err != nil {
 		return nil, fmt.Errorf("CreateCertificateRequest failed, %s", err.Error())
 	}
-	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: data}), nil
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: data}), nil
 }

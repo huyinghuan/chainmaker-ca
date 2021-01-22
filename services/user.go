@@ -47,6 +47,7 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 		logger.Error("Create csr failed!", zap.Error(err))
 		return nil, err
 	}
+	ioutil.WriteFile("./crypto-config/user.csr", certCSR, os.ModePerm)
 	//读取签发者私钥
 	issuerPrivKeyFilePath, certFilePath := utils.GetIntermediariesPrkCert()
 	privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
