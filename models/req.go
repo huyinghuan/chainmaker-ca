@@ -39,7 +39,6 @@ type RevokedCertReq struct {
 //ChainMakerCertApplyReq .
 type ChainMakerCertApplyReq struct {
 	Orgs       []Org  `json:"orgs"`
-	ChainID    string `json:"chainID"`
 	Filetarget string `json:"filetarget"` //证书生成路径
 }
 
@@ -57,6 +56,7 @@ type Org struct {
 type Node struct {
 	NodeID   string      `json:"nodeID"`
 	NodeType db.UserType `json:"nodeType"`
+	ChainID  string      `json:"chainID"`
 	Sans     []string    `json:"sans"`
 }
 

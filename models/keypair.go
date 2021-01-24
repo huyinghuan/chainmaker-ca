@@ -20,8 +20,8 @@ func GetKeyPairByID(id string) (*db.KeyPair, error) {
 }
 
 //GetKeyPairByConditions .
-func GetKeyPairByConditions(userID, orgID, chainID string, usage db.CertUsage, userType ...db.UserType) (*db.KeyPair, error) {
-	var keyPair db.KeyPair
+func GetKeyPairByConditions(userID, orgID string, usage db.CertUsage, userType ...db.UserType) ([]db.KeyPair, error) {
+	var keyPairList []db.KeyPair
 	gorm := db.DB.Debug()
 	if userID != "" {
 		gorm = gorm.Where("user_id=?", userID)
@@ -29,8 +29,28 @@ func GetKeyPairByConditions(userID, orgID, chainID string, usage db.CertUsage, u
 	if orgID != "" {
 		gorm = gorm.Where("org_id=?", orgID)
 	}
-	if chainID != "" {
-		gorm = gorm.Where("chain_id=?", chainID)
+	if userType != nil {
+		gorm = gorm.Where("user_type IN(?)", userType)
+	}
+	if usage != -1 {
+		gorm = gorm.Where("cert_usage=?", usage)
+	}
+	err := gorm.Find(&keyPairList).Error
+	if err != nil {
+		return nil, err
+	}
+	return keyPairList, nil
+}
+
+//KeyPairIsExist isExist
+func KeyPairIsExist(userID, orgID string, usage db.CertUsage, userType ...db.UserType) (*db.KeyPair, bool) {
+	var keyPair db.KeyPair
+	gorm := db.DB.Debug()
+	if userID != "" {
+		gorm = gorm.Where("user_id=?", userID)
+	}
+	if orgID != "" {
+		gorm = gorm.Where("org_id=?", orgID)
 	}
 	if userType != nil {
 		gorm = gorm.Where("user_type IN(?)", userType)
@@ -40,7 +60,10 @@ func GetKeyPairByConditions(userID, orgID, chainID string, usage db.CertUsage, u
 	}
 	err := gorm.First(&keyPair).Error
 	if err != nil {
-		return nil, err
+		if err == db.GormErrRNF {
+			return nil, false
+		}
+		return nil, true
 	}
-	return &keyPair, nil
+	return &keyPair, true
 }

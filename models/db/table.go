@@ -44,7 +44,6 @@ type KeyPair struct {
 	CertUsage     CertUsage `gorm:"unique_index:chain_org_user_usage_type_index"`
 	UserID        string    `gorm:"unique_index:chain_org_user_usage_type_index"`
 	OrgID         string    `gorm:"unique_index:chain_org_user_usage_type_index"`
-	ChainID       string    `gorm:"unique_index:chain_org_user_usage_type_index"`
 }
 
 //TableName cert

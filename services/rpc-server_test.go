@@ -62,7 +62,6 @@ func TestGenerateChainMakerCert(t *testing.T) {
 
 	var req pb.ChainMakerCertApplyReq
 
-	req.ChainId = "chain1"
 	req.Filetarget = "./crypto-config/chainmaker"
 	var org pb.Org
 	org.OrgId = "wx-org5"
@@ -71,10 +70,12 @@ func TestGenerateChainMakerCert(t *testing.T) {
 	org.Locality = "Beijing"
 	var node1 pb.Node
 	node1.NodeId = "common1"
+	node1.ChainId = "chain1"
 	node1.Type = pb.UserType_common
 	node1.Sans = []string{"chainmaker.org"}
 	var node2 pb.Node
 	node2.NodeId = "consensus1"
+	node2.ChainId = "chain1"
 	node2.Type = pb.UserType_consensus
 	node2.Sans = []string{"chainmaker.org"}
 	org.Nodes = append(org.Nodes, &node1)

@@ -74,10 +74,10 @@ func GetRootCaConfig() (CaConfig, error) {
 	return rootCaConfig, nil
 }
 
-//GetIntermediaries 读取中间CA配置文件
-func GetIntermediaries() (CaConfig, error) {
+//GetIntermediate 读取中间CA配置文件
+func GetIntermediate() (CaConfig, error) {
 	var inmediaCaConfig CaConfig
-	err := viper.UnmarshalKey("intermediaries_config", &inmediaCaConfig)
+	err := viper.UnmarshalKey("Intermediate_config", &inmediaCaConfig)
 	if err != nil {
 		return inmediaCaConfig, err
 	}
@@ -116,15 +116,15 @@ func GetIssureExpirationTime() int32 {
 	return viper.GetInt32("issure_expiration_time")
 }
 
-//GetIntermediariesPrkCert .
-func GetIntermediariesPrkCert() (privateKeyPath, certPath string) {
-	return viper.GetString("intermediaries_config.private_key_path"),
-		viper.GetString("intermediaries_config.cert_path")
+//GetIntermediatePrkCert .
+func GetIntermediatePrkCert() (privateKeyPath, certPath string) {
+	return viper.GetString("Intermediate_config.private_key_path"),
+		viper.GetString("Intermediate_config.cert_path")
 }
 
 //GetIntermCAPrivateKeyPwd 获取RootCa私钥密码
 func GetIntermCAPrivateKeyPwd() string {
-	return viper.GetString("intermediaries_config.private_key_pwd")
+	return viper.GetString("Intermediate_config.private_key_pwd")
 }
 
 //GetCRLNextTime .
@@ -150,7 +150,7 @@ func GetGenerateKeyPairType() bool {
 type KmsConfig struct {
 	KmsServer string `mapstructure:"kms_server"`
 	KmsRegion string `mapstructure:"kms_region"`
-	SecretID string `mapstructure:"secret_id"`
+	SecretID  string `mapstructure:"secret_id"`
 	SecretKey string `mapstructure:"secret_key"`
 }
 

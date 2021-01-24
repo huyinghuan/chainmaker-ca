@@ -37,3 +37,15 @@ func GetCertByPrivateKeyID(privateKeyID string) (*db.Cert, error) {
 	}
 	return &cert, nil
 }
+
+//CertIsExist .
+func CertIsExist(privateKeyID string) (*db.Cert, bool) {
+	var cert db.Cert
+	if err := db.DB.Debug().Where("private_key_id=?", privateKeyID).First(&cert).Error; err != nil {
+		if err == db.GormErrRNF {
+			return nil, false
+		}
+		return nil, true
+	}
+	return &cert, true
+}

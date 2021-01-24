@@ -41,12 +41,11 @@ func (c *ChainMakerCertService) GetCertTar(ctx context.Context, req *pb.GetCertT
 }
 
 //GetCertByConditions .
-func (c *ChainMakerCertService) GetCertByConditions(ctx context.Context, req *pb.GetCertReq) (*pb.CertContent, error) {
+func (c *ChainMakerCertService) GetCertByConditions(ctx context.Context, req *pb.GetCertReq) (*pb.GetCertResp, error) {
 	var (
-		certContent pb.CertContent
-		err         error
-		usage       db.CertUsage
-		userType    db.UserType
+		usage         db.CertUsage
+		userType      db.UserType
+		pbGetCertResp pb.GetCertResp
 	)
 	if req.Usage == -1 {
 		usage = -1
@@ -58,17 +57,23 @@ func (c *ChainMakerCertService) GetCertByConditions(ctx context.Context, req *pb
 	} else {
 		userType = db.Name2UserTypeMap[req.Type.String()]
 	}
-	certContent.CertBytes, certContent.KeyBytes, err = GetCert(req.UserId, req.OrgId, req.ChainId, usage, userType)
+	getCertResps, err := GetCert(req.UserId, req.OrgId, req.ChainId, usage, userType)
 	if err != nil {
 		logger.Error("Get cert content failed!", zap.Error(err))
 		return nil, err
 	}
-	return &certContent, nil
+	var certKeys []*pb.CertAndPrivKey = make([]*pb.CertAndPrivKey, len(getCertResps))
+	for i, v := range getCertResps {
+		certKeys[i].CertContent = v.CertContent
+		certKeys[i].PrivateKey = v.PrivateKey
+		certKeys[i].Usage = v.Usage
+	}
+	pbGetCertResp.CertKey = certKeys
+	return &pbGetCertResp, nil
 }
 func pbtransform(req *pb.ChainMakerCertApplyReq) *models.ChainMakerCertApplyReq {
 	var modelReq models.ChainMakerCertApplyReq
 	var modelOrgs []models.Org
-	modelReq.ChainID = req.ChainId
 	modelReq.Filetarget = req.Filetarget
 	for _, org := range req.Orgs {
 		var modelOrg models.Org
@@ -81,6 +86,7 @@ func pbtransform(req *pb.ChainMakerCertApplyReq) *models.ChainMakerCertApplyReq 
 		for _, node := range org.Nodes {
 			var modelNode models.Node
 			modelNode.NodeID = node.NodeId
+			modelNode.ChainID = node.ChainId
 			modelNode.NodeType = db.Name2UserTypeMap[node.Type.String()]
 			modelNode.Sans = node.Sans
 			modelNodes = append(modelNodes, modelNode)

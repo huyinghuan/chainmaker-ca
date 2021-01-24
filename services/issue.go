@@ -13,12 +13,18 @@ import (
 	"chainmaker.org/chainmaker-go/common/cert"
 	"chainmaker.org/chainmaker-go/common/crypto"
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
+	"chainmaker.org/wx-CRA-backend/models"
 	"chainmaker.org/wx-CRA-backend/models/db"
 )
 
 //IssueCertificate 签发证书
-func IssueCertificate(hashType crypto.HashType, isCA bool, issuerPrivKey crypto.PrivateKey,
+func IssueCertificate(hashType crypto.HashType, isCA bool, keyID string, issuerPrivKey crypto.PrivateKey,
 	csrBytes, certBytes []byte, expireYear int32, sans []string) (*db.Cert, error) {
+	//判断库里证书是否存在
+	dbCert, certIsExist := models.CertIsExist(keyID)
+	if certIsExist {
+		return dbCert, nil
+	}
 	var certModel db.Cert
 	issuerCert, err := ParseCertificate(certBytes)
 	if err != nil {
@@ -115,6 +121,13 @@ func IssueCertificate(hashType crypto.HashType, isCA bool, issuerPrivKey crypto.
 		return nil, fmt.Errorf("Marshal sans failed: %s", err.Error())
 	}
 	certModel.CertSans = string(sansstr)
+	certModel.CertStatus = db.EFFECTIVE
+	certModel.PrivateKeyID = keyID
+	//证书入库
+	err = models.InsertCert(&certModel)
+	if err != nil {
+		return nil, fmt.Errorf("Insert Cert to db failed: %v", err.Error())
+	}
 	return &certModel, nil
 }
 

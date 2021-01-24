@@ -41,13 +41,13 @@ root_config:
   province: Beijing                      
 
 # 中间CA配置文件
-intermediaries_config:
+Intermediate_config:
   private_key_pwd: wx123
-  private_key_path: ./crypto-config/intermediaries/intermediaries.key
+  private_key_path: ./crypto-config/Intermediate/Intermediate.key
   country: CN                              
   locality: Beijing                                   
   province: Beijing                                                             
-  cert_path: ./crypto-config/intermediaries/intermediaries.crt
+  cert_path: ./crypto-config/Intermediate/Intermediate.crt
   expire_year: 10
   org_id: weixin
 #KMS client 配置

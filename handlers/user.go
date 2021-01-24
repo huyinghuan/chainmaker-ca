@@ -24,12 +24,18 @@ func GeneratePrivateKey(c *gin.Context) {
 	}
 	var user db.KeyPairUser
 	user.CertUsage = generateKeyPairReq.CertUsage
-	user.ChainID = generateKeyPairReq.ChainID
-	user.OrgID = generateKeyPairReq.OrgID
-	user.UserID = generateKeyPairReq.UserID
 	user.UserType = generateKeyPairReq.UserType
-	isKms := utils.GetGenerateKeyPairType()
-	privateKey, keyID, err := services.CreateKeyPair(user, generateKeyPairReq.PrivateKeyPwd, isKms)
+	user.OrgID = generateKeyPairReq.OrgID
+	if user.UserType == db.NODE_COMMON || user.UserType == db.NODE_CONSENSUS {
+		user.UserID = generateKeyPairReq.ChainID + "-" + generateKeyPairReq.UserID
+	} else {
+		user.UserID = generateKeyPairReq.UserID
+	}
+	var isKms bool
+	if utils.GetGenerateKeyPairType() && (user.UserType == db.USER_ADMIN || user.UserType == db.USER_USER) {
+		isKms = true
+	}
+	privateKey, keyID, err := services.CreateKeyPair(&user, generateKeyPairReq.PrivateKeyPwd, isKms)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  500,
@@ -39,18 +45,11 @@ func GeneratePrivateKey(c *gin.Context) {
 		return
 	}
 	privateKeyStr, _ := privateKey.String()
-	err = ioutil.WriteFile("./crypto-config/user.key", []byte(privateKeyStr), os.ModePerm)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code":  500,
-			"msg":   "Write key file failed!",
-			"error": err.Error(),
-		})
-	}
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
 		"msg": gin.H{
 			"keyID": keyID,
+			"key":   privateKeyStr,
 		},
 	})
 	return

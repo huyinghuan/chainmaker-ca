@@ -1,5 +1,7 @@
 package db
 
+import "chainmaker.org/chainmaker-go/common/crypto"
+
 //CertType .
 type UserType int
 
@@ -100,5 +102,18 @@ type KeyPairUser struct {
 	CertUsage CertUsage
 	UserID    string
 	OrgID     string
-	ChainID   string
+}
+
+//CertAndPrivKey .证书和对应的密钥
+type CertAndPrivKey struct {
+	Cert    *Cert
+	PrivKey crypto.PrivateKey
+	KeyPair *KeyPair
+}
+
+//GetCertResp .
+type GetCertResp struct {
+	CertContent []byte `json:"certContent"`
+	PrivateKey  []byte `json:"privateKey"`
+	Usage       string `json:"usage"`
 }

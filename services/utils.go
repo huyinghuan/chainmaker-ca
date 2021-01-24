@@ -24,7 +24,7 @@ const (
 	defaultOrganizationalUnit = "ChainMaker"
 	defaultOrganization       = "ChainMaker"
 	defaultCommonName         = "chainmaker.org"
-	defaultExpireYear         = 10
+	defaultExpireYear         = 2
 )
 
 const (
@@ -132,23 +132,35 @@ func CheckOrgInfo(org *models.Org) error {
 }
 
 //GetCertByConditions .
-func GetCertByConditions(userID, orgID, chainID string, usage db.CertUsage, userType ...db.UserType) (*db.Cert, crypto.PrivateKey, error) {
-	keyPair, err := models.GetKeyPairByConditions(userID, orgID, chainID, usage, userType...)
+func GetCertByConditions(userID, orgID string, usage db.CertUsage, userType ...db.UserType) ([]*db.CertAndPrivKey, error) {
+	keyPairList, err := models.GetKeyPairByConditions(userID, orgID, usage, userType...)
 	if err != nil {
-		return nil, nil, err
+		return nil, fmt.Errorf("Get key pair by conditions failed: %s", err.Error())
 	}
-	if keyPair.ID == "" {
-		return nil, nil, fmt.Errorf("Org CA is not exist")
+	if len(keyPairList) == 0 {
+		return nil, nil
 	}
-	cert, err := models.GetCertByPrivateKeyID(keyPair.ID)
-	if err != nil {
-		return nil, nil, err
+	var certAndPrivKeys []*db.CertAndPrivKey
+	for i:=0;i<len(keyPairList);i++{
+		var certAndPrivKey db.CertAndPrivKey
+		cert, err := models.GetCertByPrivateKeyID(keyPairList[i].ID)
+		if err != nil {
+			return nil, fmt.Errorf("Get cert by private key id failed: %s", err.Error())
+		}
+		certAndPrivKey.Cert = cert
+		hashType := crypto.HashAlgoMap[utils.GetHashType()]
+		var isKms bool
+		if utils.GetGenerateKeyPairType() && (keyPairList[i].UserType == db.USER_ADMIN || keyPairList[i].UserType == db.USER_USER) && keyPairList[i].CertUsage == db.SIGN {
+			isKms = true
+		}
+		privateKey, err := decryptPrivKey(keyPairList[i].PrivateKey, keyPairList[i].PrivateKeyPwd, hashType, isKms)
+		if err != nil {
+			return nil, fmt.Errorf("Decrypt private key failed: %s", err.Error())
+		}
+		certAndPrivKey.KeyPair = &keyPairList[i]
+		certAndPrivKey.PrivKey = privateKey
+		certAndPrivKeys = append(certAndPrivKeys, &certAndPrivKey)
 	}
-	//私钥解密
-	hashType := crypto.HashAlgoMap[utils.GetHashType()]
-	issuerPrivKey, err := decryptPrivKey(keyPair.PrivateKey, keyPair.PrivateKeyPwd, hashType, false)
-	if err != nil {
-		return nil, nil, err
-	}
-	return cert, issuerPrivKey, nil
+
+	return certAndPrivKeys, nil
 }

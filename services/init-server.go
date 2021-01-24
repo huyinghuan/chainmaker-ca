@@ -14,6 +14,6 @@ func InitServer() {
 	isInitRootCa := utils.GetInitType()
 	if isInitRootCa == true {
 		InitRootCA()
-		CreateIntermediariesCert()
+		CreateIntermediateCert()
 	}
 }

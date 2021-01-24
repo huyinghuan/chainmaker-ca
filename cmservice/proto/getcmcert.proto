@@ -4,12 +4,11 @@ option go_package = ".;cmservice";
 service ChainMakerCertApply {
 rpc GenerateCert(ChainMakerCertApplyReq)returns(GenerateResp){}
 rpc GetCertTar(GetCertTarReq) returns (TarCertResp){}
-rpc GetCertByConditions(GetCertReq) returns (CertContent){}
+rpc GetCertByConditions(GetCertReq) returns (GetCertResp){}
 }
 message ChainMakerCertApplyReq {
-  string chain_id = 1;
-  repeated Org orgs = 2;
-  string filetarget = 3;
+  repeated Org orgs = 1;
+  string filetarget = 2;
 }
 message GetCertTarReq {
   string filetarget = 1;
@@ -25,9 +24,13 @@ message GetCertReq {
   CertUsage usage = 4;
   UserType type = 5;
 }
-message CertContent {
-  bytes cert_bytes =1;
-  bytes key_bytes= 2;
+message GetCertResp {
+repeated CertAndPrivKey cert_key = 1;
+}
+message CertAndPrivKey {
+  bytes cert_content =1;
+  bytes private_key= 2;
+  string usage = 3;
 }
 message Org {
   string country = 1;
@@ -41,6 +44,7 @@ message Node {
 string node_id=1;
 UserType type=2;
 repeated string sans=3;
+string chain_id = 4;
 }
 message User {
   string user_name=1;

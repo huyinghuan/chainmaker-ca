@@ -98,12 +98,22 @@ func decryptPrivKey(privKeyRaw []byte, privKeyPwd string, hashType crypto.HashTy
 }
 
 //CreateKeyPair .
-func CreateKeyPair(user db.KeyPairUser, privateKeyPwd string, isKms bool) (privKey crypto.PrivateKey, keyID string, err error) {
+func CreateKeyPair(user *db.KeyPairUser, privateKeyPwd string, isKms bool) (privKey crypto.PrivateKey, keyID string, err error) {
+	keyPairE, isKeyPairExist := models.KeyPairIsExist(user.UserID, user.OrgID, user.CertUsage, user.UserType)
+	if isKeyPairExist {
+		hashType := crypto.HashAlgoMap[utils.GetHashType()]
+		privateKey, err := decryptPrivKey(keyPairE.PrivateKey, keyPairE.PrivateKeyPwd, hashType, isKms)
+		if err != nil {
+			return nil, "", fmt.Errorf("Decrypt private key failed: %s", err.Error())
+		}
+		return privateKey, keyPairE.ID, nil
+	}
 	var keyPair db.KeyPair
+	keyPair.ID = Getuuid()
 	//生成公私钥（可对接KMS）
 	keyType := crypto.Name2KeyTypeMap[utils.GetPrivKeyType()]
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
-	privKey, err = createPrivKey(keyType, isKms, user.UserID)
+	privKey, err = createPrivKey(keyType, isKms, keyPair.ID)
 	if err != nil {
 		logger.Error("Generate private key failed!", zap.Error(err))
 		return
@@ -138,10 +148,8 @@ func CreateKeyPair(user db.KeyPairUser, privateKeyPwd string, isKms bool) (privK
 		logger.Error("Get userid by username failed!", zap.Error(err))
 		return
 	}
-	keyPair.ID = Getuuid()
 	keyPair.CertUsage = user.CertUsage
 	keyPair.UserType = user.UserType
-	keyPair.ChainID = user.ChainID
 	keyPair.OrgID = user.OrgID
 	keyPair.UserID = user.UserID
 	err = models.InsertKeyPair(&keyPair)
