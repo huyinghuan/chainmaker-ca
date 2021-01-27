@@ -70,12 +70,10 @@ func TestGenerateChainMakerCert(t *testing.T) {
 	org.Locality = "Beijing"
 	var node1 pb.Node
 	node1.NodeId = "common1"
-	node1.ChainId = "chain1"
 	node1.Type = pb.UserType_common
 	node1.Sans = []string{"chainmaker.org"}
 	var node2 pb.Node
 	node2.NodeId = "consensus1"
-	node2.ChainId = "chain1"
 	node2.Type = pb.UserType_consensus
 	node2.Sans = []string{"chainmaker.org"}
 	org.Nodes = append(org.Nodes, &node1)
@@ -108,7 +106,6 @@ func TestGetCert(t *testing.T) {
 	//实例化 UserInfoService 微服务的客户端
 	client := pb.NewChainMakerCertApplyClient(conn)
 	var getCertReq pb.GetCertReq
-	getCertReq.ChainId = "chain1"
 	getCertReq.OrgId = "wx-org1"
 	getCertReq.Type = pb.UserType_admin
 	getCertReq.Usage = pb.CertUsage_sign

@@ -18,7 +18,6 @@ type GenerateKeyPairReq struct {
 	CertUsage     db.CertUsage `json:"certUsage"`
 	UserID        string       `json:"userID"`
 	OrgID         string       `json:"orgID"`
-	ChainID       string       `json:"chainID"`
 	PrivateKeyPwd string       `json:"privateKeyPwd"`
 }
 
@@ -56,7 +55,6 @@ type Org struct {
 type Node struct {
 	NodeID   string      `json:"nodeID"`
 	NodeType db.UserType `json:"nodeType"`
-	ChainID  string      `json:"chainID"`
 	Sans     []string    `json:"sans"`
 }
 
@@ -76,7 +74,6 @@ type GetTarCertFileReq struct {
 type GetCertByConditionsReq struct {
 	UserID    string       `json:"userID"` //nodeID/userName
 	OrgID     string       `json:"orgID"`
-	ChainID   string       `json:"chainID"`
 	CertUsage db.CertUsage `json:"certUsage"`
 	Type      db.UserType  `json:"type"`
 }

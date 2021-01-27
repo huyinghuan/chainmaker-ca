@@ -6,11 +6,8 @@ import (
 )
 
 //GetCert 从数据库获取证书文件
-func GetCert(userID, orgID, chainID string, certUsage db.CertUsage, userType db.UserType) ([]db.GetCertResp, error) {
+func GetCert(userID, orgID string, certUsage db.CertUsage, userType db.UserType) ([]db.GetCertResp, error) {
 	var getCertResps []db.GetCertResp
-	if userType == db.NODE_COMMON || userType == db.NODE_CONSENSUS {
-		userID = chainID + "-" + userID
-	}
 	certAndPrivKeys, err := GetCertByConditions(userID, orgID, certUsage, userType)
 	if err != nil {
 		logger.Error("Get cert by conditions failed!", zap.Error(err))

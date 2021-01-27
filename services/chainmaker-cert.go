@@ -82,7 +82,7 @@ func IssueNodeCert(org *models.Org, certUsage db.CertUsage) error {
 		var user db.KeyPairUser
 		user.CertUsage = certUsage
 		user.OrgID = org.OrgID
-		user.UserID = node.ChainID + "-" + node.NodeID
+		user.UserID = node.NodeID
 		user.UserType = node.NodeType
 		privateKey, keyID, err := CreateKeyPair(&user, "", false)
 		if err != nil {
@@ -211,7 +211,7 @@ func WriteNodeCertFile(orgPath string, org *models.Org) error {
 		if err != nil {
 			return fmt.Errorf("Create node dir failed: %s", err.Error())
 		}
-		userID := node.ChainID + "-" + node.NodeID
+		userID := node.NodeID
 		certAndPrivKeys, err := GetCertByConditions(userID, org.OrgID, -1, node.NodeType)
 		if err != nil {
 			return fmt.Errorf("Get cert by conditions failed: %s", err.Error())

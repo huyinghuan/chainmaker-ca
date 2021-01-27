@@ -20,9 +20,8 @@ message GetCertTarReq {
 message GetCertReq {
   string user_id =1; //user_name 或者 node_id
   string org_id =2;
-  string chain_id =3;
-  CertUsage usage = 4;
-  UserType type = 5;
+  CertUsage usage = 3;
+  UserType type = 4;
 }
 message GetCertResp {
 repeated CertAndPrivKey cert_key = 1;
@@ -44,7 +43,6 @@ message Node {
 string node_id=1;
 UserType type=2;
 repeated string sans=3;
-string chain_id = 4;
 }
 message User {
   string user_name=1;

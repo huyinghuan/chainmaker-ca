@@ -29,10 +29,18 @@ func UpdateCertStatusRevokedBySN(certSN int64) error {
 	return nil
 }
 
+//UpdateCertStatusExpiredBySN 通过证书SN
+func UpdateCertStatusExpiredBySN(certSN int64) error {
+	if err := db.DB.Debug().Model(&db.Cert{}).Update("cert_status", db.EXPIRED).Where("serial_number", certSN).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 //GetCertByPrivateKeyID .
 func GetCertByPrivateKeyID(privateKeyID string) (*db.Cert, error) {
 	var cert db.Cert
-	if err := db.DB.Debug().Where("private_key_id=?", privateKeyID).First(&cert).Error; err != nil {
+	if err := db.DB.Debug().Where("private_key_id=? AND cert_status=?", privateKeyID, db.EFFECTIVE).First(&cert).Error; err != nil {
 		return nil, err
 	}
 	return &cert, nil

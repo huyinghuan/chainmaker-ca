@@ -26,11 +26,7 @@ func GeneratePrivateKey(c *gin.Context) {
 	user.CertUsage = generateKeyPairReq.CertUsage
 	user.UserType = generateKeyPairReq.UserType
 	user.OrgID = generateKeyPairReq.OrgID
-	if user.UserType == db.NODE_COMMON || user.UserType == db.NODE_CONSENSUS {
-		user.UserID = generateKeyPairReq.ChainID + "-" + generateKeyPairReq.UserID
-	} else {
-		user.UserID = generateKeyPairReq.UserID
-	}
+	user.UserID = generateKeyPairReq.UserID
 	var isKms bool
 	if utils.GetGenerateKeyPairType() && (user.UserType == db.USER_ADMIN || user.UserType == db.USER_USER) {
 		isKms = true

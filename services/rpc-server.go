@@ -57,7 +57,7 @@ func (c *ChainMakerCertService) GetCertByConditions(ctx context.Context, req *pb
 	} else {
 		userType = db.Name2UserTypeMap[req.Type.String()]
 	}
-	getCertResps, err := GetCert(req.UserId, req.OrgId, req.ChainId, usage, userType)
+	getCertResps, err := GetCert(req.UserId, req.OrgId, usage, userType)
 	if err != nil {
 		logger.Error("Get cert content failed!", zap.Error(err))
 		return nil, err
@@ -86,7 +86,6 @@ func pbtransform(req *pb.ChainMakerCertApplyReq) *models.ChainMakerCertApplyReq 
 		for _, node := range org.Nodes {
 			var modelNode models.Node
 			modelNode.NodeID = node.NodeId
-			modelNode.ChainID = node.ChainId
 			modelNode.NodeType = db.Name2UserTypeMap[node.Type.String()]
 			modelNode.Sans = node.Sans
 			modelNodes = append(modelNodes, modelNode)
