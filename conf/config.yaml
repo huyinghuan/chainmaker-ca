@@ -15,7 +15,7 @@ db_config:
   dbname: chainmaker
 
 #是否初始化根CA
-is_init_root_ca: false
+is_init_root_ca: true
 #密钥加密类型
 private_key_type: SM2
 #哈希类型
@@ -29,7 +29,7 @@ chainmaker_cert_path: ./crypto-config/chainmaker
 # chainmaker cert rpc port
 chainmaker_cert_rpc_port: 2333
 # 是否使用KMS生成本地公私钥
-is_kms_keypair: true
+is_kms_keypair: false
 
   # 根CA的初始化配置
 root_config:

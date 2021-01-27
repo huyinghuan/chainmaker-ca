@@ -128,7 +128,7 @@ func IssueUserCert(org *models.Org, usage db.CertUsage) error {
 		user.UserID = v.UserName
 		user.UserType = v.UserType
 		var isKms bool
-		if utils.GetGenerateKeyPairType() && user.CertUsage == db.SIGN {
+		if utils.GetGenerateKeyPairType() && user.CertUsage == db.SIGN && user.UserType == db.USER_USER {
 			isKms = true
 		}
 		privateKey, keyID, err := CreateKeyPair(&user, "", isKms)

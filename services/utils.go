@@ -141,7 +141,7 @@ func GetCertByConditions(userID, orgID string, usage db.CertUsage, userType ...d
 		return nil, nil
 	}
 	var certAndPrivKeys []*db.CertAndPrivKey
-	for i:=0;i<len(keyPairList);i++{
+	for i := 0; i < len(keyPairList); i++ {
 		var certAndPrivKey db.CertAndPrivKey
 		cert, err := models.GetCertByPrivateKeyID(keyPairList[i].ID)
 		if err != nil {
@@ -150,7 +150,7 @@ func GetCertByConditions(userID, orgID string, usage db.CertUsage, userType ...d
 		certAndPrivKey.Cert = cert
 		hashType := crypto.HashAlgoMap[utils.GetHashType()]
 		var isKms bool
-		if utils.GetGenerateKeyPairType() && (keyPairList[i].UserType == db.USER_ADMIN || keyPairList[i].UserType == db.USER_USER) && keyPairList[i].CertUsage == db.SIGN {
+		if utils.GetGenerateKeyPairType() && (keyPairList[i].UserType == db.USER_USER) && keyPairList[i].CertUsage == db.SIGN {
 			isKms = true
 		}
 		privateKey, err := decryptPrivKey(keyPairList[i].PrivateKey, keyPairList[i].PrivateKeyPwd, hashType, isKms)
