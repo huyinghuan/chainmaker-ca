@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"flag"
 	"fmt"
 	"log"
+	"os"
 
 	"chainmaker.org/wx-CRA-backend/loggers"
 	"github.com/spf13/viper"
@@ -20,11 +22,48 @@ type CaConfig struct {
 	OrgID          string `mapstructure:"org_id"`
 }
 
+// GetConfigEnv - 获取配置环境
+func GetConfigEnv() string {
+	var env string
+	n := len(os.Args)
+	for i := 1; i < n-1; i++ {
+		if os.Args[i] == "-e" || os.Args[i] == "--env" {
+			env = os.Args[i+1]
+			break
+		}
+	}
+	fmt.Println("[env]:", env)
+	if env == "" {
+		fmt.Println("env is empty, set default: space")
+		env = ""
+	}
+	return env
+}
+
+//GetFlagPath .
+func GetFlagPath() string {
+	var configPath string
+	flag.StringVar(&configPath, "config", "./conf", "input config path")
+	flag.Parse()
+	return configPath
+}
+
+//SetConfig .
+func SetConfig(envPath string) {
+	var configPath string
+	if envPath != "" {
+		configPath = envPath
+	} else {
+		configPath = GetFlagPath()
+	}
+	InitConfig(configPath)
+}
+
 //InitConfig .
-func InitConfig() {
+func InitConfig(configPath string) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./conf")
+	viper.AddConfigPath(configPath)
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Println("Init config error: " + err.Error())

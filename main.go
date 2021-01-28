@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	utils.InitConfig()
+	utils.SetConfig(utils.GetConfigEnv())
 	db.InitDB()
 	services.InitServer()
 	go services.InitRPCServer()

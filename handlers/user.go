@@ -1,9 +1,7 @@
 package handlers
 
 import (
-	"io/ioutil"
 	"net/http"
-	"os"
 
 	"chainmaker.org/wx-CRA-backend/models"
 	"chainmaker.org/wx-CRA-backend/models/db"
@@ -70,7 +68,6 @@ func ApplyCert(c *gin.Context) {
 		})
 		return
 	}
-	ioutil.WriteFile("./crypto-config/user.crt", certContent, os.ModePerm)
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
 		"msg":  "Apply user cert successfully!",
