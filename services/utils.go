@@ -71,12 +71,19 @@ func WirteCertToFile(certPath string, x509certEncode []byte) error {
 
 //ParseCertificate Cert byte解析成证书
 func ParseCertificate(certBytes []byte) (*x509.Certificate, error) {
-	block, _ := pem.Decode(certBytes)
-	cert, err := bcx509.ParseCertificate(block.Bytes)
+	var (
+		cert *bcx509.Certificate
+		err  error
+	)
+	block, rest := pem.Decode(certBytes)
+	if block == nil {
+		cert, err = bcx509.ParseCertificate(rest)
+	} else {
+		cert, err = bcx509.ParseCertificate(block.Bytes)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("ParseCertificate cert failed, %s", err)
 	}
-
 	return bcx509.ChainMakerCertToX509Cert(cert)
 }
 
