@@ -1,3 +1,6 @@
+[submodule "src/chainmaker-common"]
+	path = src/chainmaker-common
+	url = https://git.code.tencent.com/ChainMaker/chainmaker-common.git
 [submodule "src/common"]
 	path = src/common
 	url = https://git.code.tencent.com/ChainMaker/chainmaker-common.git
