@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
-	"os"
 	"time"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models"
@@ -209,10 +208,10 @@ func GetRevokedCertList() ([]byte, error) {
 		return nil, err
 	}
 	crlBytes, err := x509.CreateCRL(rand.Reader, cert, issuerPrivKey.ToStandardKey(), revokedCerts, now, next)
-	crlPath := "./crypto-config/CRL/test.crl"
-	err = ioutil.WriteFile(crlPath, pem.EncodeToMemory(&pem.Block{Type: "CRL", Bytes: crlBytes}), os.ModePerm)
 	if err != nil {
+		logger.Error("Create crl failed!", zap.Error(err))
 		return nil, err
 	}
-	return crlBytes, nil
+	pemCrl := pem.EncodeToMemory(&pem.Block{Type: "CRL", Bytes: crlBytes})
+	return pemCrl, nil
 }

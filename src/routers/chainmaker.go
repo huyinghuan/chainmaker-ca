@@ -9,5 +9,4 @@ import (
 //LoadChainMakerRouters 加载chainmaker路由
 func LoadChainMakerRouters(e *gin.Engine) {
 	e.POST("chainmaker/generatecert", handlers.GenerateCert)
-	e.POST("chainmaker/getcert", handlers.GenerateChainMakerCertFile)
 }
