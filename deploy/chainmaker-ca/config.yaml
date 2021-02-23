@@ -1,7 +1,7 @@
 # 日志配置
 log_config:
-  level: error
-  filename: ../ca-log/ca.log
+  level: debug
+  filename: ./log/ca.log
   max_size: 1
   max_age: 30
   max_backups: 5
@@ -14,6 +14,13 @@ db_config:
   port: 3306
   dbname: baas
 
+# db_config:
+#   user: root
+#   password: 123456
+#   ip: 192.168.1.177
+#   port: 3306
+#   dbname: chainmaker
+
 #是否初始化根CA
 is_init_root_ca: true
 #密钥加密类型
@@ -25,7 +32,7 @@ issure_expiration_time: 1
 # 默认CRL更新时间（h）
 crl_next_time: 4
 # chainmaker证书路径
-chainmaker_cert_path: ../crypto-config/chainmaker
+chainmaker_cert_path: ./crypto-config/chainmaker
 # chainmaker cert rpc port
 chainmaker_cert_rpc_port: 2333
 # 是否使用KMS生成本地公私钥
@@ -33,8 +40,8 @@ is_kms_keypair: false
 
   # 根CA的初始化配置
 root_config:
-  private_key_path: ../crypto-config/root/root.key
-  cert_path: ../crypto-config/root/root.crt
+  private_key_path: ./crypto-config/root/root.key
+  cert_path: ./crypto-config/root/root.crt
   expire_year: 100                     
   country: CN                  
   locality: Beijing               
@@ -43,11 +50,11 @@ root_config:
 # 中间CA配置文件
 Intermediate_config:
   private_key_pwd: wx123
-  private_key_path: ../crypto-config/Intermediate/Intermediate.key
+  private_key_path: ./crypto-config/Intermediate/Intermediate.key
   country: CN                              
   locality: Beijing                                   
   province: Beijing                                                             
-  cert_path: ../crypto-config/Intermediate/Intermediate.crt
+  cert_path: ./crypto-config/Intermediate/Intermediate.crt
   expire_year: 10
   org_id: wx-testorg
 #KMS client 配置

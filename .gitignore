@@ -1,4 +1,5 @@
-/crypto-config
+/src/crypto-config
 /log
 .idea
-/deploy/log
+/deploy/chainmaker-ca/log
+/deploy/chainmaker-ca/crypto-config
