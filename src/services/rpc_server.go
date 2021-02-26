@@ -21,7 +21,7 @@ func (c *ChainMakerCertService) GenerateCert(ctx context.Context, req *pb.ChainM
 	modelReq := pbtransform(req)
 	certpath, err := GenerateChainMakerCert(modelReq)
 	if err != nil {
-		logger.Error("[rpc server] Generate chainmaker cert failed!", zap.Error(err))
+		logger.Error("[rpc server] Generate chainmaker cert error", zap.Error(err))
 		return nil, err
 	}
 	resp.Filepath = certpath
@@ -33,7 +33,7 @@ func (c *ChainMakerCertService) GetCertTar(ctx context.Context, req *pb.GetCertT
 	var resp pb.TarCertResp
 	certFileBytes, err := GetChainMakerCertTar(req.Filetarget, req.Filesource)
 	if err != nil {
-		logger.Error("[rpc server] Get chainmaker cert failed!", zap.Error(err))
+		logger.Error("[rpc server] Get chainmaker cert tar error", zap.Error(err))
 		return nil, err
 	}
 	resp.Certfile = certFileBytes
@@ -59,7 +59,7 @@ func (c *ChainMakerCertService) GetCertByConditions(ctx context.Context, req *pb
 	}
 	getCertResps, err := GetCert(req.UserId, req.OrgId, usage, userType)
 	if err != nil {
-		logger.Error("Get cert content failed!", zap.Error(err))
+		logger.Error("[rpc server] get cert by conditions error", zap.Error(err))
 		return nil, err
 	}
 	var certKeys []*pb.CertAndPrivKey = make([]*pb.CertAndPrivKey, len(getCertResps))
@@ -110,14 +110,14 @@ func InitRPCServer() {
 	port := utils.GetChainMakerCertRPCServerPort()
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
-		logger.Error("[RPC server] Init rpc server failed!", zap.Error(err))
+		logger.Error("[RPC server] init rpc server error", zap.Error(err))
 		return
 	}
 	s := grpc.NewServer()                           // 创建gRPC服务器
 	pb.RegisterChainMakerCertApplyServer(s, server) // 在gRPC服务端注册服务
 	err = s.Serve(lis)
 	if err != nil {
-		logger.Error("[RPC server] Init rpc server failed!", zap.Error(err))
+		logger.Error("[RPC server] init rpc server error", zap.Error(err))
 		return
 	}
 }

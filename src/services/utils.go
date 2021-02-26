@@ -58,11 +58,11 @@ func WirteCertToFile(certPath string, x509certEncode []byte) error {
 	dir, file := path.Split(certPath)
 	err := CreateDir(dir)
 	if err != nil {
-		return fmt.Errorf("create dir failed,%s", err.Error())
+		return err
 	}
 	f, err := os.Create(filepath.Join(dir, file))
 	if err != nil {
-		return fmt.Errorf("create file failed, %s", err.Error())
+		return fmt.Errorf("[Write cert to file] os create error: %s", err.Error())
 	}
 	defer f.Close()
 	pem.Encode(f, &pem.Block{Type: "CERTIFICATE", Bytes: x509certEncode})
@@ -82,7 +82,7 @@ func ParseCertificate(certBytes []byte) (*x509.Certificate, error) {
 		cert, err = bcx509.ParseCertificate(block.Bytes)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("ParseCertificate cert failed, %s", err)
+		return nil, fmt.Errorf("[Parse certificate] x509 parse cert error: %s", err.Error())
 	}
 	return bcx509.ChainMakerCertToX509Cert(cert)
 }
@@ -92,7 +92,7 @@ func ParseCsr(csrBytes []byte) (*x509.CertificateRequest, error) {
 	block, _ := pem.Decode(csrBytes)
 	csrBC, err := bcx509.ParseCertificateRequest(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("ParseCertificateRequest failed, %s", err)
+		return nil, fmt.Errorf("[Parse csr] parse certificate request error: %s", err.Error())
 	}
 
 	return bcx509.ChainMakerCertCsrToX509CertCsr(csrBC)
@@ -109,10 +109,10 @@ func CreateDir(dirPath string) error {
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 		err := os.MkdirAll(dirPath, os.ModePerm)
 		if err != nil {
-			return err
+			return fmt.Errorf("[Create dir] os mkdir all error: %s", err.Error())
 		}
 	} else {
-		return err
+		return fmt.Errorf("[Create dir] os stat error: %s", err.Error())
 	}
 	return nil
 }
@@ -120,19 +120,19 @@ func CreateDir(dirPath string) error {
 //CheckOrgInfo 校验组织信息
 func CheckOrgInfo(org *models.Org) error {
 	if org.OrgID == "" {
-		err := fmt.Errorf("OrgID  can't be empty")
+		err := fmt.Errorf("[CheckOrgInfo] orgID  can't be empty")
 		return err
 	}
 	if org.Country == "" {
-		err := fmt.Errorf("Country can't be empty")
+		err := fmt.Errorf("[CheckOrgInfo] country can't be empty")
 		return err
 	}
 	if org.Locality == "" {
-		err := fmt.Errorf("Locality can't be empty")
+		err := fmt.Errorf("[CheckOrgInfo] locality can't be empty")
 		return err
 	}
 	if org.Province == "" {
-		err := fmt.Errorf("Province can't be empty")
+		err := fmt.Errorf("[CheckOrgInfo] province can't be empty")
 		return err
 	}
 	return nil
@@ -142,7 +142,7 @@ func CheckOrgInfo(org *models.Org) error {
 func GetCertByConditions(userID, orgID string, usage db.CertUsage, userType ...db.UserType) ([]*db.CertAndPrivKey, error) {
 	keyPairList, err := models.GetKeyPairByConditions(userID, orgID, usage, userType...)
 	if err != nil {
-		return nil, fmt.Errorf("Get key pair by conditions failed: %s", err.Error())
+		return nil, err
 	}
 	if len(keyPairList) == 0 {
 		return nil, nil
@@ -152,7 +152,7 @@ func GetCertByConditions(userID, orgID string, usage db.CertUsage, userType ...d
 		var certAndPrivKey db.CertAndPrivKey
 		cert, err := models.GetCertByPrivateKeyID(keyPairList[i].ID)
 		if err != nil {
-			return nil, fmt.Errorf("Get cert by private key id failed: %s", err.Error())
+			return nil, err
 		}
 		certAndPrivKey.Cert = cert
 		hashType := crypto.HashAlgoMap[utils.GetHashType()]
@@ -162,7 +162,7 @@ func GetCertByConditions(userID, orgID string, usage db.CertUsage, userType ...d
 		}
 		privateKey, err := decryptPrivKey(keyPairList[i].PrivateKey, keyPairList[i].PrivateKeyPwd, hashType, isKms)
 		if err != nil {
-			return nil, fmt.Errorf("Decrypt private key failed: %s", err.Error())
+			return nil, err
 		}
 		certAndPrivKey.KeyPair = &keyPairList[i]
 		certAndPrivKey.PrivKey = privateKey

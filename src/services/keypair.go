@@ -27,21 +27,21 @@ func createPrivKey(keyType crypto.KeyType, isKms bool, keyAlias string) (crypto.
 		kmsConfig, kmsKeyType := GetKmsConfig()
 		client, err := tencentcloudkms.CreateConnection(kmsConfig)
 		if err != nil {
-			return nil, fmt.Errorf("get kms client failed,%s", err.Error())
+			return nil, fmt.Errorf("[Create private key] create kms client connection error: %s", err.Error())
 		}
 		privKey, err := tencentcloudkms.GenerateKeyPairFromKMS(client, keyAlias, kmsKeyType)
 		if err != nil {
-			return nil, fmt.Errorf("generate keypair from kms failed, %s", err.Error())
+			return nil, fmt.Errorf("[Create private key] generate keypair from kms error: %s", err.Error())
 		}
 		return privKey, nil
 	}
 	algoName, ok := crypto.KeyType2NameMap[keyType]
 	if !ok {
-		return nil, fmt.Errorf("unknown key algo type [%d]", keyType)
+		return nil, fmt.Errorf("[Create private key] unknown key algo type [%d]", keyType)
 	}
 	privKey, err := asym.GenerateKeyPair(keyType)
 	if err != nil {
-		return nil, fmt.Errorf("generate key pair [%s] failed, %s", algoName, err.Error())
+		return nil, fmt.Errorf("[Create private key] generate key pair [%s] failed, %s", algoName, err.Error())
 	}
 	return privKey, nil
 }
@@ -51,7 +51,7 @@ func encryptPrivKey(privKey crypto.PrivateKey, privKeyPwd []byte) ([]byte, error
 	privKeyBytes, _ := privKey.Bytes()
 	privKeyPem, err := x509.EncryptPEMBlock(rand.Reader, "PRIVATE KEY", privKeyBytes, privKeyPwd, x509.PEMCipherAES256)
 	if err != nil {
-		return nil, fmt.Errorf("x509 EncryptPEMBlock failed: %s", err.Error())
+		return nil, fmt.Errorf("[Encrypt PrivKey] x509 encrypt PEM block failed: %s", err.Error())
 	}
 	return pem.EncodeToMemory(privKeyPem), nil
 }
@@ -61,10 +61,10 @@ func WritePrivKeyFile(privKeyFilePath string, data []byte) error {
 	dir, _ := path.Split(privKeyFilePath)
 	err := CreateDir(dir)
 	if err != nil {
-		return fmt.Errorf("create dir failed,%s", err.Error())
+		return err
 	}
 	if err := ioutil.WriteFile(privKeyFilePath, data, os.ModePerm); err != nil {
-		return fmt.Errorf("Write private key file failed: %s", err.Error())
+		return fmt.Errorf("[Write Private key] write private key file failed: %s", err.Error())
 	}
 	return nil
 }
@@ -75,24 +75,22 @@ func decryptPrivKey(privKeyRaw []byte, privKeyPwd string, hashType crypto.HashTy
 		kmsConfig, _ := GetKmsConfig()
 		client, err := tencentcloudkms.CreateConnection(kmsConfig)
 		if err != nil {
-			return nil, fmt.Errorf("get kms client failed,%s", err.Error())
+			return nil, fmt.Errorf("[Decrypt PrivKey] get kms client failed,%s", err.Error())
 		}
 		privateKey, err := tencentcloudkms.LoadPrivateKey(client, privKeyRaw)
 		if err != nil {
-			return nil, fmt.Errorf("load private key failed,%s", err.Error())
+			return nil, fmt.Errorf("[Decrypt PrivKey] load private key failed,%s", err.Error())
 		}
 		return privateKey, nil
 	}
 	privateKeyPwd := DefaultPrivateKeyPwd + privKeyPwd
 	issureHashPwd, err := hash.Get(hashType, []byte(privateKeyPwd))
 	if err != nil {
-		logger.Error("Get issuer private key pwd hash failed!", zap.Error(err))
-		return nil, err
+		return nil, fmt.Errorf("[Decrypt PrivKey] get issue pwd error: %s", err.Error())
 	}
 	issuerPrivKey, err := asym.PrivateKeyFromPEM(privKeyRaw, issureHashPwd)
 	if err != nil {
-		logger.Error("PrivateKey Decrypt  failed!", zap.Error(err))
-		return nil, err
+		return nil, fmt.Errorf("[Decrypt PrivKey] asym private Key From PEM error: %s", err.Error())
 	}
 	return issuerPrivKey, nil
 }
@@ -104,7 +102,7 @@ func CreateKeyPair(user *db.KeyPairUser, privateKeyPwd string, isKms bool) (priv
 		hashType := crypto.HashAlgoMap[utils.GetHashType()]
 		privateKey, err := decryptPrivKey(keyPairE.PrivateKey, keyPairE.PrivateKeyPwd, hashType, isKms)
 		if err != nil {
-			return nil, "", fmt.Errorf("Decrypt private key failed: %s", err.Error())
+			return nil, "", err
 		}
 		return privateKey, keyPairE.ID, nil
 	}
@@ -115,7 +113,6 @@ func CreateKeyPair(user *db.KeyPairUser, privateKeyPwd string, isKms bool) (priv
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
 	privKey, err = createPrivKey(keyType, isKms, keyPair.ID)
 	if err != nil {
-		logger.Error("Generate private key failed!", zap.Error(err))
 		return
 	}
 	var privKeyPemBytes, hashPwd []byte
@@ -124,13 +121,12 @@ func CreateKeyPair(user *db.KeyPairUser, privateKeyPwd string, isKms bool) (priv
 		privKeyPwd := DefaultPrivateKeyPwd + privateKeyPwd
 		hashPwd, err = hash.Get(hashType, []byte(privKeyPwd))
 		if err != nil {
-			logger.Error("Get private key pwd hash failed!", zap.Error(err))
+			err = fmt.Errorf("[Create Key Pair] get pwd hash error: %s", err.Error())
 			return
 		}
 		//私钥加密
 		privKeyPemBytes, err = encryptPrivKey(privKey, hashPwd)
 		if err != nil {
-			logger.Error("Private Encrypt failed!", zap.Error(err))
 			return
 		}
 	} else {
@@ -144,17 +140,12 @@ func CreateKeyPair(user *db.KeyPairUser, privateKeyPwd string, isKms bool) (priv
 	publicKeyPEM, _ := privKey.PublicKey().String()
 	keyPair.PublicKey = []byte(publicKeyPEM)
 	keyPair.KeyType = keyType
-	if err != nil {
-		logger.Error("Get userid by username failed!", zap.Error(err))
-		return
-	}
 	keyPair.CertUsage = user.CertUsage
 	keyPair.UserType = user.UserType
 	keyPair.OrgID = user.OrgID
 	keyPair.UserID = user.UserID
 	err = models.InsertKeyPair(&keyPair)
 	if err != nil {
-		logger.Error("Insert keypair failed!", zap.Error(err))
 		return
 	}
 	keyID = keyPair.ID
@@ -165,7 +156,7 @@ func CreateKeyPair(user *db.KeyPairUser, privateKeyPwd string, isKms bool) (priv
 func GetKmsConfig() (kmsConfig *tencentcloudkms.KMSConfig, kmsKeyType string) {
 	config, err := utils.GetKmsClientConfig()
 	if err != nil {
-		logger.Error("get ksm config failed!", zap.Error(err))
+		logger.Error("get ksm config error", zap.Error(err))
 	}
 	kmsKeyType = utils.GetPrivKeyType()
 	kmsConfig = &tencentcloudkms.KMSConfig{

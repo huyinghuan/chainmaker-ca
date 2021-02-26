@@ -5,7 +5,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
-	"fmt"
 	"io/ioutil"
 	"math/big"
 	"time"
@@ -23,7 +22,7 @@ import (
 func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 	keyPair, err := models.GetKeyPairByID(applyCertReq.PrivateKeyID)
 	if err != nil {
-		logger.Error("Get key pair by id failed!", zap.Error(err))
+		logger.Error("apply cert error", zap.Error(err))
 		return nil, err
 	}
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
@@ -34,10 +33,7 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 	//私钥解密
 	privateKey, err := decryptPrivKey(keyPair.PrivateKey, "", hashType, isKms)
 	if err != nil {
-		return nil, fmt.Errorf("Decrypt private key failed: %v", err.Error())
-	}
-	if err != nil {
-		logger.Error("Private from der failed!", zap.Error(err))
+		logger.Error("apply cery error", zap.Error(err))
 		return nil, err
 	}
 	O := keyPair.OrgID
@@ -46,26 +42,26 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 	certCSR, err := createCSR(privateKey, applyCertReq.Country, applyCertReq.Locality, applyCertReq.Province,
 		OU, O, CN)
 	if err != nil {
-		logger.Error("Create csr failed!", zap.Error(err))
+		logger.Error("apply cery error", zap.Error(err))
 		return nil, err
 	}
 	//读取签发者私钥
 	issuerPrivKeyFilePath, certFilePath := utils.GetIntermediatePrkCert()
 	privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
 	if err != nil {
-		logger.Error("Read private key file failed!", zap.Error(err))
+		logger.Error("apply cery error", zap.Error(err))
 		return nil, err
 	}
 	//私钥解密
 	issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetIntermCAPrivateKeyPwd(), hashType, false)
 	if err != nil {
-		logger.Error("Decrypt Private Key failed!", zap.Error(err))
+		logger.Error("apply cery error", zap.Error(err))
 		return nil, err
 	}
 	//读取签发者证书
 	certBytes, err := ioutil.ReadFile(certFilePath)
 	if err != nil {
-		logger.Error("Read cert file failed!", zap.Error(err))
+		logger.Error("apply cery error", zap.Error(err))
 		return nil, err
 	}
 	var isCA bool
@@ -74,7 +70,7 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 	}
 	certModel, err := IssueCertificate(hashType, isCA, keyPair.ID, issuerPrivKey, certCSR, certBytes, applyCertReq.ExpireYear, applyCertReq.NodeSans)
 	if err != nil {
-		logger.Error("Issue Cert failed!", zap.Error(err))
+		logger.Error("apply cery error", zap.Error(err))
 		return nil, err
 	}
 
@@ -85,12 +81,12 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
 	cert, err := models.GetCertBySN(updateCertReq.CertSN)
 	if err != nil {
-		logger.Error("Get cert by sn failed!", zap.Error(err))
+		logger.Error("update cert error", zap.Error(err))
 		return nil, err
 	}
 	keyPair, err := models.GetKeyPairByID(cert.PrivateKeyID)
 	if err != nil {
-		logger.Error("Get key pair by id failed!", zap.Error(err))
+		logger.Error("update cert error", zap.Error(err))
 		return nil, err
 	}
 	certCSRBytes := cert.CsrContent
@@ -98,7 +94,7 @@ func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
 	issuerPrivKeyFilePath, certFilePath := utils.GetIntermediatePrkCert()
 	privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
 	if err != nil {
-		logger.Error("Read private key file failed!", zap.Error(err))
+		logger.Error("update cert error", zap.Error(err))
 		return nil, err
 	}
 	//私钥解密
@@ -106,29 +102,29 @@ func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
 	isKms := utils.GetGenerateKeyPairType()
 	issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetIntermCAPrivateKeyPwd(), hashType, isKms)
 	if err != nil {
-		logger.Error(" Decrypt private key  failed!", zap.Error(err))
+		logger.Error("update cert error", zap.Error(err))
 		return nil, err
 	}
 	//读取签发者证书
 	certBytes, err := ioutil.ReadFile(certFilePath)
 	if err != nil {
-		logger.Error("Read cert file failed!", zap.Error(err))
+		logger.Error("update cert error", zap.Error(err))
 		return nil, err
 	}
 	var nodeSans []string
 	err = json.Unmarshal([]byte(cert.CertSans), &nodeSans)
 	if err != nil {
-		logger.Error("Nodesans unmarshal failed!", zap.Error(err))
+		logger.Error("update cert error", zap.Error(err))
 		return nil, err
 	}
 	certModel, err := IssueCertificate(hashType, false, keyPair.ID, issuerPrivKey, certCSRBytes, certBytes, updateCertReq.ExpireYear, nodeSans)
 	if err != nil {
-		logger.Error("Issue Cert failed!", zap.Error(err))
+		logger.Error("update cert error", zap.Error(err))
 		return nil, err
 	}
 	err = models.UpdateCertStatusExpiredBySN(updateCertReq.CertSN)
 	if err != nil {
-		logger.Error("Update Cert failed!", zap.Error(err))
+		logger.Error("update cert error", zap.Error(err))
 		return nil, err
 	}
 	return certModel.Content, nil
@@ -143,12 +139,12 @@ func RevokedCert(revokedCertReq *models.RevokedCertReq) error {
 	revoked.RevokedEndTime = revokedCertReq.RevokedEndTime
 	err := models.UpdateCertStatusRevokedBySN(revokedCertReq.RevokedCertSN)
 	if err != nil {
-		logger.Error("Update cert status failed!", zap.Error(err))
+		logger.Error("revoked cert error", zap.Error(err))
 		return err
 	}
 	err = models.InsertRevokedCert(&revoked)
 	if err != nil {
-		logger.Error("Insert revoked cert failed!", zap.Error(err))
+		logger.Error("revoked cert error", zap.Error(err))
 		return err
 	}
 	return nil
@@ -158,7 +154,7 @@ func RevokedCert(revokedCertReq *models.RevokedCertReq) error {
 func GetRevokedCertList() ([]byte, error) {
 	revokedCertList, err := models.GetAllRevokedList()
 	if err != nil {
-		logger.Error("Get all revoked list failed!", zap.Error(err))
+		logger.Error("get all revoked list error", zap.Error(err))
 		return nil, err
 	}
 	var revokedCerts []pkix.RevokedCertificate
@@ -174,7 +170,7 @@ func GetRevokedCertList() ([]byte, error) {
 	issuerPrivKeyFilePath, certFilePath := utils.GetIntermediatePrkCert()
 	privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
 	if err != nil {
-		logger.Error("Read private key file failed!", zap.Error(err))
+		logger.Error("get all revoked list error", zap.Error(err))
 		return nil, err
 	}
 	//私钥解密
@@ -184,7 +180,7 @@ func GetRevokedCertList() ([]byte, error) {
 		isKms := utils.GetGenerateKeyPairType()
 		issuerPrivKey, err = decryptPrivKey(privKeyRaw, utils.GetIntermCAPrivateKeyPwd(), hashType, isKms)
 		if err != nil {
-			logger.Error(" Decrypt private key  failed!", zap.Error(err))
+			logger.Error("get all revoked list error", zap.Error(err))
 			return nil, err
 		}
 	} else {
@@ -192,24 +188,24 @@ func GetRevokedCertList() ([]byte, error) {
 		plain := block.Bytes
 		issuerPrivKey, err = asym.PrivateKeyFromDER(plain)
 		if err != nil {
-			logger.Error("PrivateKeyFromPEM failed!", zap.Error(err))
+			logger.Error("get all revoked list error", zap.Error(err))
 			return nil, err
 		}
 	}
 	//读取签发者证书
 	certBytes, err := ioutil.ReadFile(certFilePath)
 	if err != nil {
-		logger.Error("Read cert file failed!", zap.Error(err))
+		logger.Error("get all revoked list error", zap.Error(err))
 		return nil, err
 	}
 	cert, err := ParseCertificate(certBytes)
 	if err != nil {
-		logger.Error("Parse Cert failed!", zap.Error(err))
+		logger.Error("get all revoked list error", zap.Error(err))
 		return nil, err
 	}
 	crlBytes, err := x509.CreateCRL(rand.Reader, cert, issuerPrivKey.ToStandardKey(), revokedCerts, now, next)
 	if err != nil {
-		logger.Error("Create crl failed!", zap.Error(err))
+		logger.Error("get all revoked list error", zap.Error(err))
 		return nil, err
 	}
 	pemCrl := pem.EncodeToMemory(&pem.Block{Type: "CRL", Bytes: crlBytes})

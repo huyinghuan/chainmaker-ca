@@ -36,16 +36,16 @@ func IssueCertificate(hashType crypto.HashType, isCA bool, keyID string, issuerP
 	}
 	csr, err := bcx509.X509CertCsrToChainMakerCertCsr(csrOriginal)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[Issue cert] X509 cert to chainmaker error: %s", err.Error())
 	}
 
 	if err := csr.CheckSignature(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[Issue cert] csr check signature error: %s", err.Error())
 	}
 
 	sn, err := rand.Int(rand.Reader, big.NewInt(1000000))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[Issue cert] rand int error: %s", err.Error())
 	}
 
 	basicConstraintsValid := false
@@ -86,19 +86,19 @@ func IssueCertificate(hashType crypto.HashType, isCA bool, keyID string, issuerP
 	} else {
 		template.AuthorityKeyId, err = cert.ComputeSKI(hashType, issuerCert.PublicKey)
 		if err != nil {
-			return nil, fmt.Errorf("issue cert compute issuer cert SKI failed, %s", err.Error())
+			return nil, fmt.Errorf("[Issue cert] issue cert compute issuer cert SKI failed: %s", err.Error())
 		}
 	}
 
 	template.SubjectKeyId, err = cert.ComputeSKI(hashType, csr.PublicKey.ToStandardKey())
 	if err != nil {
-		return nil, fmt.Errorf("issue cert compute csr SKI failed, %s", err.Error())
+		return nil, fmt.Errorf("[Issue cert] issue cert compute csr SKI failed, %s", err.Error())
 	}
 
 	x509certEncode, err := bcx509.CreateCertificate(rand.Reader, template, issuerCert,
 		csr.PublicKey.ToStandardKey(), issuerPrivKey.ToStandardKey())
 	if err != nil {
-		return nil, fmt.Errorf("issue certificate failed, %s", err)
+		return nil, fmt.Errorf("[Issue cert] issue certificate failed, %s", err)
 	}
 	certModel.IsCa = isCA
 	certModel.CertEncode = hex.EncodeToString(x509certEncode)
@@ -118,7 +118,7 @@ func IssueCertificate(hashType crypto.HashType, isCA bool, keyID string, issuerP
 	certModel.Signature = hex.EncodeToString(template.Signature)
 	sansstr, err := json.Marshal(sans)
 	if err != nil {
-		return nil, fmt.Errorf("Marshal sans failed: %s", err.Error())
+		return nil, fmt.Errorf("[Issue cert] marshal sans failed: %s", err.Error())
 	}
 	certModel.CertSans = string(sansstr)
 	certModel.CertStatus = db.EFFECTIVE
@@ -126,7 +126,7 @@ func IssueCertificate(hashType crypto.HashType, isCA bool, keyID string, issuerP
 	//证书入库
 	err = models.InsertCert(&certModel)
 	if err != nil {
-		return nil, fmt.Errorf("Insert Cert to db failed: %v", err.Error())
+		return nil, err
 	}
 	return &certModel, nil
 }
@@ -138,12 +138,12 @@ func createCSR(privKey crypto.PrivateKey, country, locality, province,
 
 	template, err := bcx509.X509CertCsrToChainMakerCertCsr(templateX509)
 	if err != nil {
-		return nil, fmt.Errorf("generate csr failed, %s", err.Error())
+		return nil, fmt.Errorf("[Create csr] generate csr failed, %s", err.Error())
 	}
 
 	data, err := bcx509.CreateCertificateRequest(rand.Reader, template, privKey.ToStandardKey())
 	if err != nil {
-		return nil, fmt.Errorf("CreateCertificateRequest failed, %s", err.Error())
+		return nil, fmt.Errorf("[Create csr] createCertificateRequest failed, %s", err.Error())
 	}
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: data}), nil
 }

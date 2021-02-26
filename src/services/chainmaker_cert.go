@@ -14,7 +14,6 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"chainmaker.org/chainmaker-go/common/crypto"
-	"go.uber.org/zap"
 )
 
 //GenerateChainMakerCert 生成chainmaker全套证书
@@ -25,40 +24,33 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) (stri
 	for _, org := range cmCertApplyReq.Orgs {
 		err := CheckOrgInfo(&org)
 		if err != nil {
-			logger.Error("Org info can't be empty")
 			return filepath, err
 		}
 		err = IssueOrgCACert(org.OrgID, org.Country, org.Locality, org.Province, "", defaultExpireYear)
 		if err != nil {
-			logger.Error("Issue org ca cert failed!", zap.Error(err))
 			return filepath, err
 		}
 		//签发节点sign证书
 		err = IssueNodeCert(&org, db.SIGN)
 		if err != nil {
-			logger.Error("Issue node sign cert failed!", zap.Error(err))
 			return filepath, err
 		}
 		//签发节点TLS证书
 		err = IssueNodeCert(&org, db.TLS)
 		if err != nil {
-			logger.Error("Issue node tls cert failed!", zap.Error(err))
 			return filepath, err
 		}
 		err = IssueUserCert(&org, db.SIGN)
 		if err != nil {
-			logger.Error("Issue  user sign cert failed!", zap.Error(err))
 			return filepath, err
 		}
 		err = IssueUserCert(&org, db.TLS)
 		if err != nil {
-			logger.Error("Issue  user tls cert failed!", zap.Error(err))
 			return filepath, err
 		}
 	}
 	filepath, err := WriteChainMakerCertFile(cmCertApplyReq)
 	if err != nil {
-		logger.Error("Write chainmaker cert file failed!", zap.Error(err))
 		return filepath, err
 	}
 	return filepath, nil
@@ -68,16 +60,16 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) (stri
 func IssueNodeCert(org *models.Org, certUsage db.CertUsage) error {
 	certAndPrivKeys, err := GetCertByConditions("", org.OrgID, -1, db.INTERMRDIARY_CA)
 	if err != nil {
-		return fmt.Errorf("Get cert by conditions failed: %s", err.Error())
+		return err
 	}
 	if certAndPrivKeys == nil {
-		return fmt.Errorf("Org ca cert is not exist")
+		return fmt.Errorf("[issue node cert] org ca cert is not exist")
 	}
 	issuerPrivKey := certAndPrivKeys[0].PrivKey
 	issueCert := certAndPrivKeys[0].Cert
 	for _, node := range org.Nodes {
 		if node.NodeID == "" || (node.NodeType != db.NODE_COMMON && node.NodeType != db.NODE_CONSENSUS) {
-			return fmt.Errorf("Node info error: There is a problem with node information")
+			return fmt.Errorf("[issue node cert] there is a problem with node information")
 		}
 		var user db.KeyPairUser
 		user.CertUsage = certUsage
@@ -86,7 +78,7 @@ func IssueNodeCert(org *models.Org, certUsage db.CertUsage) error {
 		user.UserType = node.NodeType
 		privateKey, keyID, err := CreateKeyPair(&user, "", false)
 		if err != nil {
-			return fmt.Errorf("Create key pair failed: %s", err.Error())
+			return err
 		}
 
 		//生成CSR
@@ -96,12 +88,12 @@ func IssueNodeCert(org *models.Org, certUsage db.CertUsage) error {
 		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
 			O, CN)
 		if err != nil {
-			return fmt.Errorf("Create csr  failed: %s", err.Error())
+			return err
 		}
 		hashType := crypto.HashAlgoMap[utils.GetHashType()]
 		_, err = IssueCertificate(hashType, false, keyID, issuerPrivKey, csrBytes, issueCert.Content, utils.GetIssureExpirationTime(), node.Sans)
 		if err != nil {
-			return fmt.Errorf("Issue cert  failed: %s", err.Error())
+			return err
 		}
 	}
 	return nil
@@ -111,16 +103,16 @@ func IssueNodeCert(org *models.Org, certUsage db.CertUsage) error {
 func IssueUserCert(org *models.Org, usage db.CertUsage) error {
 	certAndPrivKeys, err := GetCertByConditions("", org.OrgID, -1, db.INTERMRDIARY_CA)
 	if err != nil {
-		return fmt.Errorf("Get cert by conditions failed: %s", err.Error())
+		return err
 	}
 	if certAndPrivKeys == nil {
-		return fmt.Errorf("Org ca cert is not exist")
+		return fmt.Errorf("[issuer user cert] org ca cert is not exist")
 	}
 	issuerPrivKey := certAndPrivKeys[0].PrivKey
 	issueCert := certAndPrivKeys[0].Cert
 	for _, v := range org.Users {
 		if v.UserName == "" || (v.UserType != db.USER_ADMIN && v.UserType != db.USER_USER) {
-			return fmt.Errorf("User info error: There is a problem with node information")
+			return fmt.Errorf("[issuer user cert] there is a problem with node information")
 		}
 		var user db.KeyPairUser
 		user.CertUsage = usage
@@ -133,7 +125,6 @@ func IssueUserCert(org *models.Org, usage db.CertUsage) error {
 		}
 		privateKey, keyID, err := CreateKeyPair(&user, "", isKms)
 		if err != nil {
-			logger.Error("create key pair failed!", zap.Error(err))
 			return err
 		}
 
@@ -147,6 +138,9 @@ func IssueUserCert(org *models.Org, usage db.CertUsage) error {
 		}
 		hashType := crypto.HashAlgoMap[utils.GetHashType()]
 		_, err = IssueCertificate(hashType, false, keyID, issuerPrivKey, csrBytes, issueCert.Content, utils.GetIssureExpirationTime(), nil)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -162,17 +156,14 @@ func WriteChainMakerCertFile(req *models.ChainMakerCertApplyReq) (certBasePath s
 		orgPath := filepath.Join(certBasePath, org.OrgID)
 		err = WriteCaCertFile(orgPath, &org)
 		if err != nil {
-			logger.Error("Write ca cert failed!", zap.Error(err))
 			return
 		}
 		err = WriteNodeCertFile(orgPath, &org)
 		if err != nil {
-			logger.Error("Write node cert failed!", zap.Error(err))
 			return
 		}
 		err = WriteUserCertFile(orgPath, &org)
 		if err != nil {
-			logger.Error("Write user cert failed!", zap.Error(err))
 			return
 		}
 	}
@@ -192,13 +183,11 @@ func GetChainMakerCertTar(filetarget, filesource string) ([]byte, error) {
 	}
 	err := Tar(filetarget, filesource)
 	if err != nil {
-		logger.Error("Tar chainmaker file failed!", zap.Error(err))
 		return nil, err
 	}
 	dataBytes, err := ioutil.ReadFile(filetarget)
 	if err != nil {
-		logger.Error("Read tar file failed!", zap.Error(err))
-		return nil, err
+		return nil, fmt.Errorf("[Get cert tar] read file error: %s", err.Error())
 	}
 	return dataBytes, nil
 }
@@ -209,15 +198,15 @@ func WriteNodeCertFile(orgPath string, org *models.Org) error {
 		nodePath := filepath.Join(orgPath, "node", node.NodeID)
 		err := CreateDir(nodePath)
 		if err != nil {
-			return fmt.Errorf("Create node dir failed: %s", err.Error())
+			return err
 		}
 		userID := node.NodeID
 		certAndPrivKeys, err := GetCertByConditions(userID, org.OrgID, -1, node.NodeType)
 		if err != nil {
-			return fmt.Errorf("Get cert by conditions failed: %s", err.Error())
+			return err
 		}
 		if certAndPrivKeys == nil {
-			return fmt.Errorf("Org ca cert is not exist")
+			return fmt.Errorf("[Write node cert file] org ca cert is not exist")
 		}
 		var (
 			nodeSignCert []byte
@@ -238,22 +227,22 @@ func WriteNodeCertFile(orgPath string, org *models.Org) error {
 		nodeSignCertPath := filepath.Join(nodePath, node.NodeID+".sign.crt")
 		err = ioutil.WriteFile(nodeSignCertPath, nodeSignCert, os.ModePerm)
 		if err != nil {
-			return fmt.Errorf("Write node sign cert failed: %s", err.Error())
+			return fmt.Errorf("[Write node cert file] wirte node sign cert error: %s", err.Error())
 		}
 		nodeSignKeyPath := filepath.Join(nodePath, node.NodeID+".sign.key")
 		err = ioutil.WriteFile(nodeSignKeyPath, nodeSignKey, os.ModePerm)
 		if err != nil {
-			return fmt.Errorf("Write node sign key failed: %s", err.Error())
+			return fmt.Errorf("[Write node cert file] wirte node sign key error: %s", err.Error())
 		}
 		nodeTLSCertPath := filepath.Join(nodePath, node.NodeID+".tls.crt")
 		err = ioutil.WriteFile(nodeTLSCertPath, nodeTLSCert, os.ModePerm)
 		if err != nil {
-			return fmt.Errorf("Write node tls cert failed: %s", err.Error())
+			return fmt.Errorf("[Write node cert file] wirte node tls cert error: %s", err.Error())
 		}
 		nodeTLSKeyPath := filepath.Join(nodePath, node.NodeID+".tls.key")
 		err = ioutil.WriteFile(nodeTLSKeyPath, nodeTLSKey, os.ModePerm)
 		if err != nil {
-			return fmt.Errorf("Write node tls key failed: %s", err.Error())
+			return fmt.Errorf("[Write node cert file] wirte node tls key error: %s", err.Error())
 		}
 	}
 	return nil
@@ -263,10 +252,10 @@ func WriteNodeCertFile(orgPath string, org *models.Org) error {
 func WriteCaCertFile(orgPath string, org *models.Org) error {
 	certAndPrivKeys, err := GetCertByConditions("", org.OrgID, -1, db.INTERMRDIARY_CA)
 	if err != nil {
-		return fmt.Errorf("Get cert by conditions failed: %s", err.Error())
+		return err
 	}
 	if certAndPrivKeys == nil {
-		return fmt.Errorf("Org ca cert is not exist")
+		return fmt.Errorf("[Write ca cert file] org ca cert is not exist")
 	}
 	caKey := certAndPrivKeys[0].KeyPair
 	caCert := certAndPrivKeys[0].Cert
@@ -274,15 +263,15 @@ func WriteCaCertFile(orgPath string, org *models.Org) error {
 	caCertPath := filepath.Join(caPath, "ca.crt")
 	caKeyPath := filepath.Join(caPath, "ca.key")
 	if err := CreateDir(caPath); err != nil {
-		return fmt.Errorf("Create ca dir failed: %s", err.Error())
+		return err
 	}
 	err = ioutil.WriteFile(caCertPath, caCert.Content, os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("Write ca Cert file  failed: %s", err.Error())
+		return fmt.Errorf("[Write ca cert file] write ca cert file error: %s", err.Error())
 	}
 	err = ioutil.WriteFile(caKeyPath, caKey.PrivateKey, os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("Write ca key file by failed: %s", err.Error())
+		return fmt.Errorf("[Write ca cert file] write ca key file error: %s", err.Error())
 	}
 	return nil
 }
@@ -293,14 +282,14 @@ func WriteUserCertFile(orgPath string, org *models.Org) error {
 		userCertPath := filepath.Join(orgPath, "user", v.UserName)
 		err := CreateDir(userCertPath)
 		if err != nil {
-			return fmt.Errorf("Create failed: %s", err.Error())
+			return err
 		}
 		certAndPrivKeys, err := GetCertByConditions(v.UserName, org.OrgID, -1, v.UserType)
 		if err != nil {
-			return fmt.Errorf("Get cert by conditions failed: %s", err.Error())
+			return err
 		}
 		if certAndPrivKeys == nil {
-			return fmt.Errorf("Org ca cert is not exist")
+			return fmt.Errorf("[Wirte user cert file] org ca cert is not exist")
 		}
 
 		var (
@@ -322,22 +311,22 @@ func WriteUserCertFile(orgPath string, org *models.Org) error {
 		userSignCertPath := filepath.Join(userCertPath, v.UserName+".sign.crt")
 		err = ioutil.WriteFile(userSignCertPath, userSignCert, os.ModePerm)
 		if err != nil {
-			return fmt.Errorf("Write user sign key failed: %s", err.Error())
+			return fmt.Errorf("[Wirte user cert file] write user sign sign error: %s", err.Error())
 		}
 		userSignKeyPath := filepath.Join(userCertPath, v.UserName+".sign.key")
 		err = ioutil.WriteFile(userSignKeyPath, userSignKey, os.ModePerm)
 		if err != nil {
-			return fmt.Errorf("Write user sign cert failed: %s", err.Error())
+			return fmt.Errorf("[Wirte user cert file] write user sign key error: %s", err.Error())
 		}
 		userTLSCertPath := filepath.Join(userCertPath, v.UserName+".tls.crt")
 		err = ioutil.WriteFile(userTLSCertPath, userTLSCert, os.ModePerm)
 		if err != nil {
-			return fmt.Errorf("Write user tls key failed: %s", err.Error())
+			return fmt.Errorf("[Wirte user cert file] write user tls sign error: %s", err.Error())
 		}
 		userTLSKeyPath := filepath.Join(userCertPath, v.UserName+".tls.key")
 		err = ioutil.WriteFile(userTLSKeyPath, userTLSKey, os.ModePerm)
 		if err != nil {
-			return fmt.Errorf("Write user tls cert failed: %s", err.Error())
+			return fmt.Errorf("[Wirte user cert file] write user tls key error: %s", err.Error())
 		}
 	}
 	return nil
@@ -350,7 +339,7 @@ func Tar(filetarget, filesource string) (err error) {
 		if os.IsExist(err) {
 			os.RemoveAll(filetarget)
 		} else {
-			return err
+			return fmt.Errorf("[Tar] os create error: %s", err.Error())
 		}
 	}
 	defer fw.Close()
@@ -361,14 +350,14 @@ func Tar(filetarget, filesource string) (err error) {
 	defer func() {
 		// 这里要判断 tw 是否关闭成功，如果关闭失败，则 .tar 文件可能不完整
 		if er := tw.Close(); er != nil {
-			err = er
+			err = fmt.Errorf("[Tar] writer close error: %s", er.Error())
 		}
 	}()
 
 	// 获取文件或目录信息
 	fi, err := os.Stat(filesource)
 	if err != nil {
-		return err
+		return fmt.Errorf("[Tar] os stat error: %s", err.Error())
 	}
 
 	// 获取要打包的文件或目录的所在位置和名称
@@ -398,7 +387,7 @@ func tarDir(srcBase, srcRelative string, tw *tar.Writer, fi os.FileInfo) (err er
 	// 获取 srcFull 下的文件或子目录列表
 	fis, er := ioutil.ReadDir(srcFull)
 	if er != nil {
-		return er
+		return fmt.Errorf("[Tar dir] read dir error: %s", er.Error())
 	}
 
 	// 开始遍历
@@ -414,12 +403,12 @@ func tarDir(srcBase, srcRelative string, tw *tar.Writer, fi os.FileInfo) (err er
 	if len(srcRelative) > 0 {
 		hdr, er := tar.FileInfoHeader(fi, "")
 		if er != nil {
-			return er
+			return fmt.Errorf("[Tar dir] tar file info header error: %s", err.Error())
 		}
 		hdr.Name = srcRelative
 
 		if er = tw.WriteHeader(hdr); er != nil {
-			return er
+			return fmt.Errorf("[Tar dir] writer header error: %s", err.Error())
 		}
 	}
 
@@ -434,24 +423,24 @@ func tarFile(srcBase, srcRelative string, tw *tar.Writer, fi os.FileInfo) (err e
 	// 写入文件信息
 	hdr, er := tar.FileInfoHeader(fi, "")
 	if er != nil {
-		return er
+		return fmt.Errorf("[Tar file] tar file info header  error: %s", er.Error())
 	}
 	hdr.Name = srcRelative
 
 	if er = tw.WriteHeader(hdr); er != nil {
-		return er
+		return fmt.Errorf("[Tar dir] write header error: %s", er.Error())
 	}
 
 	// 打开要打包的文件，准备读取
 	fr, er := os.Open(srcFull)
 	if er != nil {
-		return er
+		return fmt.Errorf("[Tar dir] os open error: %s", er.Error())
 	}
 	defer fr.Close()
 
 	// 将文件数据写入 tw 中
 	if _, er = io.Copy(tw, fr); er != nil {
-		return er
+		return fmt.Errorf("[Tar dir] io copy error: %s", er.Error())
 	}
 	return nil
 }

@@ -1,11 +1,15 @@
 package models
 
-import "chainmaker.org/chainmaker-ca-backend/src/models/db"
+import (
+	"fmt"
+
+	"chainmaker.org/chainmaker-ca-backend/src/models/db"
+)
 
 //InsertKeyPair .
 func InsertKeyPair(keyPair *db.KeyPair) error {
 	if err := db.DB.Debug().Create(keyPair).Error; err != nil {
-		return err
+		return fmt.Errorf("[DB] create key pair error: %s", err.Error())
 	}
 	return nil
 }
@@ -14,7 +18,7 @@ func InsertKeyPair(keyPair *db.KeyPair) error {
 func GetKeyPairByID(id string) (*db.KeyPair, error) {
 	var keyPair db.KeyPair
 	if err := db.DB.Debug().Where("id=?", id).First(&keyPair).Error; err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[DB] get key pair by id error: %s", err.Error())
 	}
 	return &keyPair, nil
 }
@@ -37,7 +41,7 @@ func GetKeyPairByConditions(userID, orgID string, usage db.CertUsage, userType .
 	}
 	err := gorm.Find(&keyPairList).Error
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[DB] get key pair by conditions error: %s", err.Error())
 	}
 	return keyPairList, nil
 }

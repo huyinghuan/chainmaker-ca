@@ -14,13 +14,13 @@ import (
 func CreateIntermediateCert() {
 	inmediaCaConfig, err := utils.GetIntermediate()
 	if err != nil {
-		logger.Error("Get Intermediate CA config failed!", zap.Error(err))
+		logger.Error("create intermediate cert error", zap.Error(err))
 		return
 	}
 	err = IssueOrgCACert(inmediaCaConfig.OrgID, inmediaCaConfig.Country, inmediaCaConfig.Locality, inmediaCaConfig.Province,
 		inmediaCaConfig.PrivateKeyPwd, inmediaCaConfig.ExpireYear)
 	if err != nil {
-		logger.Error("Issue Intermediate CA failed!", zap.Error(err))
+		logger.Error("create intermediate cert error", zap.Error(err))
 		return
 	}
 }
@@ -34,7 +34,7 @@ func IssueOrgCACert(orgID, country, locality, province, privateKeyPwd string, ex
 	//生成公私钥
 	privKey, keyID, err := CreateKeyPair(&user, "", false)
 	if err != nil {
-		return fmt.Errorf("Create key pair failed: %v", err.Error())
+		return err
 	}
 	O := orgID
 	OU := "ca"
@@ -42,28 +42,28 @@ func IssueOrgCACert(orgID, country, locality, province, privateKeyPwd string, ex
 	//生成CSR 不以文件形式存在，在内存和数据库中
 	csrBytes, err := createCSR(privKey, country, locality, province, OU, O, CN)
 	if err != nil {
-		return fmt.Errorf("Create CSR failed: %v", err.Error())
+		return err
 	}
 	//读取签发者私钥（文件或者web端形式）
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
 	issuerPrivKeyFilePath, certFilePath := utils.GetRootPrivateKey()
 	privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
 	if err != nil {
-		return fmt.Errorf("Read private key file failed: %v", err.Error())
+		return fmt.Errorf("[Issue org cert] read file error: %s", err.Error())
 	}
 	//私钥解密
 	issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetRootCaPrivateKeyPwd(), hashType, false)
 	if err != nil {
-		return fmt.Errorf("Decrypt private key failed: %v", err.Error())
+		return err
 	}
 	//读取签发者证书
 	certBytes, err := ioutil.ReadFile(certFilePath)
 	if err != nil {
-		return fmt.Errorf("Read cert file failed: %v", err.Error())
+		return fmt.Errorf("[Issue org cert] read file error: %s", err.Error())
 	}
 	_, err = IssueCertificate(hashType, true, keyID, issuerPrivKey, csrBytes, certBytes, expireYear, nil)
 	if err != nil {
-		return fmt.Errorf("Issue Cert failed: %v", err.Error())
+		return err
 	}
 	return nil
 

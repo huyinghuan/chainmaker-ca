@@ -2,7 +2,6 @@ package services
 
 import (
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
-	"go.uber.org/zap"
 )
 
 //GetCert 从数据库获取证书文件
@@ -10,7 +9,6 @@ func GetCert(userID, orgID string, certUsage db.CertUsage, userType db.UserType)
 	var getCertResps []db.GetCertResp
 	certAndPrivKeys, err := GetCertByConditions(userID, orgID, certUsage, userType)
 	if err != nil {
-		logger.Error("Get cert by conditions failed!", zap.Error(err))
 		return nil, err
 	}
 	getCertResps = make([]db.GetCertResp, len(certAndPrivKeys))

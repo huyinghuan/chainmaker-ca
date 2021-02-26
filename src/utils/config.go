@@ -108,7 +108,7 @@ func GetRootCaConfig() (CaConfig, error) {
 	var rootCaConfig CaConfig
 	err := viper.UnmarshalKey("root_config", &rootCaConfig)
 	if err != nil {
-		return rootCaConfig, err
+		return rootCaConfig, fmt.Errorf("[Config] get root config error: %s", err.Error())
 	}
 	return rootCaConfig, nil
 }
@@ -118,7 +118,7 @@ func GetIntermediate() (CaConfig, error) {
 	var inmediaCaConfig CaConfig
 	err := viper.UnmarshalKey("Intermediate_config", &inmediaCaConfig)
 	if err != nil {
-		return inmediaCaConfig, err
+		return inmediaCaConfig, fmt.Errorf("[Config] get intermediate config error: %s", err.Error())
 	}
 	return inmediaCaConfig, nil
 }
@@ -198,7 +198,7 @@ func GetKmsClientConfig() (*KmsConfig, error) {
 	var kmsConfig KmsConfig
 	err := viper.UnmarshalKey("kms_config", &kmsConfig)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[Config] get kms client config error: %s", err.Error())
 	}
 	return &kmsConfig, nil
 }
