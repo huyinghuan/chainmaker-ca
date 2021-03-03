@@ -85,7 +85,19 @@ func createCACert(privKey crypto.PrivateKey, hashType crypto.HashType,
 	country, locality, province, organizationalUnit, organization, commonName string,
 	expireYear int32, sans []string) (*db.Cert, error) {
 	var certModel db.Cert
-	template, err := cert.GenerateCertTemplate(privKey, true, country, locality, province, organizationalUnit, organization, commonName, expireYear, sans)
+	var generateCertTemplateConfig = cert.GenerateCertTemplateConfig{
+		PrivKey:            privKey,
+		IsCA:               true,
+		Country:            country,
+		Locality:           locality,
+		Province:           province,
+		OrganizationalUnit: organizationalUnit,
+		Organization:       organization,
+		CommonName:         commonName,
+		ExpireYear:         expireYear,
+		Sans:               sans,
+	}
+	template, err := cert.GenerateCertTemplate(&generateCertTemplateConfig)
 	if err != nil {
 		return nil, fmt.Errorf("[Create ca cert] generate cert template failed, %s", err.Error())
 	}
