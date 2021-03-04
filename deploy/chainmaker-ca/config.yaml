@@ -9,10 +9,10 @@ log_config:
   # 数据库配置
 db_config:
   user: root
-  password: baas2020
-  ip: 192.168.4.122
+  password: 123456
+  ip: 192.168.1.177
   port: 3306
-  dbname: baas
+  dbname: chainmaker
 
 # db_config:
 #   user: root

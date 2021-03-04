@@ -106,13 +106,16 @@ func Getuuid() string {
 
 //CreateDir 创建文件夹
 func CreateDir(dirPath string) error {
-	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-		err := os.MkdirAll(dirPath, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("[Create dir] os mkdir all error: %s", err.Error())
+	_, err := os.Stat(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err := os.MkdirAll(dirPath, os.ModePerm)
+			if err != nil {
+				return fmt.Errorf("[Create dir] os mkdir all error: %s", err.Error())
+			}
+		} else {
+			return fmt.Errorf("[Create dir] os stat error: %s", err.Error())
 		}
-	} else {
-		return fmt.Errorf("[Create dir] os stat error: %s", err.Error())
 	}
 	return nil
 }
