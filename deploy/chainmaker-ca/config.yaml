@@ -14,13 +14,6 @@ db_config:
   port: 3306
   dbname: chainmaker
 
-# db_config:
-#   user: root
-#   password: 123456
-#   ip: 192.168.1.177
-#   port: 3306
-#   dbname: chainmaker
-
 #是否初始化根CA
 is_init_root_ca: true
 #密钥加密类型
@@ -57,6 +50,7 @@ Intermediate_config:
   cert_path: ./crypto-config/Intermediate/Intermediate.crt
   expire_year: 10
   org_id: wx-testorg
+
 #KMS client 配置
 kms_config:
   kms_server: kms.tencentcloudapi.com

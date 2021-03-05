@@ -7,4 +7,4 @@ docker run -d \
 --name chainmaker-ca \
 --restart always \
 ubuntu:18.04 \
-bash -c "./chainmaker-ca -config ./"
+bash -c "./chainmaker-ca -config ./config.yaml"

@@ -1,7 +1,7 @@
 # 日志配置
 log_config:
   level: error
-  filename: ../log/default.log
+  filename: ../log/ca.log
   max_size: 1
   max_age: 30
   max_backups: 5

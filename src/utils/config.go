@@ -43,7 +43,7 @@ func GetConfigEnv() string {
 //GetFlagPath .
 func GetFlagPath() string {
 	var configPath string
-	flag.StringVar(&configPath, "config", "./conf", "input config path")
+	flag.StringVar(&configPath, "config", "./conf/config.yaml", "please input config file path")
 	flag.Parse()
 	return configPath
 }
@@ -61,10 +61,7 @@ func SetConfig(envPath string) {
 
 //InitConfig .
 func InitConfig(configPath string) {
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(configPath)
-
+	viper.SetConfigFile(configPath)
 	if err := viper.ReadInConfig(); err != nil {
 		log.Println("Init config error: " + err.Error())
 		return
