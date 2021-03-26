@@ -77,3 +77,15 @@ type GetCertByConditionsReq struct {
 	CertUsage db.CertUsage `json:"certUsage"`
 	Type      db.UserType  `json:"type"`
 }
+
+type ApplyCertHadKeyPairReq struct {
+	Country    string       `json:"country"`
+	Locality   string       `json:"locality"`
+	Province   string       `json:"province"`
+	ExpireYear int32        `json:"expire_year"`
+	NodeSans   []string     `json:"nodeSans"`
+	UserType   db.UserType  `json:"userType"`
+	CertUsage  db.CertUsage `json:"certUsage"`
+	UserID     string       `json:"userID"`
+	OrgID      string       `json:"orgID"`
+}

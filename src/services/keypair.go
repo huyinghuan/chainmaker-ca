@@ -167,3 +167,46 @@ func GetKmsConfig() (kmsConfig *tencentcloudkms.KMSConfig, kmsKeyType string) {
 	}
 	return
 }
+
+//UploadKeyPair 上传公私钥
+func UploadKeyPair(keyType string, user *db.KeyPairUser, privateKey []byte, privateKeyPwd string, isKms bool) (privKey crypto.PrivateKey, keyID string, err error) {
+
+	//判断KeyType是否支持
+	cryptoKey, ok := crypto.Name2KeyTypeMap[keyType]
+	if !ok {
+		return nil, "", fmt.Errorf("[Upload key pair] this key type is not support,[%s]", keyType)
+	}
+	keyPairE, isKeyPairExist := models.KeyPairIsExist(user.UserID, user.OrgID, user.CertUsage, user.UserType)
+	if isKeyPairExist {
+		hashType := crypto.HashAlgoMap[utils.GetHashType()]
+		privateKey, err := decryptPrivKey(keyPairE.PrivateKey, keyPairE.PrivateKeyPwd, hashType, isKms)
+		if err != nil {
+			return nil, "", err
+		}
+		return privateKey, keyPairE.ID, nil
+	}
+	hashType := crypto.HashAlgoMap[utils.GetHashType()]
+	privKey, err = decryptPrivKey(privateKey, privateKeyPwd, hashType, isKms)
+	if err != nil {
+		return
+	}
+	var keyPair db.KeyPair
+	keyPair.ID = Getuuid()
+	hashPwd, err := hash.Get(hashType, []byte(privateKeyPwd))
+	//私钥入库
+	keyPair.PrivateKey = privateKey
+	publicKeyPEM, _ := privKey.PublicKey().String()
+	keyPair.PublicKey = []byte(publicKeyPEM)
+	keyPair.PrivateKeyPwd = hex.EncodeToString(hashPwd)
+	keyPair.KeyType = cryptoKey
+	keyPair.CertUsage = user.CertUsage
+	keyPair.UserType = user.UserType
+	keyPair.OrgID = user.OrgID
+	keyPair.UserID = user.UserID
+	err = models.InsertKeyPair(&keyPair)
+	if err != nil {
+		return
+	}
+	keyID = keyPair.ID
+	return
+}
