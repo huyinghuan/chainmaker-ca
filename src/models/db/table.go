@@ -35,15 +35,15 @@ func (table *Cert) TableName() string {
 
 //KeyPair 公私钥
 type KeyPair struct {
-	ID            string `gorm:"primary_key"`
-	PrivateKey    []byte `gorm:"type:mediumblob"`
-	PublicKey     []byte `gorm:"type:mediumblob"`
-	PrivateKeyPwd string //用户加密私钥所用密码
-	KeyType       crypto.KeyType
-	UserType      UserType  `gorm:"unique_index:chain_org_user_usage_type_index"`
-	CertUsage     CertUsage `gorm:"unique_index:chain_org_user_usage_type_index"`
-	UserID        string    `gorm:"unique_index:chain_org_user_usage_type_index"`
-	OrgID         string    `gorm:"unique_index:chain_org_user_usage_type_index"`
+	ID            string         `gorm:"primary_key"`
+	PrivateKey    []byte         `gorm:"type:mediumblob"`
+	PublicKey     []byte         `gorm:"type:mediumblob"`
+	PrivateKeyPwd string         //用户加密私钥所用密码
+	KeyType       crypto.KeyType `gorm:"unique_index:chain_org_user_usage_type_index"`
+	UserType      UserType       `gorm:"unique_index:chain_org_user_usage_type_index"`
+	CertUsage     CertUsage      `gorm:"unique_index:chain_org_user_usage_type_index"`
+	UserID        string         `gorm:"unique_index:chain_org_user_usage_type_index"`
+	OrgID         string         `gorm:"unique_index:chain_org_user_usage_type_index"`
 }
 
 //TableName cert

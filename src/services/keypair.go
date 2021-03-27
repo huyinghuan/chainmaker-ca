@@ -210,3 +210,56 @@ func UploadKeyPair(keyType string, user *db.KeyPairUser, privateKey []byte, priv
 	keyID = keyPair.ID
 	return
 }
+
+//CreateRootKeyPair .
+func CreateRootKeyPair(user *db.KeyPairUser, keyTypeStr string) (privKey crypto.PrivateKey, keyID string, err error) {
+	//判断KeyType是否支持
+	keyType, ok := crypto.Name2KeyTypeMap[keyTypeStr]
+	if !ok {
+		return nil, "", fmt.Errorf("[create root key pair] this key type is not support,[%s]", keyTypeStr)
+	}
+	// keyPairE, isKeyPairExist := models.KeyPairIsExist(user.UserID, user.OrgID, user.CertUsage, user.UserType)
+	// if isKeyPairExist {
+	// 	block, _ := pem.Decode(keyPairE.PrivateKey)
+	// 	privKey, err = asym.PrivateKeyFromDER(block.Bytes)
+	// 	if err != nil {
+	// 		return nil, "", fmt.Errorf("[create root key pair] private key from DER error: %s", err)
+	// 	}
+	// 	return privKey, keyPairE.ID, nil
+	// }
+	var keyPair db.KeyPair
+	keyPair.ID = Getuuid()
+	privKey, err = createPrivKey(keyType, false, keyPair.ID)
+	if err != nil {
+		return
+	}
+
+	privKeyPEM, _ := privKey.String()
+	privKeyPemBytes := []byte(privKeyPEM)
+
+	//私钥入库
+	keyPair.PrivateKey = privKeyPemBytes
+	publicKeyPEM, _ := privKey.PublicKey().String()
+	keyPair.PublicKey = []byte(publicKeyPEM)
+	keyPair.KeyType = keyType
+	keyPair.CertUsage = user.CertUsage
+	keyPair.UserType = user.UserType
+	keyPair.OrgID = user.OrgID
+	keyPair.UserID = user.UserID
+	err = models.InsertKeyPair(&keyPair)
+	if err != nil {
+		return
+	}
+	keyID = keyPair.ID
+
+	//write private key by key type
+
+	rootPrivateKeyPath, _ := utils.GetRootPrivateKey()
+	rootPrivateKeyPath = rootPrivateKeyPath + "root-" + crypto.KeyType2NameMap[keyType] + ".key"
+	err = WritePrivKeyFile(rootPrivateKeyPath, keyPair.PrivateKey)
+	if err != nil {
+		logger.Error("Init root ca error", zap.Error(err))
+		return
+	}
+	return
+}

@@ -46,7 +46,7 @@ func IssueOrgCACert(orgID, country, locality, province, privateKeyPwd string, ex
 	}
 	//读取签发者私钥（文件或者web端形式）
 	hashType := crypto.HashAlgoMap[utils.GetHashType()]
-	issuerPrivKeyFilePath, certFilePath := utils.GetRootPrivateKey()
+	issuerPrivKeyFilePath, certFilePath := utils.GetRootCertAndKey()
 	privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
 	if err != nil {
 		return fmt.Errorf("[Issue org cert] read file error: %s", err.Error())

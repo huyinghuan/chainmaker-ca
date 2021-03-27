@@ -33,8 +33,8 @@ is_kms_keypair: false
 
   # 根CA的初始化配置
 root_config:
-  private_key_path: ./crypto-config/root/root.key
-  cert_path: ./crypto-config/root/root.crt
+  private_key_path: ./crypto-config/root/
+  cert_path: ./crypto-config/root/
   expire_year: 100                     
   country: CN                  
   locality: Beijing               

@@ -127,6 +127,15 @@ func GetRootPrivateKey() (privKeyFilePath, certFilePath string) {
 	return
 }
 
+//GetRootPrivateKey 获取根CA私钥
+func GetRootCertAndKey() (privKeyFilePath, certFilePath string) {
+	keyType := GetPrivKeyType()
+	hashType := GetHashType()
+	privKeyFilePath = viper.GetString("root_config.private_key_path") + "root-" + keyType + ".key"
+	certFilePath = viper.GetString("root_config.cert_path") + "root-" + hashType + ".crt"
+	return
+}
+
 //GetRootCaPrivateKeyPwd 获取RootCa私钥密码
 func GetRootCaPrivateKeyPwd() string {
 	return viper.GetString("root_config.private_key_pwd")
