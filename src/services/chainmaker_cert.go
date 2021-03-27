@@ -152,6 +152,9 @@ func WriteChainMakerCertFile(req *models.ChainMakerCertApplyReq) (certBasePath s
 	} else {
 		certBasePath = req.Filetarget
 	}
+	if utils.CheckPathExist(certBasePath) {
+		os.RemoveAll(certBasePath)
+	}
 	for _, org := range req.Orgs {
 		orgPath := filepath.Join(certBasePath, org.OrgID)
 		err = WriteCaCertFile(orgPath, &org)
