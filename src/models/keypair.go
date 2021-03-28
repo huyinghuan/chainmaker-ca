@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
+	"chainmaker.org/chainmaker-go/common/crypto"
 )
 
 //InsertKeyPair .
@@ -55,6 +56,35 @@ func KeyPairIsExist(userID, orgID string, usage db.CertUsage, userType ...db.Use
 	}
 	if orgID != "" {
 		gorm = gorm.Where("org_id=?", orgID)
+	}
+	if userType != nil {
+		gorm = gorm.Where("user_type IN(?)", userType)
+	}
+	if usage != -1 {
+		gorm = gorm.Where("cert_usage=?", usage)
+	}
+	err := gorm.First(&keyPair).Error
+	if err != nil {
+		if err == db.GormErrRNF {
+			return nil, false
+		}
+		return nil, true
+	}
+	return &keyPair, true
+}
+
+//KeyPairIsExistWithType isExist
+func KeyPairIsExistWithType(userID, orgID, keyTypeStr string, usage db.CertUsage, userType ...db.UserType) (*db.KeyPair, bool) {
+	var keyPair db.KeyPair
+	gorm := db.DB.Debug()
+	if userID != "" {
+		gorm = gorm.Where("user_id=?", userID)
+	}
+	if orgID != "" {
+		gorm = gorm.Where("org_id=?", orgID)
+	}
+	if keyTypeStr != "" {
+		gorm = gorm.Where("key_type=?", crypto.Name2KeyTypeMap[keyTypeStr])
 	}
 	if userType != nil {
 		gorm = gorm.Where("user_type IN(?)", userType)

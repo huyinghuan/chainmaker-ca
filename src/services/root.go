@@ -28,7 +28,7 @@ func InitRootCA() {
 	user.UserType = db.ROOT_CA
 	user.OrgID = "wx-root"
 	//生成公私钥
-	privKey, keyID, err := CreateKeyPair(&user, rootCaConfig.PrivateKeyPwd, false)
+	privKey, keyID, err := CreateKeyPair(rootCaConfig.PrivateKeyType, rootCaConfig.HashType, &user, rootCaConfig.PrivateKeyPwd, false)
 	if err != nil {
 		logger.Error("Init root ca error", zap.Error(err))
 		return
@@ -45,7 +45,7 @@ func InitRootCA() {
 		return
 	}
 	//构建证书结构体
-	hashType := crypto.HashAlgoMap[utils.GetHashType()]
+	hashType := crypto.HashAlgoMap[rootCaConfig.HashType]
 	O := DefaultRootOrg
 	OU := "root"
 	CN := OU + "." + O

@@ -20,6 +20,8 @@ type CaConfig struct {
 	Province       string `mapstructure:"province"`
 	PrivateKeyPwd  string `mapstructure:"private_key_pwd"`
 	OrgID          string `mapstructure:"org_id"`
+	PrivateKeyType string `json:"privateKeyType"`
+	HashType       string `json:"hashType"`
 }
 
 // GetConfigEnv - 获取配置环境

@@ -4,21 +4,25 @@ import "chainmaker.org/chainmaker-ca-backend/src/models/db"
 
 //ApplyCertReq .
 type ApplyCertReq struct {
-	PrivateKeyID string   `json:"privateKeyID"`
-	Country      string   `json:"country"`
-	Locality     string   `json:"locality"`
-	Province     string   `json:"province"`
-	ExpireYear   int32    `json:"expire_year"`
-	NodeSans     []string `json:"nodeSans"`
+	PrivateKeyID   string   `json:"privateKeyID"`
+	Country        string   `json:"country"`
+	Locality       string   `json:"locality"`
+	Province       string   `json:"province"`
+	ExpireYear     int32    `json:"expire_year"`
+	NodeSans       []string `json:"nodeSans"`
+	PrivateKeyType string   `json:"privateKeyType"`
+	HashType       string   `json:"hashType"`
 }
 
 //GenerateKeyPairReq .
 type GenerateKeyPairReq struct {
-	UserType      db.UserType  `json:"userType"`
-	CertUsage     db.CertUsage `json:"certUsage"`
-	UserID        string       `json:"userID"`
-	OrgID         string       `json:"orgID"`
-	PrivateKeyPwd string       `json:"privateKeyPwd"`
+	UserType       db.UserType  `json:"userType"`
+	CertUsage      db.CertUsage `json:"certUsage"`
+	UserID         string       `json:"userID"`
+	OrgID          string       `json:"orgID"`
+	PrivateKeyPwd  string       `json:"privateKeyPwd"`
+	PrivateKeyType string       `json:"privateKeyType"`
+	HashType       string       `json:"hashType"`
 }
 
 //UpdateCertReq .
@@ -43,12 +47,14 @@ type ChainMakerCertApplyReq struct {
 
 //Org 组织
 type Org struct {
-	OrgID    string `json:"orgID"`
-	Country  string `json:"country"`
-	Locality string `json:"locality"`
-	Province string `json:"province"`
-	Nodes    []Node `json:"nodes"`
-	Users    []User `json:"users"`
+	OrgID          string `json:"orgID"`
+	Country        string `json:"country"`
+	Locality       string `json:"locality"`
+	Province       string `json:"province"`
+	Nodes          []Node `json:"nodes"`
+	Users          []User `json:"users"`
+	PrivateKeyType string `json:"privateKeyType"`
+	HashType       string `json:"hashType"`
 }
 
 //Node 节点

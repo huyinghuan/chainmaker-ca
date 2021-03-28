@@ -26,7 +26,7 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) (stri
 		if err != nil {
 			return filepath, err
 		}
-		err = IssueOrgCACert(org.OrgID, org.Country, org.Locality, org.Province, "", defaultExpireYear)
+		err = IssueOrgCACert(&org, "", defaultExpireYear)
 		if err != nil {
 			return filepath, err
 		}
@@ -76,7 +76,7 @@ func IssueNodeCert(org *models.Org, certUsage db.CertUsage) error {
 		user.OrgID = org.OrgID
 		user.UserID = node.NodeID
 		user.UserType = node.NodeType
-		privateKey, keyID, err := CreateKeyPair(&user, "", false)
+		privateKey, keyID, err := CreateKeyPair(org.PrivateKeyType, org.HashType, &user, "", false)
 		if err != nil {
 			return err
 		}
@@ -90,7 +90,7 @@ func IssueNodeCert(org *models.Org, certUsage db.CertUsage) error {
 		if err != nil {
 			return err
 		}
-		hashType := crypto.HashAlgoMap[utils.GetHashType()]
+		hashType := crypto.HashAlgoMap[org.HashType]
 		_, err = IssueCertificate(hashType, false, keyID, issuerPrivKey, csrBytes, issueCert.Content, utils.GetIssureExpirationTime(), node.Sans)
 		if err != nil {
 			return err
@@ -123,7 +123,7 @@ func IssueUserCert(org *models.Org, usage db.CertUsage) error {
 		if utils.GetGenerateKeyPairType() && user.CertUsage == db.SIGN && user.UserType == db.USER_USER {
 			isKms = true
 		}
-		privateKey, keyID, err := CreateKeyPair(&user, "", isKms)
+		privateKey, keyID, err := CreateKeyPair(org.PrivateKeyType, org.HashType, &user, "", isKms)
 		if err != nil {
 			return err
 		}
@@ -136,7 +136,7 @@ func IssueUserCert(org *models.Org, usage db.CertUsage) error {
 		if err != nil {
 			return err
 		}
-		hashType := crypto.HashAlgoMap[utils.GetHashType()]
+		hashType := crypto.HashAlgoMap[org.HashType]
 		_, err = IssueCertificate(hashType, false, keyID, issuerPrivKey, csrBytes, issueCert.Content, utils.GetIssureExpirationTime(), nil)
 		if err != nil {
 			return err

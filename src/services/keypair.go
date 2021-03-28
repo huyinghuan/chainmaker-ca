@@ -96,10 +96,10 @@ func decryptPrivKey(privKeyRaw []byte, privKeyPwd string, hashType crypto.HashTy
 }
 
 //CreateKeyPair .
-func CreateKeyPair(user *db.KeyPairUser, privateKeyPwd string, isKms bool) (privKey crypto.PrivateKey, keyID string, err error) {
-	keyPairE, isKeyPairExist := models.KeyPairIsExist(user.UserID, user.OrgID, user.CertUsage, user.UserType)
+func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, user *db.KeyPairUser, privateKeyPwd string, isKms bool) (privKey crypto.PrivateKey, keyID string, err error) {
+	keyPairE, isKeyPairExist := models.KeyPairIsExistWithType(user.UserID, user.OrgID, hashTypeStr, user.CertUsage, user.UserType)
 	if isKeyPairExist {
-		hashType := crypto.HashAlgoMap[utils.GetHashType()]
+		hashType := crypto.HashAlgoMap[hashTypeStr]
 		privateKey, err := decryptPrivKey(keyPairE.PrivateKey, keyPairE.PrivateKeyPwd, hashType, isKms)
 		if err != nil {
 			return nil, "", err
@@ -109,8 +109,8 @@ func CreateKeyPair(user *db.KeyPairUser, privateKeyPwd string, isKms bool) (priv
 	var keyPair db.KeyPair
 	keyPair.ID = Getuuid()
 	//生成公私钥（可对接KMS）
-	keyType := crypto.Name2KeyTypeMap[utils.GetPrivKeyType()]
-	hashType := crypto.HashAlgoMap[utils.GetHashType()]
+	keyType := crypto.Name2KeyTypeMap[privateKeyTypeStr]
+	hashType := crypto.HashAlgoMap[hashTypeStr]
 	privKey, err = createPrivKey(keyType, isKms, keyPair.ID)
 	if err != nil {
 		return
@@ -168,6 +168,7 @@ func GetKmsConfig() (kmsConfig *tencentcloudkms.KMSConfig, kmsKeyType string) {
 	return
 }
 
+// TODO hashType
 //UploadKeyPair 上传公私钥
 func UploadKeyPair(keyType string, user *db.KeyPairUser, privateKey []byte, privateKeyPwd string, isKms bool) (privKey crypto.PrivateKey, keyID string, err error) {
 
@@ -218,15 +219,15 @@ func CreateRootKeyPair(user *db.KeyPairUser, keyTypeStr string) (privKey crypto.
 	if !ok {
 		return nil, "", fmt.Errorf("[create root key pair] this key type is not support,[%s]", keyTypeStr)
 	}
-	// keyPairE, isKeyPairExist := models.KeyPairIsExist(user.UserID, user.OrgID, user.CertUsage, user.UserType)
-	// if isKeyPairExist {
-	// 	block, _ := pem.Decode(keyPairE.PrivateKey)
-	// 	privKey, err = asym.PrivateKeyFromDER(block.Bytes)
-	// 	if err != nil {
-	// 		return nil, "", fmt.Errorf("[create root key pair] private key from DER error: %s", err)
-	// 	}
-	// 	return privKey, keyPairE.ID, nil
-	// }
+	keyPairE, isKeyPairExist := models.KeyPairIsExistWithType(user.UserID, user.OrgID, keyTypeStr, user.CertUsage, user.UserType)
+	if isKeyPairExist {
+		block, _ := pem.Decode(keyPairE.PrivateKey)
+		privKey, err = asym.PrivateKeyFromDER(block.Bytes)
+		if err != nil {
+			return nil, "", fmt.Errorf("[create root key pair] private key from DER error: %s", err)
+		}
+		return privKey, keyPairE.ID, nil
+	}
 	var keyPair db.KeyPair
 	keyPair.ID = Getuuid()
 	privKey, err = createPrivKey(keyType, false, keyPair.ID)

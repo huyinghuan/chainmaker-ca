@@ -25,7 +25,7 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 		logger.Error("apply cert error", zap.Error(err))
 		return nil, err
 	}
-	hashType := crypto.HashAlgoMap[utils.GetHashType()]
+	hashType := crypto.HashAlgoMap[applyCertReq.HashType]
 	var isKms bool
 	if utils.GetGenerateKeyPairType() && (keyPair.UserType == db.USER_ADMIN || keyPair.UserType == db.USER_USER) {
 		isKms = true
@@ -77,6 +77,7 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 	return certModel.Content, nil
 }
 
+// TODO 流程&& privatekeyType && HashType
 //UpdateCert 更新证书
 func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
 	cert, err := models.GetCertBySN(updateCertReq.CertSN)
@@ -150,6 +151,7 @@ func RevokedCert(revokedCertReq *models.RevokedCertReq) error {
 	return nil
 }
 
+// TODO 流程&& privatekeyType && HashType
 //GetRevokedCertList 返回撤销列表
 func GetRevokedCertList() ([]byte, error) {
 	revokedCertList, err := models.GetAllRevokedList()

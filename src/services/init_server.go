@@ -13,7 +13,7 @@ func InitServer() {
 	logger = loggers.GetLogger()
 	isInitRootCa := utils.GetInitType()
 	if isInitRootCa == true {
-		//InitRootCA()
+		// InitRootCA()
 		BaasInitRootCA()
 		CreateIntermediateCert()
 	}

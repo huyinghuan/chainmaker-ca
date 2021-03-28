@@ -12,7 +12,6 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
-	"chainmaker.org/chainmaker-go/common/crypto"
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
 	uuid "github.com/satori/go.uuid"
 )
@@ -158,7 +157,7 @@ func GetCertByConditions(userID, orgID string, usage db.CertUsage, userType ...d
 			return nil, err
 		}
 		certAndPrivKey.Cert = cert
-		hashType := crypto.HashAlgoMap[utils.GetHashType()]
+		hashType := cert.HashType
 		var isKms bool
 		if utils.GetGenerateKeyPairType() && (keyPairList[i].UserType == db.USER_USER) && keyPairList[i].CertUsage == db.SIGN {
 			isKms = true

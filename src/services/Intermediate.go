@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"chainmaker.org/chainmaker-go/common/crypto"
@@ -17,8 +18,15 @@ func CreateIntermediateCert() {
 		logger.Error("create intermediate cert error", zap.Error(err))
 		return
 	}
-	err = IssueOrgCACert(inmediaCaConfig.OrgID, inmediaCaConfig.Country, inmediaCaConfig.Locality, inmediaCaConfig.Province,
-		inmediaCaConfig.PrivateKeyPwd, inmediaCaConfig.ExpireYear)
+	inmediaCaConfigOrg := models.Org{
+		OrgID:          inmediaCaConfig.OrgID,
+		Country:        inmediaCaConfig.Country,
+		Locality:       inmediaCaConfig.Locality,
+		Province:       inmediaCaConfig.Province,
+		PrivateKeyType: inmediaCaConfig.PrivateKeyType,
+		HashType:       inmediaCaConfig.HashType,
+	}
+	err = IssueOrgCACert(&inmediaCaConfigOrg, inmediaCaConfig.PrivateKeyPwd, inmediaCaConfig.ExpireYear)
 	if err != nil {
 		logger.Error("create intermediate cert error", zap.Error(err))
 		return
@@ -26,17 +34,18 @@ func CreateIntermediateCert() {
 }
 
 //IssueOrgCACert .
-func IssueOrgCACert(orgID, country, locality, province, privateKeyPwd string, expireYear int32) error {
+func IssueOrgCACert(org *models.Org, privateKeyPwd string, expireYear int32) error {
+	country, locality, province := org.Country, org.Locality, org.Province
 	var user db.KeyPairUser
 	user.CertUsage = db.SIGN
 	user.UserType = db.INTERMRDIARY_CA
-	user.OrgID = orgID
+	user.OrgID = org.OrgID
 	//生成公私钥
-	privKey, keyID, err := CreateKeyPair(&user, "", false)
+	privKey, keyID, err := CreateKeyPair(org.PrivateKeyType, org.HashType, &user, "", false)
 	if err != nil {
 		return err
 	}
-	O := orgID
+	O := org.OrgID
 	OU := "ca"
 	CN := "ca." + O
 	//生成CSR 不以文件形式存在，在内存和数据库中
@@ -45,7 +54,7 @@ func IssueOrgCACert(orgID, country, locality, province, privateKeyPwd string, ex
 		return err
 	}
 	//读取签发者私钥（文件或者web端形式）
-	hashType := crypto.HashAlgoMap[utils.GetHashType()]
+	hashType := crypto.HashAlgoMap[org.HashType]
 	issuerPrivKeyFilePath, certFilePath := utils.GetRootCertAndKey()
 	privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
 	if err != nil {

@@ -25,7 +25,7 @@ func GeneratePrivateKey(c *gin.Context) {
 	if utils.GetGenerateKeyPairType() && (user.UserType == db.USER_ADMIN || user.UserType == db.USER_USER) {
 		isKms = true
 	}
-	_, keyID, err := services.CreateKeyPair(&user, generateKeyPairReq.PrivateKeyPwd, isKms)
+	_, keyID, err := services.CreateKeyPair(generateKeyPairReq.PrivateKeyType, generateKeyPairReq.HashType, &user, generateKeyPairReq.PrivateKeyPwd, isKms)
 	if err != nil {
 		msg := "Create key pair failed"
 		FailedRespFunc(msg, err.Error(), c)
