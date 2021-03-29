@@ -1,7 +1,7 @@
 # 日志配置
 log_config:
   level: error
-  filename: ../log/ca.log
+  filename: ./log/ca.log
   max_size: 1
   max_age: 30
   max_backups: 5
@@ -9,15 +9,15 @@ log_config:
   # 数据库配置
 db_config:
   user: root
-  password: 
-  ip: 192.168.12.158
+  password: cshdemo20180918!
+  ip: mysql.tbaas
   port: 3306
-  dbname: certs
+  dbname: wxcerts
 
 #是否初始化根CA
 is_init_root_ca: true
 #密钥加密类型
-private_key_type: SM2
+private_key_type: ECC_NISTP256
 #哈希类型
 hash_type: SHA256
 #签发证书的过期时间
@@ -33,8 +33,8 @@ is_kms_keypair: false
 
   # 根CA的初始化配置
 root_config:
-  private_key_path: ./root/root.key
-  cert_path: ./root/root.crt
+  private_key_path: ./root/
+  cert_path: ./root/
   expire_year: 100                     
   country: CN                  
   locality: Beijing               
