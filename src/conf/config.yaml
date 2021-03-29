@@ -9,10 +9,10 @@ log_config:
   # 数据库配置
 db_config:
   user: root
-  password: 123456
+  password:
   ip: 127.0.0.1
   port: 3306
-  dbname: chainmaker
+  dbname: certs
 
 #是否初始化根CA
 is_init_root_ca: true
@@ -25,7 +25,7 @@ issure_expiration_time: 1
 # 默认CRL更新时间（h）
 crl_next_time: 4
 # chainmaker证书路径
-chainmaker_cert_path: ../crypto-config/chainmaker
+chainmaker_cert_path: D:\\chainmaker_cert_path/
 # chainmaker cert rpc port
 chainmaker_cert_rpc_port: 2333
 # 是否使用KMS生成本地公私钥
@@ -33,8 +33,8 @@ is_kms_keypair: false
 
   # 根CA的初始化配置
 root_config:
-  private_key_path: ../crypto-config/root/
-  cert_path: ../crypto-config/root/
+  private_key_path: D:\root_config/
+  cert_path: D:\root_config/
   expire_year: 100                     
   country: CN                  
   locality: Beijing               
@@ -43,11 +43,11 @@ root_config:
 # 中间CA配置文件
 Intermediate_config:
   private_key_pwd: wx123
-  private_key_path: ../crypto-config/Intermediate/Intermediate.key
+  private_key_path: D:\Intermediate_config/
   country: CN                              
   locality: Beijing                                   
   province: Beijing                                                             
-  cert_path: ../crypto-config/Intermediate/Intermediate.crt
+  cert_path: D:\Intermediate_config/
   expire_year: 10
   org_id: wx-testorg
 #KMS client 配置

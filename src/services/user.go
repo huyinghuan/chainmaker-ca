@@ -45,21 +45,20 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 		logger.Error("apply cery error", zap.Error(err))
 		return nil, err
 	}
-	//读取签发者私钥
-	issuerPrivKeyFilePath, certFilePath := utils.GetIntermediatePrkCert()
-	privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
+	// //读取签发者私钥
+	issuerKeyPair, err := models.GetIssuerKeyPairByConditions(keyPair.UserID, keyPair.OrgID, int(keyPair.KeyType))
 	if err != nil {
 		logger.Error("apply cery error", zap.Error(err))
 		return nil, err
 	}
 	//私钥解密
-	issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetIntermCAPrivateKeyPwd(), hashType, false)
+	issuerPrivKey, err := decryptPrivKey(issuerKeyPair.PrivateKey, utils.GetIntermCAPrivateKeyPwd(), hashType, false)
 	if err != nil {
 		logger.Error("apply cery error", zap.Error(err))
 		return nil, err
 	}
 	//读取签发者证书
-	certBytes, err := ioutil.ReadFile(certFilePath)
+	cert, err := models.GetCertByPrivateKeyID(issuerKeyPair.ID)
 	if err != nil {
 		logger.Error("apply cery error", zap.Error(err))
 		return nil, err
@@ -68,7 +67,7 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 	if keyPair.UserType == db.INTERMRDIARY_CA {
 		isCA = true
 	}
-	certModel, err := IssueCertificate(hashType, isCA, keyPair.ID, issuerPrivKey, certCSR, certBytes, applyCertReq.ExpireYear, applyCertReq.NodeSans)
+	certModel, err := IssueCertificate(hashType, isCA, keyPair.ID, issuerPrivKey, certCSR, cert.Content, applyCertReq.ExpireYear, applyCertReq.NodeSans)
 	if err != nil {
 		logger.Error("apply cery error", zap.Error(err))
 		return nil, err
@@ -133,6 +132,11 @@ func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
 
 //RevokedCert 撤销证书
 func RevokedCert(revokedCertReq *models.RevokedCertReq) error {
+	_, err := revokedCert(revokedCertReq)
+	return err
+}
+
+func revokedCert(revokedCertReq *models.RevokedCertReq) (*db.RevokedCert, error) {
 	var revoked db.RevokedCert
 	revoked.RevokedCertSN = revokedCertReq.RevokedCertSN
 	revoked.Reason = revokedCertReq.Reason
@@ -141,36 +145,48 @@ func RevokedCert(revokedCertReq *models.RevokedCertReq) error {
 	err := models.UpdateCertStatusRevokedBySN(revokedCertReq.RevokedCertSN)
 	if err != nil {
 		logger.Error("revoked cert error", zap.Error(err))
-		return err
+		return &revoked, err
 	}
 	err = models.InsertRevokedCert(&revoked)
 	if err != nil {
 		logger.Error("revoked cert error", zap.Error(err))
-		return err
+		return &revoked, err
 	}
-	return nil
+	return &revoked, nil
 }
 
-// TODO 流程&& privatekeyType && HashType
-//GetRevokedCertList 返回撤销列表
-func GetRevokedCertList() ([]byte, error) {
-	revokedCertList, err := models.GetAllRevokedList()
-	if err != nil {
-		logger.Error("get all revoked list error", zap.Error(err))
+//RevokedCert 撤销证书 返回CRL文件
+func RevokedCertWithCRL(revokedCertReq *models.RevokedCertReq) ([]byte, error) {
+	revoked, err := revokedCert(revokedCertReq)
+	if nil != err {
 		return nil, err
 	}
+	return createRevokedCertList(revoked)
+}
+
+func createRevokedCertList(revoked *db.RevokedCert) ([]byte, error) {
 	var revokedCerts []pkix.RevokedCertificate
-	for _, revoked := range revokedCertList {
-		var revokedCert pkix.RevokedCertificate
-		revokedCert.SerialNumber = big.NewInt(revoked.RevokedCertSN)
-		revokedCert.RevocationTime = time.Unix(revoked.RevokedEndTime, 0)
-		revokedCerts = append(revokedCerts, revokedCert)
-	}
+
+	var revokedCert pkix.RevokedCertificate
+	revokedCert.SerialNumber = big.NewInt(revoked.RevokedCertSN)
+	revokedCert.RevocationTime = time.Unix(revoked.RevokedEndTime, 0)
+	revokedCerts = append(revokedCerts, revokedCert)
+
 	now := time.Now()
 	next := now.Add(time.Duration(utils.GetCRLNextTime()) * time.Hour)
 	//读取签发者私钥
-	issuerPrivKeyFilePath, certFilePath := utils.GetIntermediatePrkCert()
-	privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
+	currentCert, err := models.GetCertBySN(revoked.RevokedCertSN)
+	if err != nil {
+		logger.Error("apply cert error", zap.Error(err))
+		return nil, err
+	}
+
+	keyPair, err := models.GetKeyPairByID(currentCert.PrivateKeyID)
+	if err != nil {
+		logger.Error("apply cert error", zap.Error(err))
+		return nil, err
+	}
+	issuerKeyPair, err := models.GetIssuerKeyPairByConditions(keyPair.UserID, keyPair.OrgID, int(keyPair.KeyType))
 	if err != nil {
 		logger.Error("get all revoked list error", zap.Error(err))
 		return nil, err
@@ -180,13 +196,13 @@ func GetRevokedCertList() ([]byte, error) {
 	if utils.GetIntermCAPrivateKeyPwd() != "" {
 		hashType := crypto.HashAlgoMap[utils.GetHashType()]
 		isKms := utils.GetGenerateKeyPairType()
-		issuerPrivKey, err = decryptPrivKey(privKeyRaw, utils.GetIntermCAPrivateKeyPwd(), hashType, isKms)
+		issuerPrivKey, err = decryptPrivKey(issuerKeyPair.PrivateKey, utils.GetIntermCAPrivateKeyPwd(), hashType, isKms)
 		if err != nil {
 			logger.Error("get all revoked list error", zap.Error(err))
 			return nil, err
 		}
 	} else {
-		block, _ := pem.Decode(privKeyRaw)
+		block, _ := pem.Decode(issuerKeyPair.PrivateKey)
 		plain := block.Bytes
 		issuerPrivKey, err = asym.PrivateKeyFromDER(plain)
 		if err != nil {
@@ -195,12 +211,12 @@ func GetRevokedCertList() ([]byte, error) {
 		}
 	}
 	//读取签发者证书
-	certBytes, err := ioutil.ReadFile(certFilePath)
+	certBytes, err := models.GetCertByPrivateKeyID(issuerKeyPair.ID)
 	if err != nil {
-		logger.Error("get all revoked list error", zap.Error(err))
+		logger.Error("apply cery error", zap.Error(err))
 		return nil, err
 	}
-	cert, err := ParseCertificate(certBytes)
+	cert, err := ParseCertificate(certBytes.Content)
 	if err != nil {
 		logger.Error("get all revoked list error", zap.Error(err))
 		return nil, err

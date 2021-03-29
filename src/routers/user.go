@@ -11,5 +11,5 @@ func LoadUserRouter(e *gin.Engine) {
 	e.POST("/api/applycert", handlers.ApplyCert)
 	e.POST("/api/updatecert", handlers.UpdateCert)
 	e.POST("/api/revokedcert", handlers.RevokedCert)
-	e.GET("/api/getrevokedlist", handlers.GetRevokedCertList)
+	e.POST("/api/revokedcertWithCRL", handlers.RevokedCertWithCRL)
 }

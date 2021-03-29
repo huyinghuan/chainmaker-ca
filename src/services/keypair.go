@@ -97,7 +97,7 @@ func decryptPrivKey(privKeyRaw []byte, privKeyPwd string, hashType crypto.HashTy
 
 //CreateKeyPair .
 func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, user *db.KeyPairUser, privateKeyPwd string, isKms bool) (privKey crypto.PrivateKey, keyID string, err error) {
-	keyPairE, isKeyPairExist := models.KeyPairIsExistWithType(user.UserID, user.OrgID, hashTypeStr, user.CertUsage, user.UserType)
+	keyPairE, isKeyPairExist := models.KeyPairIsExistWithType(user.UserID, user.OrgID, privateKeyTypeStr, user.CertUsage, user.UserType)
 	if isKeyPairExist {
 		hashType := crypto.HashAlgoMap[utils.GetInputOrDefault(hashTypeStr, utils.GetHashType())]
 		privateKey, err := decryptPrivKey(keyPairE.PrivateKey, keyPairE.PrivateKeyPwd, hashType, isKms)

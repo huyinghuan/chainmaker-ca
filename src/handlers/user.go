@@ -87,14 +87,20 @@ func RevokedCert(c *gin.Context) {
 	SuccessfulJSONRespFunc("Revoked cert successfully", "", c)
 }
 
-//GetRevokedCertList .
-func GetRevokedCertList(c *gin.Context) {
-	revokedCertListBytes, err := services.GetRevokedCertList()
+//RevokedCert 撤销证书
+func RevokedCertWithCRL(c *gin.Context) {
+	var revokedCertReq models.RevokedCertReq
+	if err := c.ShouldBind(&revokedCertReq); err != nil {
+		msg := "Parameter input error"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+	revokedCertListBytes, err := services.RevokedCertWithCRL(&revokedCertReq)
 	if err != nil {
-		msg := "Get revoked cert list failed"
+		msg := "Revoked cert failed"
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
 	fileName := "RevocationList.crl"
-	SuccessfulFileRespFunc(fileName, revokedCertListBytes, c)
+	SuccessfulJSONRespFunc(fileName, revokedCertListBytes, c)
 }

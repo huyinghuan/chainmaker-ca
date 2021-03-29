@@ -84,7 +84,7 @@ func KeyPairIsExistWithType(userID, orgID, keyTypeStr string, usage db.CertUsage
 		gorm = gorm.Where("org_id=?", orgID)
 	}
 	if keyTypeStr != "" {
-		gorm = gorm.Where("key_type=?", crypto.Name2KeyTypeMap[keyTypeStr])
+		gorm = gorm.Where("key_type=?", int(crypto.Name2KeyTypeMap[keyTypeStr]))
 	}
 	if userType != nil {
 		gorm = gorm.Where("user_type IN(?)", userType)
@@ -100,4 +100,20 @@ func KeyPairIsExistWithType(userID, orgID, keyTypeStr string, usage db.CertUsage
 		return nil, true
 	}
 	return &keyPair, true
+}
+
+//GetKeyPairByConditions .
+func GetIssuerKeyPairByConditions(userID, orgID string, privateKeyType int) (*db.KeyPair, error) {
+	var keyPairList db.KeyPair
+	gorm := db.DB.Debug()
+	if userID != "" {
+		gorm = gorm.Where("user_type = 1 and org_id=? and key_type=?", orgID, privateKeyType)
+	} else {
+		gorm = gorm.Where("user_type = 0 and org_id = 'wx-root' and key_type=?", privateKeyType)
+	}
+	err := gorm.Find(&keyPairList).Error
+	if err != nil {
+		return nil, fmt.Errorf("[DB] get key pair by conditions error: %s", err.Error())
+	}
+	return &keyPairList, nil
 }
