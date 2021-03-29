@@ -222,3 +222,10 @@ func CheckPathExist(path string) bool {
 	}
 	return false
 }
+
+func GetInputOrDefault(input, defaultStr string) string {
+	if len(input) > 0 {
+		return input
+	}
+	return defaultStr
+}

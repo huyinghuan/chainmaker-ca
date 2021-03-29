@@ -25,7 +25,7 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 		logger.Error("apply cert error", zap.Error(err))
 		return nil, err
 	}
-	hashType := crypto.HashAlgoMap[applyCertReq.HashType]
+	hashType := crypto.HashAlgoMap[utils.GetInputOrDefault(applyCertReq.HashType, utils.GetHashType())]
 	var isKms bool
 	if utils.GetGenerateKeyPairType() && (keyPair.UserType == db.USER_ADMIN || keyPair.UserType == db.USER_USER) {
 		isKms = true

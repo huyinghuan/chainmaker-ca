@@ -90,7 +90,7 @@ func IssueNodeCert(org *models.Org, certUsage db.CertUsage) error {
 		if err != nil {
 			return err
 		}
-		hashType := crypto.HashAlgoMap[org.HashType]
+		hashType := crypto.HashAlgoMap[utils.GetInputOrDefault(org.HashType, utils.GetHashType())]
 		_, err = IssueCertificate(hashType, false, keyID, issuerPrivKey, csrBytes, issueCert.Content, utils.GetIssureExpirationTime(), node.Sans)
 		if err != nil {
 			return err
@@ -136,7 +136,7 @@ func IssueUserCert(org *models.Org, usage db.CertUsage) error {
 		if err != nil {
 			return err
 		}
-		hashType := crypto.HashAlgoMap[org.HashType]
+		hashType := crypto.HashAlgoMap[utils.GetInputOrDefault(org.HashType, utils.GetHashType())]
 		_, err = IssueCertificate(hashType, false, keyID, issuerPrivKey, csrBytes, issueCert.Content, utils.GetIssureExpirationTime(), nil)
 		if err != nil {
 			return err

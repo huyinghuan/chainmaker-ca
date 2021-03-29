@@ -54,7 +54,7 @@ func IssueOrgCACert(org *models.Org, privateKeyPwd string, expireYear int32) err
 		return err
 	}
 	//读取签发者私钥（文件或者web端形式）
-	hashType := crypto.HashAlgoMap[org.HashType]
+	hashType := crypto.HashAlgoMap[utils.GetInputOrDefault(org.HashType, utils.GetHashType())]
 	issuerPrivKeyFilePath, certFilePath := utils.GetRootCertAndKey()
 	privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
 	if err != nil {

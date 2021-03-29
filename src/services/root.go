@@ -45,7 +45,7 @@ func InitRootCA() {
 		return
 	}
 	//构建证书结构体
-	hashType := crypto.HashAlgoMap[rootCaConfig.HashType]
+	hashType := crypto.HashAlgoMap[utils.GetInputOrDefault(rootCaConfig.HashType, utils.GetHashType())]
 	O := DefaultRootOrg
 	OU := "root"
 	CN := OU + "." + O
