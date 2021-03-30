@@ -64,3 +64,14 @@ type RevokedCert struct {
 func (table *RevokedCert) TableName() string {
 	return "revoked_cert"
 }
+
+//NodeId
+type NodeId struct {
+	ID     string `gorm:"primary_key"`
+	CertSN int64
+}
+
+//TableName cert
+func (table *NodeId) TableName() string {
+	return "node_id"
+}

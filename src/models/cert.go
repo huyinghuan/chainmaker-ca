@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"strconv"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 )
@@ -25,7 +26,7 @@ func GetCertBySN(certSN int64) (*db.Cert, error) {
 
 //UpdateCertStatusRevokedBySN 通过证书SN
 func UpdateCertStatusRevokedBySN(certSN int64) error {
-	if err := db.DB.Debug().Model(&db.Cert{}).Update("cert_status", db.REVOKED).Where("serial_number", certSN).Error; err != nil {
+	if err := db.DB.Debug().Model(&db.Cert{}).Where("serial_number=?", certSN).Update("cert_status", db.REVOKED).Error; err != nil {
 		return fmt.Errorf("[DB] update cert status revoked by sn error: %s", err.Error())
 	}
 	return nil
@@ -58,4 +59,63 @@ func CertIsExist(privateKeyID string) (*db.Cert, bool) {
 		return nil, true
 	}
 	return &cert, true
+}
+
+func GetCertById(certId int) (*db.Cert, error) {
+	var cert db.Cert
+	if err := db.DB.Debug().Where("id=?", certId).First(&cert).Error; err != nil {
+		return nil, fmt.Errorf("[DB] get cert by sn error: %s", err.Error())
+	}
+	return &cert, nil
+}
+
+func GetCertByOrgId(orgId string) ([]db.Cert, error) {
+	var certs []db.Cert
+	if err := db.DB.Debug().Table("cert").Where("organization=?", orgId).Scan(&certs).Error; err != nil {
+		return nil, fmt.Errorf("[DB] get cert by sn error: %s", err.Error())
+	}
+	return certs, nil
+}
+
+type CertResp struct {
+	OrgId       string `json:"OrgId"`
+	InvalidDate int64  `json:"InvalidDate"`
+	UserStatus  int    `json:"UserStatus"`
+	Id          int    `json:"Id"`
+	OU          string `json:"OU"`
+	UserType    string `json:"UserType"`
+	CertType    int    `json:"CertType"`
+}
+
+func GetCertRespyOrgId(orgId string) ([]CertResp, error) {
+	var certs []CertResp
+	if err := db.DB.Debug().Table("cert").Where("organization=?", orgId).Scan(&certs).Error; err != nil {
+		return nil, fmt.Errorf("[DB] get cert by sn error: %s", err.Error())
+	}
+	return certs, nil
+}
+
+//InsertNodeId nodeId
+func InsertNodeId(nodeId *db.NodeId) error {
+	if err := db.DB.Debug().Create(nodeId).Error; err != nil {
+		return fmt.Errorf("[DB] create nodeId error: %s, %s, %s", err.Error(), strconv.FormatInt(nodeId.CertSN, 10), nodeId.ID)
+	}
+	return nil
+}
+
+//GetNodeId nodeId
+func GetNodeId(certSN int64) (*db.NodeId, error) {
+	var node db.NodeId
+	if err := db.DB.Debug().Where("cert_sn=?", certSN).First(&node).Error; err != nil {
+		return nil, fmt.Errorf("[DB] get nodeId error: %s, %s", err.Error(), strconv.FormatInt(certSN, 10))
+	}
+	return &node, nil
+}
+
+//UpdateCertBySN .
+func UpdateCertBySN(certSN int64, old_cert_status, new_cert_status int) error {
+	if err := db.DB.Debug().Model(&db.Cert{}).Where("serial_number=? and cert_status=?", certSN, old_cert_status).Update("cert_status", new_cert_status).Error; err != nil {
+		return fmt.Errorf("[DB] get cert by sn error: %s", err.Error())
+	}
+	return nil
 }

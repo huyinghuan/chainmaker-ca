@@ -84,7 +84,7 @@ func IssueNodeCert(org *models.Org, certUsage db.CertUsage) error {
 		//生成CSR
 		O := org.OrgID
 		OU := db.UserType2NameMap[user.UserType]
-		CN := node.NodeID + "." + O
+		CN := node.NodeID + "-" + O
 		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
 			O, CN)
 		if err != nil {
@@ -216,6 +216,7 @@ func WriteNodeCertFile(orgPath string, org *models.Org) error {
 			nodeTLSCert  []byte
 			nodeSignKey  []byte
 			nodeTLSKey   []byte
+			certSN       int64
 		)
 		for _, v := range certAndPrivKeys {
 			if v.KeyPair.CertUsage == db.SIGN {
@@ -225,6 +226,7 @@ func WriteNodeCertFile(orgPath string, org *models.Org) error {
 			if v.KeyPair.CertUsage == db.TLS {
 				nodeTLSCert = v.Cert.Content
 				nodeTLSKey = v.KeyPair.PrivateKey
+				certSN = v.Cert.SerialNumber
 			}
 		}
 		nodeSignCertPath := filepath.Join(nodePath, node.NodeID+".sign.crt")
@@ -246,6 +248,16 @@ func WriteNodeCertFile(orgPath string, org *models.Org) error {
 		err = ioutil.WriteFile(nodeTLSKeyPath, nodeTLSKey, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("[Write node cert file] wirte node tls key error: %s", err.Error())
+		}
+
+		nodeId, err := GetAndSaveNodeID(nodeTLSCert, certSN)
+		if err != nil {
+			return fmt.Errorf("[Write node cert file] get node Id error: %s", err.Error())
+		}
+		nodeIdPath := filepath.Join(nodePath, node.NodeID+".nodeid")
+		err = ioutil.WriteFile(nodeIdPath, []byte(nodeId), os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("[Write node cert file] wirte node Id error: %s", err.Error())
 		}
 	}
 	return nil
