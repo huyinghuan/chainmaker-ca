@@ -5,7 +5,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
-	"io/ioutil"
 	"math/big"
 	"time"
 
@@ -90,23 +89,22 @@ func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
 		return nil, err
 	}
 	certCSRBytes := cert.CsrContent
-	//读取签发者私钥
-	issuerPrivKeyFilePath, certFilePath := utils.GetIntermediatePrkCert()
-	privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
+
+	// //读取签发者私钥
+	issuerKeyPair, err := models.GetIssuerKeyPairByConditions(keyPair.UserID, keyPair.OrgID, int(keyPair.KeyType))
 	if err != nil {
 		logger.Error("update cert error", zap.Error(err))
 		return nil, err
 	}
 	//私钥解密
-	hashType := crypto.HashAlgoMap[utils.GetHashType()]
 	isKms := utils.GetGenerateKeyPairType()
-	issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetIntermCAPrivateKeyPwd(), hashType, isKms)
+	issuerPrivKey, err := decryptPrivKey(issuerKeyPair.PrivateKey, utils.GetIntermCAPrivateKeyPwd(), cert.HashType, isKms)
 	if err != nil {
 		logger.Error("update cert error", zap.Error(err))
 		return nil, err
 	}
 	//读取签发者证书
-	certBytes, err := ioutil.ReadFile(certFilePath)
+	certIssuer, err := models.GetCertByPrivateKeyID(issuerKeyPair.ID)
 	if err != nil {
 		logger.Error("update cert error", zap.Error(err))
 		return nil, err
@@ -117,7 +115,7 @@ func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
 		logger.Error("update cert error", zap.Error(err))
 		return nil, err
 	}
-	certModel, err := IssueCertificate(hashType, false, keyPair.ID, issuerPrivKey, certCSRBytes, certBytes, updateCertReq.ExpireYear, nodeSans)
+	certModel, err := IssueCertificate(cert.HashType, false, keyPair.ID, issuerPrivKey, certCSRBytes, certIssuer.Content, updateCertReq.ExpireYear, nodeSans)
 	if err != nil {
 		logger.Error("update cert error", zap.Error(err))
 		return nil, err
@@ -228,4 +226,62 @@ func createRevokedCertList(revoked *db.RevokedCert) ([]byte, error) {
 	}
 	pemCrl := pem.EncodeToMemory(&pem.Block{Type: "CRL", Bytes: crlBytes})
 	return pemCrl, nil
+}
+
+func CertInfo(certId int) (*models.CertInfo, error) {
+	cert, err := models.GetCertById(certId)
+	if err != nil {
+		return nil, err
+	}
+	var certInfo models.CertInfo
+	certInfo.HashType = int(cert.HashType)
+	certInfo.Id = cert.ID
+	certInfo.InvalidDate = cert.InvalidDate
+	certInfo.OrgId = cert.Organization
+
+	pw, err := models.GetKeyPairByID(cert.PrivateKeyID)
+	if err != nil {
+		return nil, err
+	}
+	certInfo.UserType = db.UserType2NameMap[pw.UserType]
+	certInfo.PrivateKeyType = crypto.KeyType2NameMap[pw.KeyType]
+	certInfo.UserStatus = int(cert.CertStatus)
+	certInfo.Length = len(string(pw.PrivateKey))
+	return &certInfo, nil
+}
+
+func CertList(OrgId string) ([]models.CertResp, error) {
+	certs, err := models.GetCertByOrgId(OrgId)
+	if err != nil {
+		return nil, err
+	}
+
+	certlist := make([]models.CertResp, len(certs))
+	for i := 0; i < len(certs); i++ {
+		certlist[i].Id = certs[i].ID
+		certlist[i].InvalidDate = certs[i].InvalidDate
+		certlist[i].OU = certs[i].OrganizationalUnit
+		certlist[i].OrgId = certs[i].Organization
+		certlist[i].UserStatus = int(certs[i].CertStatus)
+		certlist[i].UserType = certs[i].OrganizationalUnit
+
+		// certlist[i].CertType = certs[i].OrganizationalUnit
+	}
+	return certlist, nil
+}
+
+func Download(certId int64) ([]byte, error) {
+	cert, err := models.GetCertBySN(certId)
+	if err != nil {
+		return nil, err
+	}
+	return cert.Content, nil
+}
+
+func Freeze(certSN int64) error {
+	return models.UpdateCertBySN(certSN, int(db.EFFECTIVE), int(db.FREEZE))
+}
+
+func UnFreeze(certSN int64) error {
+	return models.UpdateCertBySN(certSN, int(db.FREEZE), int(db.EFFECTIVE))
 }

@@ -84,7 +84,7 @@ func KeyPairIsExistWithType(userID, orgID, keyTypeStr string, usage db.CertUsage
 		gorm = gorm.Where("org_id=?", orgID)
 	}
 	if keyTypeStr != "" {
-		gorm = gorm.Where("key_type=?", int(crypto.Name2KeyTypeMap[keyTypeStr]))
+		gorm = gorm.Where("key_type=?", crypto.Name2KeyTypeMap[keyTypeStr])
 	}
 	if userType != nil {
 		gorm = gorm.Where("user_type IN(?)", userType)

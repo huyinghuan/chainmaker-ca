@@ -10,3 +10,10 @@ type StandardResp struct {
 	Msg  string      `json:"msg"`
 	Data interface{} `json:"data"`
 }
+
+type CertInfo struct {
+	PrivateKeyType string `json:"PrivateKeyType"`
+	HashType       int    `json:"HashType"`
+	Length         int    `json:"Length"`
+	CertResp
+}

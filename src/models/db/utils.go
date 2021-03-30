@@ -24,6 +24,7 @@ const (
 	EFFECTIVE CertStatus = iota
 	EXPIRED
 	REVOKED
+	FREEZE
 )
 const (
 	SIGN CertUsage = iota
@@ -55,6 +56,7 @@ var CertStatus2NameMap = map[CertStatus]string{
 	EFFECTIVE: "EFFECTIVE",
 	EXPIRED:   "EXPIRED",
 	REVOKED:   "REVOKED",
+	FREEZE:    "FREEZE",
 }
 
 //Name2CertStatusMap string name to cert status
@@ -62,6 +64,7 @@ var Name2CertStatusMap = map[string]CertStatus{
 	"EFFECTIVE": EFFECTIVE,
 	"EXPIRED":   EXPIRED,
 	"REVOKED":   REVOKED,
+	"FREEZE":    FREEZE,
 }
 
 //CertUsage2NameMap .

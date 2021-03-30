@@ -219,6 +219,8 @@ func CreateRootKeyPair(user *db.KeyPairUser, keyTypeStr string) (privKey crypto.
 	if !ok {
 		return nil, "", fmt.Errorf("[create root key pair] this key type is not support,[%s]", keyTypeStr)
 	}
+	rootPrivateKeyPath, _ := utils.GetRootPrivateKey()
+	rootPrivateKeyPath = rootPrivateKeyPath + "root-" + crypto.KeyType2NameMap[keyType] + ".key"
 	keyPairE, isKeyPairExist := models.KeyPairIsExistWithType(user.UserID, user.OrgID, keyTypeStr, user.CertUsage, user.UserType)
 	if isKeyPairExist {
 		block, _ := pem.Decode(keyPairE.PrivateKey)
@@ -226,6 +228,8 @@ func CreateRootKeyPair(user *db.KeyPairUser, keyTypeStr string) (privKey crypto.
 		if err != nil {
 			return nil, "", fmt.Errorf("[create root key pair] private key from DER error: %s", err)
 		}
+
+		WritePrivKeyFile(rootPrivateKeyPath, keyPairE.PrivateKey)
 		return privKey, keyPairE.ID, nil
 	}
 	var keyPair db.KeyPair
@@ -255,7 +259,6 @@ func CreateRootKeyPair(user *db.KeyPairUser, keyTypeStr string) (privKey crypto.
 
 	//write private key by key type
 
-	rootPrivateKeyPath, _ := utils.GetRootPrivateKey()
 	rootPrivateKeyPath = rootPrivateKeyPath + "root-" + crypto.KeyType2NameMap[keyType] + ".key"
 	err = WritePrivKeyFile(rootPrivateKeyPath, keyPair.PrivateKey)
 	if err != nil {
