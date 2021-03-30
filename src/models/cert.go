@@ -77,16 +77,6 @@ func GetCertByOrgId(orgId string) ([]db.Cert, error) {
 	return certs, nil
 }
 
-type CertResp struct {
-	OrgId       string `json:"OrgId"`
-	InvalidDate int64  `json:"InvalidDate"`
-	UserStatus  int    `json:"UserStatus"`
-	Id          int    `json:"Id"`
-	OU          string `json:"OU"`
-	UserType    string `json:"UserType"`
-	CertType    int    `json:"CertType"`
-}
-
 func GetCertRespyOrgId(orgId string) ([]CertResp, error) {
 	var certs []CertResp
 	if err := db.DB.Debug().Table("cert").Where("organization=?", orgId).Scan(&certs).Error; err != nil {
@@ -118,4 +108,44 @@ func UpdateCertBySN(certSN int64, old_cert_status, new_cert_status int) error {
 		return fmt.Errorf("[DB] get cert by sn error: %s", err.Error())
 	}
 	return nil
+}
+
+//GetCertsByConditions .
+func GetCertsByConditions(OrgId string, start, pageSize, UserStatus, Id, CertType, UserType int, startTime int64) ([]CertResp, error) {
+	CertResp := make([]CertResp, 0)
+	gorm := db.DB.Debug()
+	gorm = gorm.Table("cert").Where("cert.issue_date>=?", startTime)
+	gorm = gorm.Select("cert.organization as org_id, cert.invalid_date as invalid_date, cert.cert_status as user_status, cert.id as id, cert.organizational_unit as ou, cert.serial_number as cert_sn, key_pair.user_type as user_type, key_pair.cert_usage as cert_type")
+
+	if Id != -1 {
+		gorm = gorm.Where("cert.id=?", Id).Joins("join key_pair on key_pair.id = cert.private_key_id")
+	} else {
+		if OrgId != "" {
+			gorm = gorm.Where("cert.organization=?", OrgId)
+		}
+
+		if UserStatus != -1 {
+			gorm = gorm.Where("cert.cert_status=?", UserStatus)
+		}
+		gorm = gorm.Joins("inner join key_pair on key_pair.id = cert.private_key_id")
+
+		if CertType != -1 {
+			gorm = gorm.Where("key_pair.cert_usage=?", CertType)
+		}
+		if UserType != -1 {
+			gorm = gorm.Where("key_pair.user_type=?", UserType)
+		}
+	}
+
+	if start > 0 {
+		gorm = gorm.Offset(start)
+	}
+	if pageSize > 0 {
+		gorm = gorm.Limit(pageSize)
+	}
+	err := gorm.Scan(&CertResp).Error
+	if err != nil {
+		return nil, fmt.Errorf("[DB] get certs by conditions error: %s", err.Error())
+	}
+	return CertResp, nil
 }

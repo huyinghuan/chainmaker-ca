@@ -250,24 +250,14 @@ func CertInfo(certId int) (*models.CertInfo, error) {
 	return &certInfo, nil
 }
 
-func CertList(OrgId string) ([]models.CertResp, error) {
-	certs, err := models.GetCertByOrgId(OrgId)
+func CertList(getCertsReq *models.GetCertsReq) ([]models.CertResp, error) {
+	start := getCertsReq.PageSize * (getCertsReq.Page - 1)
+	certs, err := models.GetCertsByConditions(getCertsReq.OrgID, start, getCertsReq.PageSize, getCertsReq.UserStatus, getCertsReq.Id, getCertsReq.CertType, int(getCertsReq.UserType), getCertsReq.StartTime)
 	if err != nil {
 		return nil, err
 	}
 
-	certlist := make([]models.CertResp, len(certs))
-	for i := 0; i < len(certs); i++ {
-		certlist[i].Id = certs[i].ID
-		certlist[i].InvalidDate = certs[i].InvalidDate
-		certlist[i].OU = certs[i].OrganizationalUnit
-		certlist[i].OrgId = certs[i].Organization
-		certlist[i].UserStatus = int(certs[i].CertStatus)
-		certlist[i].UserType = certs[i].OrganizationalUnit
-
-		// certlist[i].CertType = certs[i].OrganizationalUnit
-	}
-	return certlist, nil
+	return certs, nil
 }
 
 func Download(certId int64) ([]byte, error) {

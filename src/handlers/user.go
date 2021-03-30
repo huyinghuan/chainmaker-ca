@@ -130,23 +130,6 @@ func CertInfo(c *gin.Context) {
 	SuccessfulJSONRespFunc("", certInfo, c)
 }
 
-func CertList(c *gin.Context) {
-	OrgId := c.Query("OrgId")
-	if OrgId == "" {
-		msg := "input parameter error"
-		FailedRespFunc(msg, "", c)
-		return
-	}
-
-	certs, err := services.CertList(OrgId)
-	if err != nil {
-		msg := "Revoked cert failed"
-		FailedRespFunc(msg, err.Error(), c)
-		return
-	}
-	SuccessfulJSONRespFunc("Revoked cert successfully", certs, c)
-}
-
 func Download(c *gin.Context) {
 	certSN := c.Query("CertSN")
 	if certSN == "" {
@@ -209,9 +192,26 @@ func UnFreeze(c *gin.Context) {
 
 	err = services.UnFreeze(valInt)
 	if err != nil {
-		msg := "Freeze cert failed"
+		msg := "unFreeze cert failed"
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
 	SuccessfulJSONRespFunc("", "", c)
+}
+
+func CertList(c *gin.Context) {
+	var getCertsReq models.GetCertsReq
+	if err := c.ShouldBind(&getCertsReq); err != nil {
+		// msg := "input parameter error"
+		FailedRespFunc(err.Error(), "", c)
+		return
+	}
+
+	certs, err := services.CertList(&getCertsReq)
+	if err != nil {
+		msg := "get certs failed"
+		FailedRespFunc(msg, err.Error(), c)
+		return
+	}
+	SuccessfulJSONRespFunc("get certs successfully", certs, c)
 }

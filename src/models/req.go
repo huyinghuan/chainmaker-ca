@@ -95,3 +95,15 @@ type ApplyCertHadKeyPairReq struct {
 	UserID     string       `json:"userID"`
 	OrgID      string       `json:"orgID"`
 }
+
+//GetCertsReq .
+type GetCertsReq struct {
+	Page       int         `json:"Page"`
+	PageSize   int         `json:"PageSize"`
+	UserType   db.UserType `json:"UserType"`
+	CertType   int         `json:"CertType"`
+	UserStatus int         `json:"UserStatus"`
+	OrgID      string      `json:"OrgID"`
+	Id         int         `json:"Id"`
+	StartTime  int64       `json:"StartTime"`
+}

@@ -17,3 +17,14 @@ type CertInfo struct {
 	Length         int    `json:"Length"`
 	CertResp
 }
+
+type CertResp struct {
+	OrgId       string `json:"org_id"`
+	InvalidDate int64  `json:"invalid_date"`
+	UserStatus  int    `json:"user_status"`
+	Id          int    `json:"id"`
+	OU          string `json:"ou"`
+	UserType    string `json:"user_type"`
+	CertType    int    `json:"cert_type"`
+	CertSN      int64  `json:"cert_sn"`
+}
