@@ -29,8 +29,8 @@ spec:
     spec:
   #    nodeSelector:
   #      node_name: 10.0.0.10   #预留用于区分管控节点和区块链节点
-      nodeSelector:
-        kubernetes.io/hostname: 10.0.0.10
+      # nodeSelector:
+      #   kubernetes.io/hostname: 10.0.0.10
       containers:
       #规范： 模块名-微服务名-自定义名-container
       - name: tbaas-certwx-container
@@ -43,7 +43,7 @@ spec:
         - name: volume-certwx-log
           mountPath: /chainmaker-ca-backend/log
         - name: volume-certwx-conf
-          mountPath: /chainmaker-ca-backend/conf/
+          mountPath: /chainmaker-ca-backend/conf
 #        - name: volume-certs-storage
 #          mountPath: /data/release/ca
         ports:
