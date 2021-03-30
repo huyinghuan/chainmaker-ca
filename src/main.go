@@ -20,6 +20,7 @@ func init() {
 }
 func main() {
 	g := gin.New()
+	g.Use(utils.Cors())
 	g.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"msg":   "Hello,World!",

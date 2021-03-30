@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strconv"
+
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/services"
@@ -103,4 +105,113 @@ func RevokedCertWithCRL(c *gin.Context) {
 	}
 	fileName := "RevocationList.crl"
 	SuccessfulJSONRespFunc(fileName, revokedCertListBytes, c)
+}
+
+func CertInfo(c *gin.Context) {
+	certId := c.Query("Id")
+	if certId == "" {
+		msg := "input parameter error"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+	valInt, err := strconv.Atoi(certId) // 函数原型 ：func Atoi(s string) (int, error)
+	if err != nil {
+		msg := "convert string to int failed"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+
+	certInfo, err := services.CertInfo(valInt)
+	if err != nil {
+		msg := "Revoked cert failed"
+		FailedRespFunc(msg, err.Error(), c)
+		return
+	}
+	SuccessfulJSONRespFunc("", certInfo, c)
+}
+
+func CertList(c *gin.Context) {
+	OrgId := c.Query("OrgId")
+	if OrgId == "" {
+		msg := "input parameter error"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+
+	certs, err := services.CertList(OrgId)
+	if err != nil {
+		msg := "Revoked cert failed"
+		FailedRespFunc(msg, err.Error(), c)
+		return
+	}
+	SuccessfulJSONRespFunc("Revoked cert successfully", certs, c)
+}
+
+func Download(c *gin.Context) {
+	certSN := c.Query("CertSN")
+	if certSN == "" {
+		msg := "input parameter error"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+	valInt, err := strconv.ParseInt(certSN, 10, 64)
+	if err != nil {
+		msg := "convert string to int failed"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+
+	certInfo, err := services.Download(valInt)
+	if err != nil {
+		msg := "Revoked cert failed"
+		FailedRespFunc(msg, err.Error(), c)
+		return
+	}
+	SuccessfulJSONRespFunc("", certInfo, c)
+}
+
+func Freeze(c *gin.Context) {
+	certSN := c.Query("CertSN")
+	if certSN == "" {
+		msg := "input parameter error"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+	valInt, err := strconv.ParseInt(certSN, 10, 64)
+	if err != nil {
+		msg := "convert string to int failed"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+
+	err = services.Freeze(valInt)
+	if err != nil {
+		msg := "Freeze cert failed"
+		FailedRespFunc(msg, err.Error(), c)
+		return
+	}
+	SuccessfulJSONRespFunc("", "", c)
+}
+
+func UnFreeze(c *gin.Context) {
+	certSN := c.Query("CertSN")
+	if certSN == "" {
+		msg := "input parameter error"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+	valInt, err := strconv.ParseInt(certSN, 10, 64)
+	if err != nil {
+		msg := "convert string to int failed"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+
+	err = services.UnFreeze(valInt)
+	if err != nil {
+		msg := "Freeze cert failed"
+		FailedRespFunc(msg, err.Error(), c)
+		return
+	}
+	SuccessfulJSONRespFunc("", "", c)
 }
