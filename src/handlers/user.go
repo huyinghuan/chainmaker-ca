@@ -137,9 +137,11 @@ func Download(c *gin.Context) {
 		FailedRespFunc(msg, "", c)
 		return
 	}
+	fileName := "cert.key"
 	keyOrTLs := c.Query("type")
 	if keyOrTLs == "" {
 		keyOrTLs = "cert"
+		fileName = "cert.crt"
 	}
 
 	valInt, err := strconv.ParseInt(certSN, 10, 64)
@@ -155,7 +157,7 @@ func Download(c *gin.Context) {
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
-	SuccessfulJSONRespFunc("", certInfo, c)
+	SuccessfulFileRespFunc(fileName, certInfo, c)
 }
 
 func Freeze(c *gin.Context) {

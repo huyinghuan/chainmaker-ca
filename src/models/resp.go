@@ -31,5 +31,5 @@ type CertResp struct {
 
 type Certs struct {
 	Certs []CertResp
-	Total int `json:"total"`
+	Total int64 `json:"total"`
 }

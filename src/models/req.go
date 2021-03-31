@@ -106,4 +106,5 @@ type GetCertsReq struct {
 	OrgID      string      `json:"OrgID"`
 	Id         int         `json:"Id"`
 	StartTime  int64       `json:"StartTime"`
+	EndTime    int64       `json:"EndTime"`
 }

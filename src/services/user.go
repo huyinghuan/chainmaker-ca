@@ -252,17 +252,12 @@ func CertInfo(certId int) (*models.CertInfo, error) {
 
 func CertList(getCertsReq *models.GetCertsReq) (*models.Certs, error) {
 	start := getCertsReq.PageSize * (getCertsReq.Page - 1)
-	certs, err := models.GetCertsByConditions(getCertsReq.OrgID, start, getCertsReq.PageSize, getCertsReq.UserStatus, getCertsReq.Id, getCertsReq.CertType, int(getCertsReq.UserType), getCertsReq.StartTime)
+	certs, total, err := models.GetCertsByConditions(getCertsReq.OrgID, start, getCertsReq.PageSize, getCertsReq.UserStatus, getCertsReq.Id, getCertsReq.CertType, int(getCertsReq.UserType), getCertsReq.StartTime, getCertsReq.EndTime)
 	if err != nil {
 		return nil, err
 	}
-	length := 0
-	if certs != nil {
-		length = len(certs)
-	}
 
-	certResps := models.Certs{Certs: certs, Total: length}
-
+	certResps := models.Certs{Certs: certs, Total: total}
 	return &certResps, nil
 }
 

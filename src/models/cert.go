@@ -111,10 +111,11 @@ func UpdateCertBySN(certSN int64, old_cert_status, new_cert_status int) error {
 }
 
 //GetCertsByConditions .
-func GetCertsByConditions(OrgId string, start, pageSize, UserStatus, Id, CertType, UserType int, startTime int64) ([]CertResp, error) {
+func GetCertsByConditions(OrgId string, start, pageSize, UserStatus, Id, CertType, UserType int, startTime, endTime int64) ([]CertResp, int64, error) {
 	CertResp := make([]CertResp, 0)
 	gorm := db.DB.Debug()
 	gorm = gorm.Table("cert").Where("cert.issue_date>=?", startTime)
+	gorm = gorm.Table("cert").Where("cert.issue_date<=?", endTime)
 	gorm = gorm.Select("cert.organization as org_id, cert.invalid_date as invalid_date, cert.cert_status as user_status, cert.id as id, cert.organizational_unit as ou, cert.serial_number as cert_sn, key_pair.user_type as user_type, key_pair.cert_usage as cert_type")
 
 	if Id != -1 {
@@ -137,15 +138,20 @@ func GetCertsByConditions(OrgId string, start, pageSize, UserStatus, Id, CertTyp
 		}
 	}
 
+	var total int64
+	err := gorm.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
 	if start > 0 {
 		gorm = gorm.Offset(start)
 	}
 	if pageSize > 0 {
 		gorm = gorm.Limit(pageSize)
 	}
-	err := gorm.Scan(&CertResp).Error
+	err = gorm.Scan(&CertResp).Error
 	if err != nil {
-		return nil, fmt.Errorf("[DB] get certs by conditions error: %s", err.Error())
+		return nil, 0, fmt.Errorf("[DB] get certs by conditions error: %s", err.Error())
 	}
-	return CertResp, nil
+	return CertResp, total, nil
 }
