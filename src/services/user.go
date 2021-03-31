@@ -245,7 +245,7 @@ func CertInfo(certId int) (*models.CertInfo, error) {
 	certInfo.UserType = int(pw.UserType)
 	certInfo.UserStatus = int(cert.CertStatus)
 	certInfo.PrivateKeyType = PrivateKeyType2NameMap[pw.KeyType]
-	certInfo.PublicKeyType = PublicKeyType2NameMap[pw.KeyType] + HashType2NameMap[cert.HashType]
+	certInfo.PublicKeyType = PublicKeyType2NameMap[pw.KeyType] + "-with-" + HashType2NameMap[cert.HashType]
 	certInfo.Length = len(pw.PrivateKey)
 	return &certInfo, nil
 }
