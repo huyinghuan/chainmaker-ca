@@ -234,7 +234,6 @@ func CertInfo(certId int) (*models.CertInfo, error) {
 		return nil, err
 	}
 	var certInfo models.CertInfo
-	certInfo.HashType = int(cert.HashType)
 	certInfo.Id = cert.ID
 	certInfo.InvalidDate = cert.InvalidDate
 	certInfo.OrgId = cert.Organization
@@ -243,29 +242,48 @@ func CertInfo(certId int) (*models.CertInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	certInfo.UserType = db.UserType2NameMap[pw.UserType]
-	certInfo.PrivateKeyType = crypto.KeyType2NameMap[pw.KeyType]
+	certInfo.UserType = int(pw.UserType)
 	certInfo.UserStatus = int(cert.CertStatus)
-	certInfo.Length = len(string(pw.PrivateKey))
+	certInfo.PrivateKeyType = PrivateKeyType2NameMap[pw.KeyType]
+	certInfo.PublicKeyType = PublicKeyType2NameMap[pw.KeyType] + HashType2NameMap[cert.HashType]
+	certInfo.Length = len(pw.PrivateKey)
 	return &certInfo, nil
 }
 
-func CertList(getCertsReq *models.GetCertsReq) ([]models.CertResp, error) {
+func CertList(getCertsReq *models.GetCertsReq) (*models.Certs, error) {
 	start := getCertsReq.PageSize * (getCertsReq.Page - 1)
 	certs, err := models.GetCertsByConditions(getCertsReq.OrgID, start, getCertsReq.PageSize, getCertsReq.UserStatus, getCertsReq.Id, getCertsReq.CertType, int(getCertsReq.UserType), getCertsReq.StartTime)
 	if err != nil {
 		return nil, err
 	}
+	length := 0
+	if certs != nil {
+		length = len(certs)
+	}
 
-	return certs, nil
+	certResps := models.Certs{Certs: certs, Total: length}
+
+	return &certResps, nil
 }
 
-func Download(certId int64) ([]byte, error) {
+func Download(certId int64, keyOrTLs string) ([]byte, error) {
 	cert, err := models.GetCertBySN(certId)
 	if err != nil {
 		return nil, err
 	}
-	return cert.Content, nil
+
+	if keyOrTLs == "cert" {
+		return cert.Content, nil
+	}
+
+	if keyOrTLs == "key" {
+		key, err := models.GetKeyPairByID(cert.PrivateKeyID)
+		if err != nil {
+			return nil, err
+		}
+		return key.PrivateKey, nil
+	}
+	return nil, nil
 }
 
 func Freeze(certSN int64) error {

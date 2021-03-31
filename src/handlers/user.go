@@ -137,6 +137,11 @@ func Download(c *gin.Context) {
 		FailedRespFunc(msg, "", c)
 		return
 	}
+	keyOrTLs := c.Query("type")
+	if keyOrTLs == "" {
+		keyOrTLs = "cert"
+	}
+
 	valInt, err := strconv.ParseInt(certSN, 10, 64)
 	if err != nil {
 		msg := "convert string to int failed"
@@ -144,7 +149,7 @@ func Download(c *gin.Context) {
 		return
 	}
 
-	certInfo, err := services.Download(valInt)
+	certInfo, err := services.Download(valInt, keyOrTLs)
 	if err != nil {
 		msg := "Revoked cert failed"
 		FailedRespFunc(msg, err.Error(), c)

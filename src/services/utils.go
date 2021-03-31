@@ -12,6 +12,7 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
+	"chainmaker.org/chainmaker-go/common/crypto"
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
 	uuid "github.com/satori/go.uuid"
 )
@@ -34,6 +35,40 @@ const (
 	//DefaultRootOrg .
 	DefaultRootOrg = "wx-root"
 )
+
+var PrivateKeyType2NameMap = map[crypto.KeyType]string{
+	crypto.AES:           "AES",
+	crypto.SM4:           "SM4",
+	crypto.RSA512:        "RSA",
+	crypto.RSA1024:       "RSA",
+	crypto.RSA2048:       "RSA",
+	crypto.SM2:           "SM2",
+	crypto.ECC_Secp256k1: "ECC",
+	crypto.ECC_NISTP256:  "ECC",
+	crypto.ECC_NISTP384:  "ECC",
+	crypto.ECC_NISTP521:  "ECC",
+	crypto.ECC_Ed25519:   "ECC",
+}
+
+var PublicKeyType2NameMap = map[crypto.KeyType]string{
+	crypto.AES:           "aes",
+	crypto.SM4:           "sm4",
+	crypto.RSA512:        "rsa",
+	crypto.RSA1024:       "rsa",
+	crypto.RSA2048:       "rsa",
+	crypto.SM2:           "sm2",
+	crypto.ECC_Secp256k1: "ecdsa",
+	crypto.ECC_NISTP256:  "ecdsa",
+	crypto.ECC_NISTP384:  "ecdsa",
+	crypto.ECC_NISTP521:  "ecdsa",
+	crypto.ECC_Ed25519:   "ecdsa",
+}
+
+var HashType2NameMap = map[crypto.HashType]string{
+	crypto.HASH_TYPE_SM3:      "SM3",
+	crypto.HASH_TYPE_SHA256:   "SHA256",
+	crypto.HASH_TYPE_SHA3_256: "SHA3_256",
+}
 
 func dealSANS(sans []string) ([]string, []net.IP) {
 

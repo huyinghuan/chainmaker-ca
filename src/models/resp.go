@@ -13,7 +13,7 @@ type StandardResp struct {
 
 type CertInfo struct {
 	PrivateKeyType string `json:"PrivateKeyType"`
-	HashType       int    `json:"HashType"`
+	PublicKeyType  string `json:"HashType"`
 	Length         int    `json:"Length"`
 	CertResp
 }
@@ -24,7 +24,12 @@ type CertResp struct {
 	UserStatus  int    `json:"user_status"`
 	Id          int    `json:"id"`
 	OU          string `json:"ou"`
-	UserType    string `json:"user_type"`
+	UserType    int    `json:"user_type"`
 	CertType    int    `json:"cert_type"`
 	CertSN      int64  `json:"cert_sn"`
+}
+
+type Certs struct {
+	Certs []CertResp
+	Total int `json:"total"`
 }

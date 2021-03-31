@@ -118,7 +118,7 @@ func GetCertsByConditions(OrgId string, start, pageSize, UserStatus, Id, CertTyp
 	gorm = gorm.Select("cert.organization as org_id, cert.invalid_date as invalid_date, cert.cert_status as user_status, cert.id as id, cert.organizational_unit as ou, cert.serial_number as cert_sn, key_pair.user_type as user_type, key_pair.cert_usage as cert_type")
 
 	if Id != -1 {
-		gorm = gorm.Where("cert.id=?", Id).Joins("join key_pair on key_pair.id = cert.private_key_id")
+		gorm = gorm.Where("cert.id=?", Id).Joins("join key_pair on key_pair.id = cert.private_key_id").Where("key_pair.user_type<>0")
 	} else {
 		if OrgId != "" {
 			gorm = gorm.Where("cert.organization=?", OrgId)
@@ -127,7 +127,7 @@ func GetCertsByConditions(OrgId string, start, pageSize, UserStatus, Id, CertTyp
 		if UserStatus != -1 {
 			gorm = gorm.Where("cert.cert_status=?", UserStatus)
 		}
-		gorm = gorm.Joins("inner join key_pair on key_pair.id = cert.private_key_id")
+		gorm = gorm.Joins("inner join key_pair on key_pair.id = cert.private_key_id").Where("key_pair.user_type<>0")
 
 		if CertType != -1 {
 			gorm = gorm.Where("key_pair.cert_usage=?", CertType)
