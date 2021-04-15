@@ -30,6 +30,7 @@ type CertResp struct {
 }
 
 type Certs struct {
-	Certs []CertResp
-	Total int64 `json:"total"`
+	Certs        []CertResp
+	Total        int64 `json:"total"`
+	CanApplyCert bool  `json:"canApplyCert"`
 }

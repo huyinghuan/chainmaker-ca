@@ -25,6 +25,24 @@ func IssueCertificate(hashType crypto.HashType, isCA bool, keyID string, issuerP
 	if certIsExist {
 		return dbCert, nil
 	}
+	return issueCertificateImpl(hashType, isCA, keyID, issuerPrivKey, csrBytes, certBytes, expireYear, sans)
+}
+
+//IssueCertificate 签发证书
+func IssueCertificateCheckStatus(hashType crypto.HashType, isCA bool, keyID string, issuerPrivKey crypto.PrivateKey,
+	csrBytes, certBytes []byte, expireYear int32, sans []string) (*db.Cert, error) {
+	//判断库里证书是否存在
+	dbCert, certIsExist := models.CertIsExist(keyID)
+	if certIsExist && dbCert.CertStatus == db.EFFECTIVE {
+		return dbCert, nil
+	}
+	return issueCertificateImpl(hashType, isCA, keyID, issuerPrivKey, csrBytes, certBytes, expireYear, sans)
+}
+
+//IssueCertificate 签发证书
+func issueCertificateImpl(hashType crypto.HashType, isCA bool, keyID string, issuerPrivKey crypto.PrivateKey,
+	csrBytes, certBytes []byte, expireYear int32, sans []string) (*db.Cert, error) {
+
 	var certModel db.Cert
 	issuerCert, err := ParseCertificate(certBytes)
 	if err != nil {

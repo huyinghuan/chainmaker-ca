@@ -145,6 +145,52 @@ func IssueUserCert(org *models.Org, usage db.CertUsage) error {
 	return nil
 }
 
+//IssueUserCertWithStatus .
+func IssueUserCertWithStatus(org *models.Org, usage db.CertUsage) error {
+	certAndPrivKeys, err := GetCertByConditions("", org.OrgID, -1, db.INTERMRDIARY_CA)
+	if err != nil {
+		return err
+	}
+	if certAndPrivKeys == nil {
+		return fmt.Errorf("[issuer user cert] org ca cert is not exist")
+	}
+	issuerPrivKey := certAndPrivKeys[0].PrivKey
+	issueCert := certAndPrivKeys[0].Cert
+	for _, v := range org.Users {
+		if v.UserName == "" || (v.UserType != db.USER_ADMIN && v.UserType != db.USER_USER) {
+			return fmt.Errorf("[issuer user cert] there is a problem with node information")
+		}
+		var user db.KeyPairUser
+		user.CertUsage = usage
+		user.OrgID = org.OrgID
+		user.UserID = v.UserName
+		user.UserType = v.UserType
+		var isKms bool
+		if utils.GetGenerateKeyPairType() && user.CertUsage == db.SIGN && user.UserType == db.USER_USER {
+			isKms = true
+		}
+		privateKey, keyID, err := CreateKeyPair(org.PrivateKeyType, org.HashType, &user, "", isKms)
+		if err != nil {
+			return err
+		}
+
+		O := org.OrgID
+		OU := db.UserType2NameMap[user.UserType]
+		CN := user.UserID + "." + O
+		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
+			O, CN)
+		if err != nil {
+			return err
+		}
+		hashType := crypto.HashAlgoMap[utils.GetInputOrDefault(org.HashType, utils.GetHashType())]
+		_, err = IssueCertificateCheckStatus(hashType, false, keyID, issuerPrivKey, csrBytes, issueCert.Content, utils.GetIssureExpirationTime(), nil)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 //WriteChainMakerCertFile 写证书文件
 func WriteChainMakerCertFile(req *models.ChainMakerCertApplyReq) (certBasePath string, err error) {
 	if req.Filetarget == "" {

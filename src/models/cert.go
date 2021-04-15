@@ -34,7 +34,7 @@ func UpdateCertStatusRevokedBySN(certSN int64) error {
 
 //UpdateCertStatusExpiredBySN 通过证书SN
 func UpdateCertStatusExpiredBySN(certSN int64) error {
-	if err := db.DB.Debug().Model(&db.Cert{}).Update("cert_status", db.EXPIRED).Where("serial_number", certSN).Error; err != nil {
+	if err := db.DB.Debug().Model(&db.Cert{}).Where("serial_number=?", certSN).Update("cert_status", db.EXPIRED).Error; err != nil {
 		return fmt.Errorf("[DB] update cert status expired by sn error: %s", err.Error())
 	}
 	return nil
@@ -44,9 +44,18 @@ func UpdateCertStatusExpiredBySN(certSN int64) error {
 func GetCertByPrivateKeyID(privateKeyID string) (*db.Cert, error) {
 	var cert db.Cert
 	if err := db.DB.Debug().Where("private_key_id=? AND cert_status=?", privateKeyID, db.EFFECTIVE).First(&cert).Error; err != nil {
-		return nil, fmt.Errorf("[DB] get cert by private key id error: %s", err.Error())
+		return nil, fmt.Errorf("[DB] get cert by private key id error: %s, %s", err.Error(), privateKeyID)
 	}
 	return &cert, nil
+}
+
+//GetCertByPrivateKeyIDWithOutStatus .
+func GetCertByPrivateKeyIDWithOutStatus(privateKeyID string) ([]db.Cert, error) {
+	var certs []db.Cert
+	if err := db.DB.Debug().Table("cert").Where("private_key_id=?", privateKeyID).Scan(&certs).Error; err != nil {
+		return nil, fmt.Errorf("[DB] get cert by private key id error: %s, %s", err.Error(), privateKeyID)
+	}
+	return certs, nil
 }
 
 //CertIsExist .
@@ -104,25 +113,41 @@ func GetNodeId(certSN int64) (*db.NodeId, error) {
 
 //UpdateCertBySN .
 func UpdateCertBySN(certSN int64, old_cert_status, new_cert_status int) error {
-	if err := db.DB.Debug().Model(&db.Cert{}).Where("serial_number=? and cert_status=?", certSN, old_cert_status).Update("cert_status", new_cert_status).Error; err != nil {
-		return fmt.Errorf("[DB] get cert by sn error: %s", err.Error())
+	var total int64
+	g := db.DB.Debug().Model(&db.Cert{}).Where("serial_number=? and cert_status=?", certSN, old_cert_status)
+	if err := g.Count(&total).Error; err != nil {
+		return fmt.Errorf("[DB] update cert by sn error: %s", err.Error())
+	}
+	if total <= 0 {
+		return fmt.Errorf("[DB] update cert by sn error: no recording")
+	}
+	if err := g.Update("cert_status", new_cert_status).Error; err != nil {
+		return fmt.Errorf("[DB] update cert by sn error: %s", err.Error())
 	}
 	return nil
 }
 
 //GetCertsByConditions .
-func GetCertsByConditions(OrgId string, start, pageSize, UserStatus, Id, CertType, UserType int, startTime, endTime int64) ([]CertResp, int64, error) {
+func GetCertsByConditions(OrgId, UserId string, start, pageSize, UserStatus, Id, CertType, UserType int, startTime, endTime int64) ([]CertResp, int64, error) {
 	CertResp := make([]CertResp, 0)
-	gorm := db.DB.Debug()
-	gorm = gorm.Table("cert").Where("cert.issue_date>=?", startTime)
-	gorm = gorm.Table("cert").Where("cert.issue_date<=?", endTime)
-	gorm = gorm.Select("cert.organization as org_id, cert.invalid_date as invalid_date, cert.cert_status as user_status, cert.id as id, cert.organizational_unit as ou, cert.serial_number as cert_sn, key_pair.user_type as user_type, key_pair.cert_usage as cert_type")
-
+	gorm := db.DB.Debug().Table("cert")
+	gorm = gorm.Select("cert.organization as org_id, cert.invalid_date as invalid_date, cert.cert_status as user_status, cert.id as id, key_pair.user_id as ou, cert.serial_number as cert_sn, key_pair.user_type as user_type, key_pair.cert_usage as cert_type")
+	if startTime != -1 {
+		gorm = gorm.Table("cert").Where("cert.issue_date>=?", startTime)
+	}
+	if endTime != -1 {
+		gorm = gorm.Table("cert").Where("cert.issue_date<=?", endTime)
+	}
 	if Id != -1 {
 		gorm = gorm.Where("cert.id=?", Id).Joins("join key_pair on key_pair.id = cert.private_key_id").Where("key_pair.user_type<>0")
 	} else {
+		gorm = gorm.Where("key_pair.user_id <>'client1' and key_pair.user_id <>'admin1'")
 		if OrgId != "" {
-			gorm = gorm.Where("cert.organization=?", OrgId)
+			gorm = gorm.Where("cert.organization like ?", OrgId+"%")
+		}
+
+		if UserId != "" {
+			gorm = gorm.Where("key_pair.user_id =?", UserId)
 		}
 
 		if UserStatus != -1 {
@@ -135,6 +160,8 @@ func GetCertsByConditions(OrgId string, start, pageSize, UserStatus, Id, CertTyp
 		}
 		if UserType != -1 {
 			gorm = gorm.Where("key_pair.user_type=?", UserType)
+		} else {
+			gorm = gorm.Where("key_pair.user_type>1 and key_pair.user_type<4")
 		}
 	}
 
@@ -154,4 +181,13 @@ func GetCertsByConditions(OrgId string, start, pageSize, UserStatus, Id, CertTyp
 		return nil, 0, fmt.Errorf("[DB] get certs by conditions error: %s", err.Error())
 	}
 	return CertResp, total, nil
+}
+
+//CheckCertBySNAndOrgId .
+func CheckCertBySNAndOrgId(certSN int64, organization string) bool {
+	var total int
+	if err := db.DB.Debug().Model(&db.Cert{}).Where("serial_number=? and organization=?", certSN, organization).Count(&total).Error; err == nil && total > 0 {
+		return true
+	}
+	return false
 }

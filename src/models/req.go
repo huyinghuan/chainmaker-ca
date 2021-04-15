@@ -27,8 +27,9 @@ type GenerateKeyPairReq struct {
 
 //UpdateCertReq .
 type UpdateCertReq struct {
-	CertSN     int64 `json:"certSN"`
-	ExpireYear int32 `json:"expire_year"`
+	CertSN     int64  `json:"certSN"`
+	ExpireYear int32  `json:"expire_year"`
+	OrgID      string `json:"orgID"`
 }
 
 //RevokedCertReq .
@@ -37,6 +38,7 @@ type RevokedCertReq struct {
 	Reason           string `json:"reason"`
 	RevokedStartTime int64  `json:"revokedStartTime"`
 	RevokedEndTime   int64  `json:"revokedEndTime"`
+	OrgID            string `json:"orgID"`
 }
 
 //ChainMakerCertApplyReq .
@@ -104,7 +106,34 @@ type GetCertsReq struct {
 	CertType   int         `json:"CertType"`
 	UserStatus int         `json:"UserStatus"`
 	OrgID      string      `json:"OrgID"`
+	UserID     string      `json:"userID"`
 	Id         int         `json:"Id"`
 	StartTime  int64       `json:"StartTime"`
 	EndTime    int64       `json:"EndTime"`
+	UserRole   int64       `json:"UserRole"`
+	SubUserID  string      `json:"SubUserID"`
+}
+
+type Authority struct {
+	OrgID  string `json:"orgID"`
+	CertSN int64  `json:"CertSN"`
+}
+
+type DownloadReq struct {
+	Authority
+	Type string `json:"Type"`
+}
+
+type FreezeReq struct {
+	Authority
+}
+
+type UnFreezeReq struct {
+	Authority
+}
+
+type UserApplyCertReq struct {
+	UserID   string `json:"userID"`
+	OrgID    string `json:"orgID"`
+	UserRole int64  `json:"UserRole"`
 }

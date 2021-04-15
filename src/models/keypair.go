@@ -32,7 +32,7 @@ func GetKeyPairByConditions(userID, orgID string, usage db.CertUsage, userType .
 		gorm = gorm.Where("user_id=?", userID)
 	}
 	if orgID != "" {
-		gorm = gorm.Where("org_id=?", orgID)
+		gorm = gorm.Where("org_id like ?", orgID+"%")
 	}
 	if userType != nil {
 		gorm = gorm.Where("user_type IN(?)", userType)
@@ -55,7 +55,7 @@ func KeyPairIsExist(userID, orgID string, usage db.CertUsage, userType ...db.Use
 		gorm = gorm.Where("user_id=?", userID)
 	}
 	if orgID != "" {
-		gorm = gorm.Where("org_id=?", orgID)
+		gorm = gorm.Where("org_id like ?", orgID+"%")
 	}
 	if userType != nil {
 		gorm = gorm.Where("user_type IN(?)", userType)
@@ -81,7 +81,7 @@ func KeyPairIsExistWithType(userID, orgID, keyTypeStr string, usage db.CertUsage
 		gorm = gorm.Where("user_id=?", userID)
 	}
 	if orgID != "" {
-		gorm = gorm.Where("org_id=?", orgID)
+		gorm = gorm.Where("org_id like ?", orgID+"%")
 	}
 	if keyTypeStr != "" {
 		gorm = gorm.Where("key_type=?", crypto.Name2KeyTypeMap[keyTypeStr])
@@ -107,13 +107,43 @@ func GetIssuerKeyPairByConditions(userID, orgID string, privateKeyType int) (*db
 	var keyPairList db.KeyPair
 	gorm := db.DB.Debug()
 	if userID != "" {
-		gorm = gorm.Where("user_type = 1 and org_id=? and key_type=?", orgID, privateKeyType)
+		gorm = gorm.Where("user_type = 1 and org_id like ? and key_type=?", orgID+"%", privateKeyType)
 	} else {
 		gorm = gorm.Where("user_type = 0 and org_id = 'wx-root' and key_type=?", privateKeyType)
 	}
 	err := gorm.Find(&keyPairList).Error
 	if err != nil {
-		return nil, fmt.Errorf("[DB] get key pair by conditions error: %s", err.Error())
+		return nil, fmt.Errorf("[DB] get issuer key pair by conditions error: %s, %s, %d", err.Error(), userID, privateKeyType)
 	}
 	return &keyPairList, nil
+}
+
+//GetIssuerKeyPairListByConditions .
+func GetIssuerKeyPairListByConditions(userID, orgID string) ([]db.KeyPair, error) {
+	var keyPairList []db.KeyPair
+	gorm := db.DB.Debug()
+	if userID != "" {
+		gorm = gorm.Where("user_type = 1 and org_id like ?", orgID+"%")
+	} else {
+		gorm = gorm.Where("user_type = 0 and org_id = 'wx-root'")
+	}
+	err := gorm.Find(&keyPairList).Error
+	if err != nil {
+		return nil, fmt.Errorf("[DB] user get  issuer key pair by conditions error: %s", err.Error())
+	}
+	return keyPairList, nil
+}
+
+//GetUserKeyPairListByConditions .
+func GetUserKeyPairListByConditions(userType int, userID, orgID string) ([]db.KeyPair, error) {
+	var keyPairList []db.KeyPair
+	gorm := db.DB.Debug()
+	if userType != -1 {
+		gorm = gorm.Where("user_type = ?", userType)
+	}
+	err := gorm.Where("org_id like ? and user_id=?", orgID+"%", userID).Find(&keyPairList).Error
+	if err != nil {
+		return nil, fmt.Errorf("[DB] user get key pair by conditions error: %s", err.Error())
+	}
+	return keyPairList, nil
 }

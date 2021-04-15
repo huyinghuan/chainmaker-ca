@@ -15,7 +15,7 @@ func GeneratePrivateKey(c *gin.Context) {
 	var generateKeyPairReq models.GenerateKeyPairReq
 	if err := c.ShouldBind(&generateKeyPairReq); err != nil {
 		msg := "Parameter input error"
-		FailedRespFunc(msg, "", c)
+		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
 	var user db.KeyPairUser
@@ -41,7 +41,7 @@ func ApplyCert(c *gin.Context) {
 	var applyCertReq models.ApplyCertReq
 	if err := c.ShouldBind(&applyCertReq); err != nil {
 		msg := "Parameter input error"
-		FailedRespFunc(msg, "", c)
+		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
 	certContent, err := services.ApplyCert(&applyCertReq)
@@ -59,7 +59,7 @@ func UpdateCert(c *gin.Context) {
 	var updateCertReq models.UpdateCertReq
 	if err := c.ShouldBind(&updateCertReq); err != nil {
 		msg := "Parameter input error"
-		FailedRespFunc(msg, "", c)
+		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
 	certContent, err := services.UpdateCert(&updateCertReq)
@@ -77,7 +77,7 @@ func RevokedCert(c *gin.Context) {
 	var revokedCertReq models.RevokedCertReq
 	if err := c.ShouldBind(&revokedCertReq); err != nil {
 		msg := "Parameter input error"
-		FailedRespFunc(msg, "", c)
+		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
 	err := services.RevokedCert(&revokedCertReq)
@@ -94,17 +94,17 @@ func RevokedCertWithCRL(c *gin.Context) {
 	var revokedCertReq models.RevokedCertReq
 	if err := c.ShouldBind(&revokedCertReq); err != nil {
 		msg := "Parameter input error"
-		FailedRespFunc(msg, "", c)
+		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
 	revokedCertListBytes, err := services.RevokedCertWithCRL(&revokedCertReq)
 	if err != nil {
-		msg := "Revoked cert failed"
+		msg := "Revoked cert with crl failed"
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
 	fileName := "RevocationList.crl"
-	SuccessfulJSONRespFunc(fileName, revokedCertListBytes, c)
+	SuccessfulFileRespFunc(fileName, revokedCertListBytes, c)
 }
 
 func CertInfo(c *gin.Context) {
@@ -117,13 +117,13 @@ func CertInfo(c *gin.Context) {
 	valInt, err := strconv.Atoi(certId) // 函数原型 ：func Atoi(s string) (int, error)
 	if err != nil {
 		msg := "convert string to int failed"
-		FailedRespFunc(msg, "", c)
+		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
 
 	certInfo, err := services.CertInfo(valInt)
 	if err != nil {
-		msg := "Revoked cert failed"
+		msg := "Get cert info failed"
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
@@ -131,29 +131,21 @@ func CertInfo(c *gin.Context) {
 }
 
 func Download(c *gin.Context) {
-	certSN := c.Query("CertSN")
-	if certSN == "" {
-		msg := "input parameter error"
-		FailedRespFunc(msg, "", c)
+	var downloadReq models.DownloadReq
+	if err := c.ShouldBind(&downloadReq); err != nil {
+		msg := "Parameter input error"
+		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
 	fileName := "cert.key"
-	keyOrTLs := c.Query("type")
-	if keyOrTLs == "" {
-		keyOrTLs = "cert"
+	if downloadReq.Type == "" {
+		downloadReq.Type = "cert"
 		fileName = "cert.crt"
 	}
 
-	valInt, err := strconv.ParseInt(certSN, 10, 64)
+	certInfo, err := services.Download(downloadReq)
 	if err != nil {
-		msg := "convert string to int failed"
-		FailedRespFunc(msg, "", c)
-		return
-	}
-
-	certInfo, err := services.Download(valInt, keyOrTLs)
-	if err != nil {
-		msg := "Revoked cert failed"
+		msg := "Download cert failed"
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
@@ -161,57 +153,52 @@ func Download(c *gin.Context) {
 }
 
 func Freeze(c *gin.Context) {
-	certSN := c.Query("CertSN")
-	if certSN == "" {
-		msg := "input parameter error"
-		FailedRespFunc(msg, "", c)
-		return
-	}
-	valInt, err := strconv.ParseInt(certSN, 10, 64)
-	if err != nil {
-		msg := "convert string to int failed"
-		FailedRespFunc(msg, "", c)
+	var freezeReq models.FreezeReq
+	if err := c.ShouldBind(&freezeReq); err != nil {
+		msg := "Parameter input error"
+		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
 
-	err = services.Freeze(valInt)
+	err := services.Freeze(&freezeReq)
 	if err != nil {
 		msg := "Freeze cert failed"
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
-	SuccessfulJSONRespFunc("", "", c)
+	Msg := "freeze success"
+	SuccessfulJSONRespFunc(Msg, Msg, c)
 }
 
 func UnFreeze(c *gin.Context) {
-	certSN := c.Query("CertSN")
-	if certSN == "" {
-		msg := "input parameter error"
-		FailedRespFunc(msg, "", c)
-		return
-	}
-	valInt, err := strconv.ParseInt(certSN, 10, 64)
-	if err != nil {
-		msg := "convert string to int failed"
-		FailedRespFunc(msg, "", c)
+	var unfreezeReq models.UnFreezeReq
+	if err := c.ShouldBind(&unfreezeReq); err != nil {
+		msg := "Parameter input error"
+		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
 
-	err = services.UnFreeze(valInt)
+	err := services.UnFreeze(&unfreezeReq)
 	if err != nil {
 		msg := "unFreeze cert failed"
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
-	SuccessfulJSONRespFunc("", "", c)
+	Msg := "unfreeze success"
+	SuccessfulJSONRespFunc(Msg, Msg, c)
 }
 
 func CertList(c *gin.Context) {
 	var getCertsReq models.GetCertsReq
 	if err := c.ShouldBind(&getCertsReq); err != nil {
-		// msg := "input parameter error"
-		FailedRespFunc(err.Error(), "", c)
+		msg := "input parameter error"
+		FailedRespFunc(msg, err.Error(), c)
 		return
+	}
+
+	if getCertsReq.OrgID == "" {
+		msg := "org id is null"
+		FailedRespFunc(msg, msg, c)
 	}
 
 	certs, err := services.CertList(&getCertsReq)
@@ -221,4 +208,23 @@ func CertList(c *gin.Context) {
 		return
 	}
 	SuccessfulJSONRespFunc("get certs successfully", certs, c)
+}
+
+//UserApplyCert 申请证书
+func UserApplyCert(c *gin.Context) {
+	var applyCertReq models.UserApplyCertReq
+	if err := c.ShouldBind(&applyCertReq); err != nil {
+		msg := "Parameter input error"
+		FailedRespFunc(msg, err.Error(), c)
+		return
+	}
+
+	err := services.UserApplyCert(&applyCertReq)
+	if err != nil {
+		msg := "Apply cert failed"
+		FailedRespFunc(msg, err.Error(), c)
+		return
+	}
+	Msg := "user apply cert successfully"
+	SuccessfulJSONRespFunc(Msg, Msg, c)
 }

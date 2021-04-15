@@ -7,5 +7,6 @@ RUN cd /chainmaker-ca-backend/src && go build
 FROM ubuntu
 WORKDIR /chainmaker-ca-backend
 COPY --from=builder /chainmaker-ca-backend/src/src ./chainmaker_ca
+# COPY ./src/conf ./conf
 
 CMD ./chainmaker_ca -config ./conf/config.yaml
