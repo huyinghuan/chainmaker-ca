@@ -310,7 +310,9 @@ func Download(downloadReq models.DownloadReq) ([]byte, error) {
 	if downloadReq.Type == "cert" {
 		return cert.Content, nil
 	}
-
+	if ok, err := checkIsNotOrgCa(downloadReq.CertSN); ok || err != nil {
+		return nil, fmt.Errorf("Download key is org ca or get ca err")
+	}
 	if downloadReq.Type == "key" {
 		key, err := models.GetKeyPairByID(cert.PrivateKeyID)
 		if err != nil {

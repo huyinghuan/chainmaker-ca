@@ -73,4 +73,5 @@ message ImportOrgCaAndKeyReq {
 }
 message ImportOrgCaAndKeyResp {
   bool isOk = 1;
+  string org_id =2;
 }

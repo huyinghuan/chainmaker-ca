@@ -144,6 +144,7 @@ func GetCertsByConditions(OrgId, UserId string, start, pageSize, UserStatus, Id,
 		gorm = gorm.Where("key_pair.user_id <>'client1' and key_pair.user_id <>'admin1'")
 		if OrgId != "" {
 			gorm = gorm.Where("cert.organization like ?", OrgId+"%")
+			gorm = gorm.Or("key_pair.user_type=1 and cert.organization like ?", OrgId+"%")
 		}
 
 		if UserId != "" {

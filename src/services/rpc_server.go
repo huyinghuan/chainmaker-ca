@@ -66,6 +66,7 @@ func (c *ChainMakerCertService) ImportOrgCaAndKey(ctx context.Context, req *pb.I
 
 	err = ImportOrgCa(privateKey, Id, cert, keyPairUser, hashType, req.Cert)
 	resp.IsOk = true
+	resp.OrgId = keyPairUser.OrgID
 	return &resp, err
 }
 
