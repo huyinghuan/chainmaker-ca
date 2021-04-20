@@ -3,7 +3,6 @@ package services
 import (
 	"crypto/x509"
 	"encoding/hex"
-	"encoding/pem"
 	"fmt"
 	"time"
 
@@ -38,7 +37,8 @@ func ImportOrgCa(privKey crypto.PrivateKey, Id string, cert *x509.Certificate, k
 	certModel.IsCa = true
 	certModel.CertEncode = hex.EncodeToString(certBytes)
 	certModel.CommonName = cert.Subject.CommonName
-	certModel.Content = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certBytes})
+	certModel.Content = certBytes
+
 	certModel.Country = cert.Subject.Country[0]
 	certModel.ExpireYear = int32((cert.NotAfter.Unix() - cert.NotBefore.Unix()) / int64(365*24*time.Hour))
 	certModel.HashType = hashType
