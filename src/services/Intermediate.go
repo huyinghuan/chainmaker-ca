@@ -45,6 +45,10 @@ func IssueOrgCACert(org *models.Org, privateKeyPwd string, expireYear int32) err
 	if err != nil {
 		return err
 	}
+	_, certIsExist := models.CertIsExist(keyID)
+	if certIsExist {
+		return nil
+	}
 	O := org.OrgID
 	OU := "ca"
 	CN := "ca." + O
