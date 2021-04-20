@@ -170,7 +170,7 @@ func GetKmsConfig() (kmsConfig *tencentcloudkms.KMSConfig, kmsKeyType string) {
 
 // TODO hashType
 //UploadKeyPair 上传公私钥
-func UploadKeyPair(keyType string, user *db.KeyPairUser, privateKey []byte, privateKeyPwd string, isKms bool) (privKey crypto.PrivateKey, keyID string, err error) {
+func UploadKeyPair(keyType string, hashType crypto.HashType, user *db.KeyPairUser, privateKey []byte, privateKeyPwd string, isKms bool) (privKey crypto.PrivateKey, keyID string, err error) {
 
 	//判断KeyType是否支持
 	cryptoKey, ok := crypto.Name2KeyTypeMap[keyType]
@@ -186,7 +186,6 @@ func UploadKeyPair(keyType string, user *db.KeyPairUser, privateKey []byte, priv
 		}
 		return privateKey, keyPairE.ID, nil
 	}
-	hashType := crypto.HashAlgoMap[utils.GetHashType()]
 	privKey, err = decryptPrivKey(privateKey, privateKeyPwd, hashType, isKms)
 	if err != nil {
 		return

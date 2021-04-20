@@ -137,6 +137,10 @@ func RevokedCert(revokedCertReq *models.RevokedCertReq) error {
 }
 
 func revokedCert(revokedCertReq *models.RevokedCertReq) (*db.RevokedCert, error) {
+	if ok, err := checkIsNotOrgCa(revokedCertReq.RevokedCertSN); ok || err != nil {
+		return nil, fmt.Errorf("RevokedCert cert is org ca or get ca err")
+	}
+
 	var revoked db.RevokedCert
 	revoked.RevokedCertSN = revokedCertReq.RevokedCertSN
 	revoked.Reason = revokedCertReq.Reason
@@ -318,6 +322,9 @@ func Download(downloadReq models.DownloadReq) ([]byte, error) {
 }
 
 func Freeze(freezeReq *models.FreezeReq) error {
+	if ok, err := checkIsNotOrgCa(freezeReq.CertSN); ok || err != nil {
+		return fmt.Errorf("RevokedCert cert is org ca or get ca err")
+	}
 	msg := fmt.Errorf("test:%d, %s", freezeReq.CertSN, freezeReq.OrgID)
 	logger.Error("test:%s, %s", zap.Error(msg))
 	if !models.CheckCertBySNAndOrgId(freezeReq.CertSN, freezeReq.OrgID) {
@@ -327,6 +334,9 @@ func Freeze(freezeReq *models.FreezeReq) error {
 }
 
 func UnFreeze(unfreezeReq *models.UnFreezeReq) error {
+	if ok, err := checkIsNotOrgCa(unfreezeReq.CertSN); ok || err != nil {
+		return fmt.Errorf("RevokedCert cert is org ca or get ca err")
+	}
 	if !models.CheckCertBySNAndOrgId(unfreezeReq.CertSN, unfreezeReq.OrgID) {
 		return fmt.Errorf("UnFreeze Permission denied")
 	}
@@ -448,4 +458,17 @@ func checkNeedIssueCert(keyPairs []db.KeyPair, tmpCount *tmpCount) bool {
 		return false
 	}
 	return true
+}
+
+func checkIsNotOrgCa(sn int64) (bool, error) {
+	cert, err := models.GetCertBySN(sn)
+	if nil != err {
+		return false, err
+	}
+
+	keyPair, err := models.GetKeyPairByID(cert.PrivateKeyID)
+	if nil != err {
+		return false, err
+	}
+	return keyPair.UserType == db.INTERMRDIARY_CA, nil
 }

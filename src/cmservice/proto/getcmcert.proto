@@ -5,6 +5,7 @@ service ChainMakerCertApply {
 rpc GenerateCert(ChainMakerCertApplyReq)returns(GenerateResp){}
 rpc GetCertTar(GetCertTarReq) returns (TarCertResp){}
 rpc GetCertByConditions(GetCertReq) returns (GetCertResp){}
+rpc ImportOrgCaAndKey(ImportOrgCaAndKeyReq) returns (ImportOrgCaAndKeyResp){}
 }
 message ChainMakerCertApplyReq {
   repeated Org orgs = 1;
@@ -65,4 +66,11 @@ bytes certfile = 1;
 }
 message GenerateResp{
   string filepath =1;
+}
+message ImportOrgCaAndKeyReq {
+  bytes cert = 1;
+  bytes key = 2;
+}
+message ImportOrgCaAndKeyResp {
+  bool isOk = 1;
 }

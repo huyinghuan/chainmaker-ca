@@ -161,7 +161,7 @@ func GetCertsByConditions(OrgId, UserId string, start, pageSize, UserStatus, Id,
 		if UserType != -1 {
 			gorm = gorm.Where("key_pair.user_type=?", UserType)
 		} else {
-			gorm = gorm.Where("key_pair.user_type>1 and key_pair.user_type<4")
+			gorm = gorm.Where("key_pair.user_type>=1 and key_pair.user_type<4")
 		}
 	}
 

@@ -2,18 +2,82 @@ package services
 
 import (
 	"context"
+	"crypto/x509"
 	"net"
+	"strings"
 
 	pb "chainmaker.org/chainmaker-ca-backend/src/cmservice"
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
+	"chainmaker.org/chainmaker-go/common/crypto"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
 //ChainMakerCertService .
-type ChainMakerCertService struct{}
+type ChainMakerCertService struct {
+	pb.UnimplementedChainMakerCertApplyServer
+}
+
+const (
+	UnknownSignatureAlgorithm int = iota
+	MD2WithRSA
+	MD5WithRSA
+	SHA1WithRSA
+	SHA256WithRSA
+	SHA384WithRSA
+	SHA512WithRSA
+	DSAWithSHA1
+	DSAWithSHA256
+	ECDSAWithSHA1
+	ECDSAWithSHA256
+	ECDSAWithSHA384
+	ECDSAWithSHA512
+	SHA256WithRSAPSS
+	SHA384WithRSAPSS
+	SHA512WithRSAPSS
+	SHA256WithSM2
+	SM3WithSM2
+)
+
+var (
+	CRYPTO_ALGO_SHA256   = "SHA256"
+	CRYPTO_ALGO_SHA3_256 = "SHA3_256"
+	CRYPTO_ALGO_SM3      = "SM3"
+)
+
+// Only supports the sm4 or ecc_nistp256 private key
+func (c *ChainMakerCertService) ImportOrgCaAndKey(ctx context.Context, req *pb.ImportOrgCaAndKeyReq) (*pb.ImportOrgCaAndKeyResp, error) {
+	var resp pb.ImportOrgCaAndKeyResp
+	cert, err := ParseCertificate(req.Cert)
+	if nil != err {
+		resp.IsOk = false
+		return &resp, err
+	}
+
+	var keyPairUser db.KeyPairUser
+	keyPairUser.CertUsage = db.SIGN
+	keyPairUser.OrgID = cert.Subject.Organization[0]
+	keyPairUser.UserID = cert.Subject.CommonName[0 : strings.LastIndex(cert.Subject.CommonName, keyPairUser.OrgID)-1]
+	keyPairUser.UserType = db.INTERMRDIARY_CA
+	keyType, hashType := getKeyAndHashType(cert)
+	privateKey, Id, err := UploadKeyPair(keyType, hashType, &keyPairUser, req.Key, "", false)
+
+	err = ImportOrgCa(privateKey, Id, cert, keyPairUser, hashType, req.Cert)
+	resp.IsOk = true
+	return &resp, err
+}
+
+func getKeyAndHashType(cert *x509.Certificate) (keyType string, hashType crypto.HashType) {
+	hash := CRYPTO_ALGO_SHA256
+	key := "ECC_NISTP256"
+	if int(cert.SignatureAlgorithm) == SHA256WithSM2 || int(cert.SignatureAlgorithm) == SM3WithSM2 {
+		key = "SM4"
+		hash = CRYPTO_ALGO_SM3
+	}
+	return key, crypto.HashAlgoMap[hash]
+}
 
 //GenerateCert .实现
 func (c *ChainMakerCertService) GenerateCert(ctx context.Context, req *pb.ChainMakerCertApplyReq) (*pb.GenerateResp, error) {
