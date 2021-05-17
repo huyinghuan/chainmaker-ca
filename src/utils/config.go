@@ -5,26 +5,33 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"chainmaker.org/chainmaker-ca-backend/src/loggers"
+	"chainmaker.org/chainmaker-go/common/crypto"
 	"github.com/spf13/viper"
 )
 
-//CaConfig 根和中间Ca配置
-type CaConfig struct {
-	PrivateKeyPath string `mapstructure:"private_key_path"`
-	CertPath       string `mapstructure:"cert_path"`
-	ExpireYear     int32  `mapstructure:"expire_year"`
-	Country        string `mapstructure:"country"`
-	Locality       string `mapstructure:"locality"`
-	Province       string `mapstructure:"province"`
-	PrivateKeyPwd  string `mapstructure:"private_key_pwd"`
-	OrgID          string `mapstructure:"org_id"`
-	PrivateKeyType string `json:"privateKeyType"`
-	HashType       string `json:"hashType"`
+//CaConfig
+type RootCaConf struct {
+	Country           string `mapstructure:"country"`
+	Locality          string `mapstructure:"locality"`
+	Province          string `mapstructure:"province"`
+	PrivateKeyPwd     string `mapstructure:"private_key_pwd"`
+	OrgId             string `mapstructure:"org_id"`
+	IsGenerateKeypair bool   `mapstructure:"is_generate_keypair"`
+	CertPath          string `mapstructure:"cert_path"`
+	PrivateKeyPath    string `mapstructure:"privatekey_path"`
 }
 
-// GetConfigEnv - 获取配置环境
+type DoubleRootPathConf struct {
+	TlsCertPath        string `mapstructure:"tls_cert_path"`
+	TlsPrivateKeyPath  string `mapstructure:"tls_privatekey_path"`
+	SignCertPath       string `mapstructure:"sign_cert_path"`
+	SignPrivateKeyPath string `mapstructure:"sign_privatekey_path"`
+}
+
+// GetConfigEnv --Specify the path and name of the configuration file (Env)
 func GetConfigEnv() string {
 	var env string
 	n := len(os.Args)
@@ -42,7 +49,7 @@ func GetConfigEnv() string {
 	return env
 }
 
-//GetFlagPath .
+//GetFlagPath --Specify the path and name of the configuration file (flag)
 func GetFlagPath() string {
 	var configPath string
 	flag.StringVar(&configPath, "config", "./conf/config.yaml", "please input config file path")
@@ -50,7 +57,7 @@ func GetFlagPath() string {
 	return configPath
 }
 
-//SetConfig .
+//SetConfig --Set config path and file name
 func SetConfig(envPath string) {
 	var configPath string
 	if envPath != "" {
@@ -61,7 +68,7 @@ func SetConfig(envPath string) {
 	InitConfig(configPath)
 }
 
-//InitConfig .
+//InitConfig --init config
 func InitConfig(configPath string) {
 	viper.SetConfigFile(configPath)
 	if err := viper.ReadInConfig(); err != nil {
@@ -90,7 +97,7 @@ type DBConfig struct {
 	DbName   string
 }
 
-//GetDBConfig 拿到数据库配置
+//GetDBConfig --Get DB config from config file.
 func GetDBConfig() string {
 	var dbConfig DBConfig
 	err := viper.UnmarshalKey("db_config", &dbConfig)
@@ -102,130 +109,85 @@ func GetDBConfig() string {
 	return mysqlURL
 }
 
-//GetRootCaConfig 读取配置文件
-func GetRootCaConfig() (CaConfig, error) {
-	var rootCaConfig CaConfig
+//GetRootCaConfig Read root CA config file
+func GetRootCaConfig() (*RootCaConf, error) {
+	var rootCaConfig RootCaConf
 	err := viper.UnmarshalKey("root_config", &rootCaConfig)
 	if err != nil {
-		return rootCaConfig, fmt.Errorf("[Config] get root config error: %s", err.Error())
+		return &rootCaConfig, fmt.Errorf("[Config] get root config error: %s", err.Error())
 	}
-	return rootCaConfig, nil
+	return &rootCaConfig, nil
 }
 
-//GetIntermediate 读取中间CA配置文件
-func GetIntermediate() (CaConfig, error) {
-	var inmediaCaConfig CaConfig
-	err := viper.UnmarshalKey("Intermediate_config", &inmediaCaConfig)
+//GetRootPathConf .
+func GetRootPathConf() (*DoubleRootPathConf, error) {
+	var rootPathConf DoubleRootPathConf
+	err := viper.UnmarshalKey("rootpath_double", &rootPathConf)
 	if err != nil {
-		return inmediaCaConfig, fmt.Errorf("[Config] get intermediate config error: %s", err.Error())
+		return &rootPathConf, fmt.Errorf("[Config] get double root ca path conf error: %s", err.Error())
 	}
-	return inmediaCaConfig, nil
+	return &rootPathConf, nil
+}
+func GetHashType(inputHashType string) (crypto.HashType, error) {
+	if inputHashType != "" || len(inputHashType) != 0 {
+		hashType, ok := Name2HashTypeMap[inputHashType]
+		if !ok {
+			return 0, fmt.Errorf("[get hash type] this hash type is not support,[%s]", inputHashType)
+		}
+		return hashType, nil
+	}
+	confHashType := viper.GetString("hash_type")
+	hashType, ok := Name2HashTypeMap[confHashType]
+	if !ok {
+		return 0, fmt.Errorf("[get hash type] hash type in config is not support,[%s]", confHashType)
+	}
+	return hashType, nil
 }
 
-//GetRootPrivateKey 获取根CA私钥
-func GetRootPrivateKey() (privKeyFilePath, certFilePath string) {
-	privKeyFilePath = viper.GetString("root_config.private_key_path")
-	certFilePath = viper.GetString("root_config.cert_path")
-	return
+func GetPrivateKeyType(inputKeyType string) (crypto.KeyType, error) {
+	if inputKeyType != "" || len(inputKeyType) != 0 {
+		keyType, ok := crypto.Name2KeyTypeMap[inputKeyType]
+		if !ok {
+			return 0, fmt.Errorf("[get hash type] this key type is not support,[%s]", inputKeyType)
+		}
+		return keyType, nil
+	}
+	confKeyType := viper.GetString("key_type")
+	keyType, ok := crypto.Name2KeyTypeMap[confKeyType]
+	if !ok {
+		return 0, fmt.Errorf("[get hash type] key type in config is not support,[%s]", confKeyType)
+	}
+	return keyType, nil
 }
 
-//GetRootPrivateKey 获取根CA私钥
-func GetRootCertAndKey() (privKeyFilePath, certFilePath string) {
-	keyType := GetPrivKeyType()
-	hashType := GetHashType()
-	privKeyFilePath = viper.GetString("root_config.private_key_path") + "root-" + keyType + ".key"
-	certFilePath = viper.GetString("root_config.cert_path") + "root-" + hashType + ".crt"
-	return
+func IsGenerateRootCA() bool {
+	return viper.GetBool("is_generate_rootca")
 }
 
-//GetRootCaPrivateKeyPwd 获取RootCa私钥密码
-func GetRootCaPrivateKeyPwd() string {
-	return viper.GetString("root_config.private_key_pwd")
+func GetCaType() string {
+	return viper.GetString("ca_type")
 }
 
-//GetInitType 获取配置文件中需不需要init root ca
-func GetInitType() bool {
-	return viper.GetViper().GetBool("is_init_root_ca")
+func GetDefaultExpireTime() int32 {
+	return viper.GetInt32("expire_year")
 }
 
-//GetPrivKeyType .
-func GetPrivKeyType() string {
-	return viper.GetString("private_key_type")
-}
-
-//GetHashType .
-func GetHashType() string {
+func GetDefaultHashType() string {
 	return viper.GetString("hash_type")
 }
 
-//GetIssureExpirationTime .
-func GetIssureExpirationTime() int32 {
-	return viper.GetInt32("issure_expiration_time")
+func GetDefaultKeyType() string {
+	return viper.GetString("key_type")
 }
 
-//GetIntermediatePrkCert .
-func GetIntermediatePrkCert() (privateKeyPath, certPath string) {
-	return viper.GetString("Intermediate_config.private_key_path"),
-		viper.GetString("Intermediate_config.cert_path")
+func IsEncryptedPrivatekey() bool {
+	return viper.GetBool("is_encrypted_privatekey")
 }
 
-//GetIntermCAPrivateKeyPwd 获取RootCa私钥密码
-func GetIntermCAPrivateKeyPwd() string {
-	return viper.GetString("Intermediate_config.private_key_pwd")
-}
-
-//GetCRLNextTime .
-func GetCRLNextTime() int {
-	return viper.GetInt("crl_next_time")
-}
-
-//GetChainMakerCertPath .
-func GetChainMakerCertPath() string {
-	return viper.GetString("chainmaker_cert_path")
-}
-
-//GetChainMakerCertRPCServerPort .
-func GetChainMakerCertRPCServerPort() string {
-	return ":" + viper.GetString("chainmaker_cert_rpc_port")
-}
-
-//GetGenerateKeyPairType .
-func GetGenerateKeyPairType() bool {
-	return viper.GetBool("is_kms_keypair")
-}
-
-type KmsConfig struct {
-	KmsServer string `mapstructure:"kms_server"`
-	KmsRegion string `mapstructure:"kms_region"`
-	SecretID  string `mapstructure:"secret_id"`
-	SecretKey string `mapstructure:"secret_key"`
-}
-
-//GetKmsClientConfig 读取中间CA配置文件
-func GetKmsClientConfig() (*KmsConfig, error) {
-	var kmsConfig KmsConfig
-	err := viper.UnmarshalKey("kms_config", &kmsConfig)
+func GetCRLNextTime() time.Duration {
+	d, err := time.ParseDuration(viper.GetString("crl_next_time"))
 	if err != nil {
-		return nil, fmt.Errorf("[Config] get kms client config error: %s", err.Error())
+		return time.Hour * 24
 	}
-	return &kmsConfig, nil
-}
-
-// CheckPathExist 判断文件夹是否存在
-func CheckPathExist(path string) bool {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true
-	}
-	if os.IsNotExist(err) {
-		return false
-	}
-	return false
-}
-
-func GetInputOrDefault(input, defaultStr string) string {
-	if len(input) > 0 {
-		return input
-	}
-	return defaultStr
+	return d
 }

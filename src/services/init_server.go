@@ -8,13 +8,13 @@ import (
 
 var logger *zap.Logger
 
-//InitServer 初始化Ca
+//InitServer 初始化CA
 func InitServer() {
 	logger = loggers.GetLogger()
 	isInitRootCa := utils.GetInitType()
 	if isInitRootCa == true {
-		// InitRootCA()
-		BaasInitRootCA()
-		CreateIntermediateCert()
+		InitRootCA()
+	} else {
+		LoadRootCAFromConfig()
 	}
 }

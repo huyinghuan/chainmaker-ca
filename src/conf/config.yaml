@@ -1,4 +1,4 @@
-# 日志配置
+# log config
 log_config:
   level: error
   filename: ../log/ca.log
@@ -6,53 +6,37 @@ log_config:
   max_age: 30
   max_backups: 5
 
-  # 数据库配置
+# db config
 db_config:
   user: root
-  password:
+  password: 123456
   ip: 127.0.0.1
   port: 3306
   dbname: certs
 
-#是否初始化根CA
-is_init_root_ca: true
-#密钥加密类型
-private_key_type: ECC_NISTP256
-#哈希类型
-hash_type: SHA256
-#签发证书的过期时间
-issure_expiration_time: 1
-# 默认CRL更新时间（h）
-crl_next_time: 4
-# chainmaker证书路径
-chainmaker_cert_path: D:\\chainmaker_cert_path/
-# chainmaker cert rpc port
-chainmaker_cert_rpc_port: 2333
-# 是否使用KMS生成本地公私钥
-is_kms_keypair: false
+# CA config
+is_generate_rootca: true
+ca_type: double                        #sign/tls/double/solo
+expire_year: 2
+hash_type: SHA256 
+key_type: ECC_NISTP256
+is_encrypted_privatekey: true
+crl_next_time: 24h
 
-  # 根CA的初始化配置
+# Root CA config
 root_config:
-  private_key_path: D:\root_config/
-  cert_path: D:\root_config/
-  expire_year: 100                     
+  org_id: wx-root                  
   country: CN                  
   locality: Beijing               
-  province: Beijing                      
+  province: Beijing     
+  privatekey_pwd: wx-123
+  is_generate_keypair: true
+  cert_path: ../crypto-config/RootCA/root.crt
+  privatekey_path: ../crypto-config/RootCA/root.key
 
-# 中间CA配置文件
-Intermediate_config:
-  private_key_pwd: wx123
-  private_key_path: D:\Intermediate_config/
-  country: CN                              
-  locality: Beijing                                   
-  province: Beijing                                                             
-  cert_path: D:\Intermediate_config/
-  expire_year: 10
-  org_id: wx-testorg
-#KMS client 配置
-kms_config:
-  kms_server: kms.tencentcloudapi.com
-  kms_region: ap-guangzhou
-  secret_id: AKIDA9uPef95S0JOHQx0RzCF3qPilYUfrjNm
-  secret_key: VllDRRBfCTVHn46sNYUKSqysWhdR0K0T
+#Root double CA path
+rootpath_double:
+    tls_cert_path: ../crypto-config/RootCA/tls/root-tls.crt
+    tls_privatekey_path: ../crypto-config/RootCA/tls/root-tls.key
+    sign_cert_path: ../crypto-config/RootCA/sign/root-sign.crt
+    sign_privatekey_path: ../crypto-config/RootCA/sign/root-sign.crt        

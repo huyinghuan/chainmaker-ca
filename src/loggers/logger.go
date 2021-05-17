@@ -9,7 +9,7 @@ import (
 var logger *zap.Logger
 var slogger *zap.SugaredLogger
 
-//LogConifg 日志配置
+//LogConifg logger Config
 type LogConifg struct {
 	Level      string
 	FileName   string
@@ -18,7 +18,7 @@ type LogConifg struct {
 	MaxBackups int
 }
 
-//InitLogger 初始化Logger
+//InitLogger init zap logger
 func InitLogger(logConf *LogConifg) error {
 	writeSyncer := getLogWriter(logConf.FileName, logConf.MaxSize, logConf.MaxBackups, logConf.MaxAge)
 	encoder := getEncoder()
@@ -53,12 +53,12 @@ func getEncoder() zapcore.Encoder {
 	return zapcore.NewJSONEncoder(encoderConfig)
 }
 
-//GetLogger getlogger
+//GetLogger Get normal logger
 func GetLogger() *zap.Logger {
 	return logger
 }
 
-//GetSugaLogger Get SugaredLogger
+//GetSugaLogger Get sugared logger
 func GetSugaLogger() *zap.SugaredLogger {
 	return slogger
 }

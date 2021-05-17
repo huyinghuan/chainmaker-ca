@@ -16,10 +16,8 @@ import (
 	"chainmaker.org/chainmaker-go/common/crypto"
 )
 
-//GenerateChainMakerCert 生成chainmaker全套证书
+//GenerateChainMakerCert a full set of certificate
 func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) (string, error) {
-	//首先每个组织是root签发的一个中间CA
-	//循环签发出中间CA
 	var filepath string
 	for _, org := range cmCertApplyReq.Orgs {
 		err := CheckOrgInfo(&org)
@@ -30,12 +28,10 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) (stri
 		if err != nil {
 			return filepath, err
 		}
-		//签发节点sign证书
 		err = IssueNodeCert(&org, db.SIGN)
 		if err != nil {
 			return filepath, err
 		}
-		//签发节点TLS证书
 		err = IssueNodeCert(&org, db.TLS)
 		if err != nil {
 			return filepath, err
@@ -56,9 +52,9 @@ func GenerateChainMakerCert(cmCertApplyReq *models.ChainMakerCertApplyReq) (stri
 	return filepath, nil
 }
 
-//IssueNodeCert 签发节点证书
+//IssueNodeCert .
 func IssueNodeCert(org *models.Org, certUsage db.CertUsage) error {
-	certAndPrivKeys, err := GetCertByConditions("", org.OrgID, -1, db.INTERMRDIARY_CA)
+	certAndPrivKeys, err := GetCertByConditions("", org.OrgId, -1, db.INTERMRDIARY_CA)
 	if err != nil {
 		return err
 	}
@@ -73,8 +69,8 @@ func IssueNodeCert(org *models.Org, certUsage db.CertUsage) error {
 		}
 		var user db.KeyPairUser
 		user.CertUsage = certUsage
-		user.OrgID = org.OrgID
-		user.UserID = node.NodeID
+		user.OrgId = org.OrgId
+		user.UserId = node.NodeID
 		user.UserType = node.NodeType
 		privateKey, keyID, err := CreateKeyPair(org.PrivateKeyType, org.HashType, &user, "", false)
 		if err != nil {
@@ -82,7 +78,7 @@ func IssueNodeCert(org *models.Org, certUsage db.CertUsage) error {
 		}
 
 		//生成CSR
-		O := org.OrgID
+		O := org.OrgId
 		OU := db.UserType2NameMap[user.UserType]
 		CN := node.NodeID + "-" + O
 		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
@@ -101,7 +97,7 @@ func IssueNodeCert(org *models.Org, certUsage db.CertUsage) error {
 
 //IssueUserCert .
 func IssueUserCert(org *models.Org, usage db.CertUsage) error {
-	certAndPrivKeys, err := GetCertByConditions("", org.OrgID, -1, db.INTERMRDIARY_CA)
+	certAndPrivKeys, err := GetCertByConditions("", org.OrgId, -1, db.INTERMRDIARY_CA)
 	if err != nil {
 		return err
 	}
@@ -116,8 +112,8 @@ func IssueUserCert(org *models.Org, usage db.CertUsage) error {
 		}
 		var user db.KeyPairUser
 		user.CertUsage = usage
-		user.OrgID = org.OrgID
-		user.UserID = v.UserName
+		user.OrgId = org.OrgId
+		user.UserId = v.UserName
 		user.UserType = v.UserType
 		var isKms bool
 		if utils.GetGenerateKeyPairType() && user.CertUsage == db.SIGN && user.UserType == db.USER_USER {
@@ -128,9 +124,9 @@ func IssueUserCert(org *models.Org, usage db.CertUsage) error {
 			return err
 		}
 
-		O := org.OrgID
+		O := org.OrgId
 		OU := db.UserType2NameMap[user.UserType]
-		CN := user.UserID + "." + O
+		CN := user.UserId + "." + O
 		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
 			O, CN)
 		if err != nil {
@@ -147,7 +143,7 @@ func IssueUserCert(org *models.Org, usage db.CertUsage) error {
 
 //IssueUserCertWithStatus .
 func IssueUserCertWithStatus(org *models.Org, usage db.CertUsage) error {
-	certAndPrivKeys, err := GetCertByConditions("", org.OrgID, -1, db.INTERMRDIARY_CA)
+	certAndPrivKeys, err := GetCertByConditions("", org.OrgId, -1, db.INTERMRDIARY_CA)
 	if err != nil {
 		return err
 	}
@@ -162,8 +158,8 @@ func IssueUserCertWithStatus(org *models.Org, usage db.CertUsage) error {
 		}
 		var user db.KeyPairUser
 		user.CertUsage = usage
-		user.OrgID = org.OrgID
-		user.UserID = v.UserName
+		user.OrgId = org.OrgId
+		user.UserId = v.UserName
 		user.UserType = v.UserType
 		var isKms bool
 		if utils.GetGenerateKeyPairType() && user.CertUsage == db.SIGN && user.UserType == db.USER_USER {
@@ -174,9 +170,9 @@ func IssueUserCertWithStatus(org *models.Org, usage db.CertUsage) error {
 			return err
 		}
 
-		O := org.OrgID
+		O := org.OrgId
 		OU := db.UserType2NameMap[user.UserType]
-		CN := user.UserID + "." + O
+		CN := user.UserId + "." + O
 		csrBytes, err := createCSR(privateKey, org.Country, org.Locality, org.Province, OU,
 			O, CN)
 		if err != nil {
@@ -202,7 +198,7 @@ func WriteChainMakerCertFile(req *models.ChainMakerCertApplyReq) (certBasePath s
 		os.RemoveAll(certBasePath)
 	}
 	for _, org := range req.Orgs {
-		orgPath := filepath.Join(certBasePath, org.OrgID)
+		orgPath := filepath.Join(certBasePath, org.OrgId)
 		err = WriteCaCertFile(orgPath, &org)
 		if err != nil {
 			return
@@ -249,8 +245,8 @@ func WriteNodeCertFile(orgPath string, org *models.Org) error {
 		if err != nil {
 			return err
 		}
-		userID := node.NodeID
-		certAndPrivKeys, err := GetCertByConditions(userID, org.OrgID, -1, node.NodeType)
+		userId := node.NodeID
+		certAndPrivKeys, err := GetCertByConditions(userId, org.OrgId, -1, node.NodeType)
 		if err != nil {
 			return err
 		}
@@ -311,7 +307,7 @@ func WriteNodeCertFile(orgPath string, org *models.Org) error {
 
 //WriteCaCertFile .
 func WriteCaCertFile(orgPath string, org *models.Org) error {
-	certAndPrivKeys, err := GetCertByConditions("", org.OrgID, -1, db.INTERMRDIARY_CA)
+	certAndPrivKeys, err := GetCertByConditions("", org.OrgId, -1, db.INTERMRDIARY_CA)
 	if err != nil {
 		return err
 	}
@@ -345,7 +341,7 @@ func WriteUserCertFile(orgPath string, org *models.Org) error {
 		if err != nil {
 			return err
 		}
-		certAndPrivKeys, err := GetCertByConditions(v.UserName, org.OrgID, -1, v.UserType)
+		certAndPrivKeys, err := GetCertByConditions(v.UserName, org.OrgId, -1, v.UserType)
 		if err != nil {
 			return err
 		}

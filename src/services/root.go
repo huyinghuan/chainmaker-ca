@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
+	"io/ioutil"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
@@ -15,9 +16,21 @@ import (
 	"go.uber.org/zap"
 )
 
-//InitRootCA 初始化根CA
+type RootCertRequestConfig struct {
+	PrivateKey         crypto.PrivateKey
+	Country            string
+	Locality           string
+	Province           string
+	OrganizationalUnit string
+	Organization       string
+	CommonName         string
+	HashType           crypto.HashType
+	ExpireYear         int32
+}
+
+//InitRootCA create root ca
 func InitRootCA() {
-	//读配置文件（可以升级为web传参）
+	//read ca config
 	rootCaConfig, err := utils.GetRootCaConfig()
 	if err != nil {
 		logger.Error("Init root ca error", zap.Error(err))
@@ -26,167 +39,203 @@ func InitRootCA() {
 	var user db.KeyPairUser
 	user.CertUsage = db.SIGN
 	user.UserType = db.ROOT_CA
-	user.OrgID = "wx-root"
-	//生成公私钥
-	privKey, keyID, err := CreateKeyPair(rootCaConfig.PrivateKeyType, rootCaConfig.HashType, &user, rootCaConfig.PrivateKeyPwd, false)
+	user.OrgId = utils.DefaultRootOrg
+
+	keyTypeStr := utils.GetDefaultKeyTypeFromConf()
+	hashTypeStr := utils.GetDefaultHashTypeFromConf()
+	//create root key pair
+	privKey, keyID, err := CreateKeyPair(keyTypeStr, hashTypeStr, &user, rootCaConfig.PrivateKeyPwd)
 	if err != nil {
 		logger.Error("Init root ca error", zap.Error(err))
 		return
 	}
-	//写私钥
+	//write key pair to file
 	keyPair, err := models.GetKeyPairByID(keyID)
 	if err != nil {
 		logger.Error("Init root ca error", zap.Error(err))
 		return
 	}
-	err = WritePrivKeyFile(rootCaConfig.PrivateKeyPath, keyPair.PrivateKey)
+	rootPrivatePath, err := utils.GetRootPrivateKeyPath("")
 	if err != nil {
 		logger.Error("Init root ca error", zap.Error(err))
 		return
 	}
-	//构建证书结构体
-	hashType := crypto.HashAlgoMap[utils.GetInputOrDefault(rootCaConfig.HashType, utils.GetHashType())]
-	O := DefaultRootOrg
+	err = WritePrivKeyFile(rootPrivatePath, keyPair.PrivateKey)
+	if err != nil {
+		logger.Error("Init root ca error", zap.Error(err))
+		return
+	}
+	//create cert
+	hashType, err := utils.GetHashType(hashTypeStr)
+	if err != nil {
+		logger.Error("Init root ca error", zap.Error(err))
+		return
+	}
+	O := utils.DefaultRootOrg
 	OU := "root"
 	CN := OU + "." + O
-	certModel, err := createCACert(privKey, hashType,
-		rootCaConfig.Country, rootCaConfig.Locality, rootCaConfig.Province, OU,
-		O, CN, rootCaConfig.ExpireYear, nil)
+	rootCertConf := &RootCertRequestConfig{
+		PrivateKey:         privKey,
+		Country:            rootCaConfig.Country,
+		Locality:           rootCaConfig.Locality,
+		Province:           rootCaConfig.Province,
+		OrganizationalUnit: OU,
+		Organization:       O,
+		CommonName:         CN,
+		HashType:           hashType,
+		ExpireYear:         rootCaConfig.ExpireYear,
+		Sans:               []string{""},
+		Uuid:               "",
+	}
+	certModel, err := createCACert(rootCertConf)
 	if err != nil {
 		logger.Error("Init root ca error", zap.Error(err))
 		return
 	}
 	certModel.CertStatus = db.EFFECTIVE
 	certModel.PrivateKeyID = keyID
-	//证书入库
 	if err := models.InsertCert(certModel); err != nil {
 		logger.Error("Init root ca error", zap.Error(err))
 		return
 	}
-
-	//证书写入文件（也可以是传到浏览器提供下载）
 	certContent, err := hex.DecodeString(certModel.CertEncode)
 	if err != nil {
 		logger.Error("Init root ca error", zap.Error(err))
 		return
 	}
-	if err := WirteCertToFile(rootCaConfig.CertPath, certContent); err != nil {
+	rootCertPath, err := utils.GetRootCertPath(hashTypeStr)
+	if err != nil {
+		logger.Error("Init root ca error", zap.Error(err))
+		return
+	}
+	if err := WirteCertToFile(rootCertPath, certContent); err != nil {
 		logger.Error("Init root ca error", zap.Error(err))
 		return
 	}
 }
 
-//CreateCACert 创建入库的证书结构
-func createCACert(privKey crypto.PrivateKey, hashType crypto.HashType,
-	country, locality, province, organizationalUnit, organization, commonName string,
-	expireYear int32, sans []string) (*db.Cert, error) {
+func createCACert(rootCertConf *RootCertRequestConfig) (*db.Cert, error) {
 	var certModel db.Cert
 	var generateCertTemplateConfig = cert.GenerateCertTemplateConfig{
-		PrivKey:            privKey,
+		PrivKey:            rootCertConf.PrivateKey,
 		IsCA:               true,
-		Country:            country,
-		Locality:           locality,
-		Province:           province,
-		OrganizationalUnit: organizationalUnit,
-		Organization:       organization,
-		CommonName:         commonName,
-		ExpireYear:         expireYear,
-		Sans:               sans,
+		Country:            rootCertConf.Country,
+		Locality:           rootCertConf.Locality,
+		Province:           rootCertConf.Province,
+		OrganizationalUnit: rootCertConf.OrganizationalUnit,
+		Organization:       rootCertConf.Organization,
+		CommonName:         rootCertConf.CommonName,
+		ExpireYear:         rootCertConf.ExpireYear,
+		Sans:               rootCertConf.Sans,
 	}
 	template, err := cert.GenerateCertTemplate(&generateCertTemplateConfig)
 	if err != nil {
 		return nil, fmt.Errorf("[Create ca cert] generate cert template failed, %s", err.Error())
 	}
 
-	template.SubjectKeyId, err = cert.ComputeSKI(hashType, privKey.PublicKey().ToStandardKey())
+	template.SubjectKeyId, err = cert.ComputeSKI(rootCertConf.HashType, rootCertConf.PrivateKey.PublicKey().ToStandardKey())
 	if err != nil {
 		return nil, fmt.Errorf("[Create ca cert] create CA cert compute SKI failed, %s", err.Error())
 	}
 	x509certEncode, err := bcx509.CreateCertificate(rand.Reader, template, template,
-		privKey.PublicKey().ToStandardKey(), privKey.ToStandardKey())
+		rootCertConf.PrivateKey.PublicKey().ToStandardKey(), rootCertConf.PrivateKey.ToStandardKey())
 	if err != nil {
 		return nil, fmt.Errorf("[Create ca cert] create CA cert failed, %s", err.Error())
 	}
 	certModel.IsCa = true
 	certModel.SerialNumber = template.SerialNumber.Int64()
 	certModel.Signature = hex.EncodeToString(template.Signature)
-	certModel.HashType = hashType
+	certModel.HashType = rootCertConf.HashType
 	certModel.IssueDate = template.NotBefore.Unix()
 	certModel.InvalidDate = template.NotAfter.Unix()
 	certModel.CertEncode = hex.EncodeToString(x509certEncode)
-	certModel.Country = country
-	certModel.ExpireYear = expireYear
-	certModel.Locality = locality
-	certModel.Province = province
-	certModel.Organization = organization
-	certModel.OrganizationalUnit = organizationalUnit
-	certModel.CommonName = commonName
+	certModel.Country = rootCertConf.Country
+	certModel.ExpireYear = rootCertConf.ExpireYear
+	certModel.Locality = rootCertConf.Locality
+	certModel.Province = rootCertConf.Province
+	certModel.Organization = rootCertConf.Organization
+	certModel.OrganizationalUnit = rootCertConf.OrganizationalUnit
+	certModel.CommonName = rootCertConf.CommonName
 	certModel.Content = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: x509certEncode})
 	return &certModel, nil
 }
 
-//BaasInitRootCA 初始化根CA
-func BaasInitRootCA() {
-	//读配置文件（可以升级为web传参）
+func LoadRootCAFromConfig() {
+	//read ca config
 	rootCaConfig, err := utils.GetRootCaConfig()
 	if err != nil {
 		logger.Error("Init root ca error", zap.Error(err))
 		return
 	}
-	var user db.KeyPairUser
-	user.CertUsage = db.SIGN
-	user.UserType = db.ROOT_CA
-	user.OrgID = "wx-root"
-	//to key
-	var privateKey crypto.PrivateKey
-	var keyID string
-	privateKey, keyID, err = CreateRootKeyPair(&user, "ECC_NISTP256")
+	rootPrivateKeyBytes, err := ioutil.ReadFile(rootCaConfig.PrivateKeyPath)
 	if err != nil {
-		logger.Error("Init root ca error", zap.Error(err))
+		logger.Error("Load root ca from config error", zap.Error(err))
 		return
 	}
-	if err := createRootCert(&rootCaConfig, privateKey, "SHA256", keyID); err != nil {
-		logger.Error("Init root ca error", zap.Error(err))
+	hashType, err := utils.GetHashType(utils.GetDefaultHashTypeFromConf())
+	if err != nil {
+		logger.Error("Load root ca from config error", zap.Error(err))
 		return
 	}
-
-	privateKey, keyID, err = CreateRootKeyPair(&user, "SM2")
+	keyType, err := utils.GetPrivateKeyType(utils.GetDefaultKeyTypeFromConf())
 	if err != nil {
-		logger.Error("Init root ca error", zap.Error(err))
+		logger.Error("Load root ca from config error", zap.Error(err))
 		return
 	}
-	if err := createRootCert(&rootCaConfig, privateKey, "SM3", keyID); err != nil {
-		logger.Error("Init root ca error", zap.Error(err))
+	privateKey, err := ParsePrivateKey(rootPrivateKeyBytes)
+	if err != nil {
+		logger.Error("Load root ca from config error", zap.Error(err))
 		return
 	}
-}
-
-func createRootCert(rootCaConfig *utils.CaConfig, privateKey crypto.PrivateKey, hashTypeStr string, keyID string) error {
-
-	hashType := crypto.HashAlgoMap[hashTypeStr]
-	O := DefaultRootOrg
-	OU := "root"
-	CN := OU + "." + O
-	certModel, err := createCACert(privateKey, hashType,
-		rootCaConfig.Country, rootCaConfig.Locality, rootCaConfig.Province, OU,
-		O, CN, rootCaConfig.ExpireYear, nil)
+	publicKeyBytes, err := privateKey.PublicKey().Bytes()
 	if err != nil {
-		return err
+		logger.Error("Load root ca from config error", zap.Error(err))
+		return
 	}
-	certModel.CertStatus = db.EFFECTIVE
-	certModel.PrivateKeyID = keyID
-	//证书入库
-	if err := models.InsertCert(certModel); err != nil {
-		return err
+	keyPair := &db.KeyPair{
+		PrivateKey: rootPrivateKeyBytes,
+		HashType:   hashType,
+		KeyType:    keyType,
+		ID:         Getuuid(),
+		UserType:   db.ROOT_CA,
+		CertUsage:  db.SIGN,
+		PublicKey:  publicKeyBytes,
 	}
-	//证书写入文件（也可以是传到浏览器提供下载）
-	certContent, err := hex.DecodeString(certModel.CertEncode)
+	err = models.InsertKeyPair(keyPair)
 	if err != nil {
-		return err
+		logger.Error("Load root ca from config error", zap.Error(err))
+		return
 	}
-	rootCertPath := rootCaConfig.CertPath + "root-" + hashTypeStr + ".crt"
-	if err := WirteCertToFile(rootCertPath, certContent); err != nil {
-		return err
+	rootCertBytes, err := ioutil.ReadFile(rootCaConfig.CertPath)
+	if err != nil {
+		logger.Error("Load root ca from config error", zap.Error(err))
+		return
 	}
-	return nil
+	rootCert, err := ParseCertificate(rootCertBytes)
+	if err != nil {
+		logger.Error("Load root ca from config error", zap.Error(err))
+		return
+	}
+	certModel := &db.Cert{
+		SerialNumber:       rootCert.SerialNumber.Int64(),
+		Content:            rootCertBytes,
+		Signature:          hex.EncodeToString(rootCert.Signature),
+		HashType:           hashType,
+		Country:            rootCert.Subject.Country[0],
+		Locality:           rootCert.Subject.Locality[0],
+		Province:           rootCert.Subject.Province[0],
+		Organization:       rootCert.Subject.Organization[0],
+		OrganizationalUnit: rootCert.Subject.OrganizationalUnit[0],
+		CommonName:         rootCert.Subject.CommonName,
+		IsCa:               true,
+		CertStatus:         db.EFFECTIVE,
+		IssueDate:          rootCert.NotAfter.Unix(),
+		InvalidDate:        rootCert.NotBefore.Unix(),
+		PrivateKeyID:       keyPair.ID,
+	}
+	err = models.InsertCert(certModel)
+	if err != nil {
+		logger.Error("Load root ca from config error", zap.Error(err))
+		return
+	}
 }

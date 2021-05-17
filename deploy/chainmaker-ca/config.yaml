@@ -1,59 +1,44 @@
-# 日志配置
+# log config
 log_config:
-  level: debug
-  filename: ./log/ca.log
+  level: error
+  filename: ../log/ca.log
   max_size: 1
   max_age: 30
   max_backups: 5
 
-  # 数据库配置
+# db config
 db_config:
   user: root
   password: 123456
-  ip: 192.168.1.177
+  ip: 127.0.0.1
   port: 3306
-  dbname: chainmaker
+  dbname: certs
 
-#是否初始化根CA
+# CA config
 is_init_root_ca: true
-#密钥加密类型
-private_key_type: ECC_NISTP256
-#哈希类型
-hash_type: SHA256
-#签发证书的过期时间
 issure_expiration_time: 1
-# 默认CRL更新时间（h）
 crl_next_time: 4
-# chainmaker证书路径
-chainmaker_cert_path: ./crypto-config/chainmaker
-# chainmaker cert rpc port
-chainmaker_cert_rpc_port: 2333
-# 是否使用KMS生成本地公私钥
-is_kms_keypair: false
 
-  # 根CA的初始化配置
+# ChainMaker config
+chainmaker_cert_path: ../crypto-config/ChainMaker
+chainmaker_cert_rpc_port: 2333
+
+# Root CA config
 root_config:
-  private_key_path: ./crypto-config/root/
-  cert_path: ./crypto-config/root/
-  expire_year: 100                     
+  private_key_path: ../crypto-config/RootCA
+  cert_path: ../crypto-config/RootCA
+  expire_year: 10                    
   country: CN                  
   locality: Beijing               
   province: Beijing                      
 
-# 中间CA配置文件
+# Org CA config
 Intermediate_config:
   private_key_pwd: wx123
-  private_key_path: ./crypto-config/Intermediate/Intermediate.key
+  private_key_path: ../crypto-config/IntermediateCA
   country: CN                              
   locality: Beijing                                   
   province: Beijing                                                             
-  cert_path: ./crypto-config/Intermediate/Intermediate.crt
-  expire_year: 10
+  cert_path: ../crypto-config/IntermediateCA
+  expire_year: 2
   org_id: wx-testorg
-
-#KMS client 配置
-kms_config:
-  kms_server: kms.tencentcloudapi.com
-  kms_region: ap-guangzhou
-  secret_id: AKIDA9uPef95S0JOHQx0RzCF3qPilYUfrjNm
-  secret_key: VllDRRBfCTVHn46sNYUKSqysWhdR0K0T

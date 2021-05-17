@@ -1,7 +1,5 @@
 package db
 
-import "chainmaker.org/chainmaker-go/common/crypto"
-
 //CertType .
 type UserType int
 
@@ -15,20 +13,22 @@ const (
 	ROOT_CA UserType = iota
 	INTERMRDIARY_CA
 	USER_ADMIN
-	USER_USER
+	USER_CLIENT
 	NODE_CONSENSUS
 	NODE_COMMON
 )
 
 const (
-	EFFECTIVE CertStatus = iota
+	ACTIVE CertStatus = iota
 	EXPIRED
 	REVOKED
-	FREEZE
+	FROZEN
 )
 const (
 	SIGN CertUsage = iota
 	TLS
+	TLS_SIGN
+	TLS_ENC
 )
 
 //UserType2NameMap CertType to string name
@@ -36,7 +36,7 @@ var UserType2NameMap = map[UserType]string{
 	ROOT_CA:         "root",
 	INTERMRDIARY_CA: "ca",
 	USER_ADMIN:      "admin",
-	USER_USER:       "client",
+	USER_CLIENT:     "client",
 	NODE_CONSENSUS:  "consensus",
 	NODE_COMMON:     "common",
 }
@@ -46,37 +46,41 @@ var Name2UserTypeMap = map[string]UserType{
 	"root":      ROOT_CA,
 	"ca":        INTERMRDIARY_CA,
 	"admin":     USER_ADMIN,
-	"client":    USER_USER,
+	"client":    USER_CLIENT,
 	"consensus": NODE_CONSENSUS,
 	"common":    NODE_COMMON,
 }
 
 //CertStatus2NameMap CertStatus to string name
 var CertStatus2NameMap = map[CertStatus]string{
-	EFFECTIVE: "EFFECTIVE",
-	EXPIRED:   "EXPIRED",
-	REVOKED:   "REVOKED",
-	FREEZE:    "FREEZE",
+	ACTIVE:  "ACTIVE",
+	EXPIRED: "EXPIRED",
+	REVOKED: "REVOKED",
+	FROZEN:  "FROZEN",
 }
 
 //Name2CertStatusMap string name to cert status
 var Name2CertStatusMap = map[string]CertStatus{
-	"EFFECTIVE": EFFECTIVE,
-	"EXPIRED":   EXPIRED,
-	"REVOKED":   REVOKED,
-	"FREEZE":    FREEZE,
+	"ACTIVE":  ACTIVE,
+	"EXPIRED": EXPIRED,
+	"REVOKED": REVOKED,
+	"FROZEN":  FROZEN,
 }
 
 //CertUsage2NameMap .
 var CertUsage2NameMap = map[CertUsage]string{
-	SIGN: "sign",
-	TLS:  "tls",
+	SIGN:     "sign",
+	TLS:      "tls",
+	TLS_SIGN: "tls-sign",
+	TLS_ENC:  "tls-enc",
 }
 
 //Name2CertUsageMap .
 var Name2CertUsageMap = map[string]CertUsage{
-	"sign": SIGN,
-	"tls":  TLS,
+	"sign":     SIGN,
+	"tls":      TLS,
+	"tls-sign": TLS_SIGN,
+	"tls-enc":  TLS_ENC,
 }
 
 //NodeType 节点类型
@@ -99,24 +103,10 @@ var Name2NodeTypeMap = map[string]NodeType{
 	"CONSENSUS_NODE": CONSENSUS_NODE,
 }
 
-//KeyPairUser .
-type KeyPairUser struct {
+//KeyPairType
+type KeyPairType struct {
 	UserType  UserType
 	CertUsage CertUsage
-	UserID    string
-	OrgID     string
-}
-
-//CertAndPrivKey .证书和对应的密钥
-type CertAndPrivKey struct {
-	Cert    *Cert
-	PrivKey crypto.PrivateKey
-	KeyPair *KeyPair
-}
-
-//GetCertResp .
-type GetCertResp struct {
-	CertContent []byte `json:"certContent"`
-	PrivateKey  []byte `json:"privateKey"`
-	Usage       string `json:"usage"`
+	UserId    string
+	OrgId     string
 }

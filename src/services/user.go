@@ -36,9 +36,9 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 		logger.Error("apply cery decryptPrivKey error", zap.Error(err))
 		return nil, err
 	}
-	O := keyPair.OrgID
+	O := keyPair.OrgId
 	OU := db.UserType2NameMap[keyPair.UserType]
-	CN := keyPair.UserID + "." + O
+	CN := keyPair.UserId + "." + O
 	certCSR, err := createCSR(privateKey, applyCertReq.Country, applyCertReq.Locality, applyCertReq.Province,
 		OU, O, CN)
 	if err != nil {
@@ -46,7 +46,7 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 		return nil, err
 	}
 	// //读取签发者私钥
-	issuerKeyPair, err := models.GetIssuerKeyPairByConditions(keyPair.UserID, keyPair.OrgID, int(keyPair.KeyType))
+	issuerKeyPair, err := models.GetIssuerKeyPairByConditions(keyPair.UserId, keyPair.OrgId, int(keyPair.KeyType))
 	if err != nil {
 		logger.Error("apply cery  getIssuerKeyPairByConditions error", zap.Error(err))
 		return nil, err
@@ -79,7 +79,7 @@ func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {
 // TODO 流程&& privatekeyType && HashType
 //UpdateCert 更新证书
 func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
-	if !models.CheckCertBySNAndOrgId(updateCertReq.CertSN, updateCertReq.OrgID) {
+	if !models.CheckCertBySNAndOrgId(updateCertReq.CertSN, updateCertReq.OrgId) {
 		return nil, fmt.Errorf("UpdateCert Permission denied")
 	}
 	cert, err := models.GetCertBySN(updateCertReq.CertSN)
@@ -95,7 +95,7 @@ func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
 	certCSRBytes := cert.CsrContent
 
 	// //读取签发者私钥
-	issuerKeyPair, err := models.GetIssuerKeyPairByConditions(keyPair.UserID, keyPair.OrgID, int(keyPair.KeyType))
+	issuerKeyPair, err := models.GetIssuerKeyPairByConditions(keyPair.UserId, keyPair.OrgId, int(keyPair.KeyType))
 	if err != nil {
 		logger.Error("update cert getIssuerKeyPairByConditions error", zap.Error(err))
 		return nil, err
@@ -129,7 +129,7 @@ func UpdateCert(updateCertReq *models.UpdateCertReq) ([]byte, error) {
 
 //RevokedCert 撤销证书
 func RevokedCert(revokedCertReq *models.RevokedCertReq) error {
-	if !models.CheckCertBySNAndOrgId(revokedCertReq.RevokedCertSN, revokedCertReq.OrgID) {
+	if !models.CheckCertBySNAndOrgId(revokedCertReq.RevokedCertSN, revokedCertReq.OrgId) {
 		return fmt.Errorf("RevokedCert Permission denied")
 	}
 	_, err := revokedCert(revokedCertReq)
@@ -161,7 +161,7 @@ func revokedCert(revokedCertReq *models.RevokedCertReq) (*db.RevokedCert, error)
 
 //RevokedCert 撤销证书 返回CRL文件
 func RevokedCertWithCRL(revokedCertReq *models.RevokedCertReq) ([]byte, error) {
-	if !models.CheckCertBySNAndOrgId(revokedCertReq.RevokedCertSN, revokedCertReq.OrgID) {
+	if !models.CheckCertBySNAndOrgId(revokedCertReq.RevokedCertSN, revokedCertReq.OrgId) {
 		return nil, fmt.Errorf("RevokedCertWithCRL Permission denied")
 	}
 	revoked, err := revokedCert(revokedCertReq)
@@ -193,7 +193,7 @@ func createRevokedCertList(revoked *db.RevokedCert) ([]byte, error) {
 		logger.Error("revoked cert crl getKeyPairByID error", zap.Error(err))
 		return nil, err
 	}
-	issuerKeyPair, err := models.GetIssuerKeyPairByConditions(keyPair.UserID, keyPair.OrgID, int(keyPair.KeyType))
+	issuerKeyPair, err := models.GetIssuerKeyPairByConditions(keyPair.UserId, keyPair.OrgId, int(keyPair.KeyType))
 	if err != nil {
 		logger.Error("revoked cert crl getIssuerKeyPairByConditions error", zap.Error(err))
 		return nil, err
@@ -258,13 +258,13 @@ func CertInfo(certId int) (*models.CertInfo, error) {
 	certInfo.Length = len(pw.PrivateKey)
 	certInfo.CertSN = cert.SerialNumber
 	certInfo.CertType = int(pw.CertUsage)
-	certInfo.OU = pw.UserID
+	certInfo.OU = pw.UserId
 	return &certInfo, nil
 }
 
 func CertList(getCertsReq *models.GetCertsReq) (*models.Certs, error) {
 	keyType := -1
-	userId := getCertsReq.UserID
+	userId := getCertsReq.UserId
 	userKeyType := db.USER_ADMIN
 	if getCertsReq.UserRole == 2 {
 		keyType = int(db.USER_USER)
@@ -273,11 +273,11 @@ func CertList(getCertsReq *models.GetCertsReq) (*models.Certs, error) {
 		userId = ""
 	}
 
-	if getCertsReq.SubUserID != "" {
-		userId = getCertsReq.SubUserID
+	if getCertsReq.SubUserId != "" {
+		userId = getCertsReq.SubUserId
 	}
 
-	keyPairs, err := models.GetUserKeyPairListByConditions(int(userKeyType), getCertsReq.UserID, getCertsReq.OrgID)
+	keyPairs, err := models.GetUserKeyPairListByConditions(int(userKeyType), getCertsReq.UserId, getCertsReq.OrgId)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +289,7 @@ func CertList(getCertsReq *models.GetCertsReq) (*models.Certs, error) {
 	canApplyCert := checkNeedIssueCert(keyPairs, &tmpCount)
 
 	start := getCertsReq.PageSize * (getCertsReq.Page - 1)
-	certs, total, err := models.GetCertsByConditions(getCertsReq.OrgID, userId, start, getCertsReq.PageSize, getCertsReq.UserStatus, getCertsReq.Id, getCertsReq.CertType, keyType, getCertsReq.StartTime, getCertsReq.EndTime)
+	certs, total, err := models.GetCertsByConditions(getCertsReq.OrgId, userId, start, getCertsReq.PageSize, getCertsReq.UserStatus, getCertsReq.Id, getCertsReq.CertType, keyType, getCertsReq.StartTime, getCertsReq.EndTime)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +299,7 @@ func CertList(getCertsReq *models.GetCertsReq) (*models.Certs, error) {
 }
 
 func Download(downloadReq models.DownloadReq) ([]byte, error) {
-	if !models.CheckCertBySNAndOrgId(downloadReq.CertSN, downloadReq.OrgID) {
+	if !models.CheckCertBySNAndOrgId(downloadReq.CertSN, downloadReq.OrgId) {
 		return nil, fmt.Errorf("Download Permission denied")
 	}
 	cert, err := models.GetCertBySN(downloadReq.CertSN)
@@ -327,9 +327,9 @@ func Freeze(freezeReq *models.FreezeReq) error {
 	if ok, err := checkIsNotOrgCa(freezeReq.CertSN); ok || err != nil {
 		return fmt.Errorf("RevokedCert cert is org ca or get ca err")
 	}
-	msg := fmt.Errorf("test:%d, %s", freezeReq.CertSN, freezeReq.OrgID)
+	msg := fmt.Errorf("test:%d, %s", freezeReq.CertSN, freezeReq.OrgId)
 	logger.Error("test:%s, %s", zap.Error(msg))
-	if !models.CheckCertBySNAndOrgId(freezeReq.CertSN, freezeReq.OrgID) {
+	if !models.CheckCertBySNAndOrgId(freezeReq.CertSN, freezeReq.OrgId) {
 		return fmt.Errorf("Freeze Permission denied")
 	}
 	return models.UpdateCertBySN(freezeReq.CertSN, int(db.EFFECTIVE), int(db.FREEZE))
@@ -339,7 +339,7 @@ func UnFreeze(unfreezeReq *models.UnFreezeReq) error {
 	if ok, err := checkIsNotOrgCa(unfreezeReq.CertSN); ok || err != nil {
 		return fmt.Errorf("RevokedCert cert is org ca or get ca err")
 	}
-	if !models.CheckCertBySNAndOrgId(unfreezeReq.CertSN, unfreezeReq.OrgID) {
+	if !models.CheckCertBySNAndOrgId(unfreezeReq.CertSN, unfreezeReq.OrgId) {
 		return fmt.Errorf("UnFreeze Permission denied")
 	}
 	return models.UpdateCertBySN(unfreezeReq.CertSN, int(db.FREEZE), int(db.EFFECTIVE))
@@ -359,29 +359,29 @@ func UserApplyCert(userApplyCertReq *models.UserApplyCertReq) error {
 	if userApplyCertReq.UserRole == 2 {
 		userKeyType = db.USER_USER
 	}
-	userkeyPairs, err := models.GetUserKeyPairListByConditions(int(userKeyType), userApplyCertReq.UserID, userApplyCertReq.OrgID)
+	userkeyPairs, err := models.GetUserKeyPairListByConditions(int(userKeyType), userApplyCertReq.UserId, userApplyCertReq.OrgId)
 	if nil != err {
-		return fmt.Errorf("UserApplyCert: get user key pair error:", err.Error())
+		return fmt.Errorf("UserApplyCert: get user key pair error: %s", err.Error())
 	}
 
 	if !checkNeedIssueCert(userkeyPairs, &tmpCount) {
 		return fmt.Errorf("UserApplyCert: already have certs")
 	}
 
-	keyPairs, err := models.GetIssuerKeyPairListByConditions(userApplyCertReq.UserID, userApplyCertReq.OrgID)
+	keyPairs, err := models.GetIssuerKeyPairListByConditions(userApplyCertReq.UserId, userApplyCertReq.OrgId)
 	if nil != err {
-		return fmt.Errorf("UserApplyCert: get issuer key pair error:", err.Error())
+		return fmt.Errorf("UserApplyCert: get issuer key pair error: %s", err.Error())
 	}
 	issuerKeyPair := keyPairs[0]
 	issueCert, err := models.GetCertByPrivateKeyID(issuerKeyPair.ID)
 	if nil != err {
-		return fmt.Errorf("UserApplyCert: get issuer cert error:", err.Error())
+		return fmt.Errorf("UserApplyCert: get issuer cert error: %s", err.Error())
 	}
 
 	var nodeSans []string
 	if issueCert.CertSans != "" && len(issueCert.CertSans) > 0 {
 		if err = json.Unmarshal([]byte(issueCert.CertSans), &nodeSans); err != nil {
-			return fmt.Errorf("UserApplyCert: json unmarshal error:", err.Error())
+			return fmt.Errorf("UserApplyCert: json unmarshal error: %s", err.Error())
 		}
 	}
 	keyType := crypto.KeyType2NameMap[issuerKeyPair.KeyType]
@@ -392,13 +392,13 @@ func UserApplyCert(userApplyCertReq *models.UserApplyCertReq) error {
 	}
 
 	org := models.Org{
-		OrgID:    userApplyCertReq.OrgID,
+		OrgId:    userApplyCertReq.OrgId,
 		Country:  issueCert.Country,
 		Locality: issueCert.Locality,
 		Province: issueCert.Province,
 		Nodes:    nil,
 		Users: []models.User{
-			{UserName: userApplyCertReq.UserID,
+			{UserName: userApplyCertReq.UserId,
 				UserType: userType,
 			},
 		},

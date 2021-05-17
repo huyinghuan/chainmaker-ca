@@ -58,15 +58,15 @@ func (c *ChainMakerCertService) ImportOrgCaAndKey(ctx context.Context, req *pb.I
 
 	var keyPairUser db.KeyPairUser
 	keyPairUser.CertUsage = db.SIGN
-	keyPairUser.OrgID = cert.Subject.Organization[0]
-	keyPairUser.UserID = cert.Subject.CommonName[0 : strings.LastIndex(cert.Subject.CommonName, keyPairUser.OrgID)-1]
+	keyPairUser.OrgId = cert.Subject.Organization[0]
+	keyPairUser.UserId = cert.Subject.CommonName[0 : strings.LastIndex(cert.Subject.CommonName, keyPairUser.OrgId)-1]
 	keyPairUser.UserType = db.INTERMRDIARY_CA
 	keyType, hashType := getKeyAndHashType(cert)
 	privateKey, Id, err := UploadKeyPair(keyType, hashType, &keyPairUser, req.Key, "", false)
 
 	err = ImportOrgCa(privateKey, Id, cert, keyPairUser, hashType, req.Cert)
 	resp.IsOk = true
-	resp.OrgId = keyPairUser.OrgID
+	resp.OrgId = keyPairUser.OrgId
 	return &resp, err
 }
 
@@ -147,7 +147,7 @@ func pbtransform(req *pb.ChainMakerCertApplyReq) *models.ChainMakerCertApplyReq 
 		modelOrg.Country = org.Country
 		modelOrg.Locality = org.Locality
 		modelOrg.Province = org.Province
-		modelOrg.OrgID = org.OrgId
+		modelOrg.OrgId = org.OrgId
 		for _, node := range org.Nodes {
 			var modelNode models.Node
 			modelNode.NodeID = node.NodeId

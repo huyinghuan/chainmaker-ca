@@ -35,7 +35,7 @@ func GinLogger() gin.HandlerFunc {
 	}
 }
 
-//GinRecovery recover掉项目可能出现的panic
+//GinRecovery recover panic
 func GinRecovery(stack bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {

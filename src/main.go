@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 
+	"chainmaker.org/chainmaker-ca-backend/src/handlers"
 	"chainmaker.org/chainmaker-ca-backend/src/loggers"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/routers"
@@ -20,7 +21,10 @@ func init() {
 }
 func main() {
 	g := gin.New()
-	g.Use(utils.Cors())
+	//loading middleware
+	g.Use(loggers.GinLogger(), loggers.GinRecovery(true))
+	g.Use(handlers.Cors())
+	//test route
 	g.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"msg":   "Hello,World!",
@@ -28,9 +32,7 @@ func main() {
 			"data":  "test!",
 		})
 	})
-	//加载中间件
-	g.Use(loggers.GinLogger(), loggers.GinRecovery(true))
-	//加载路由
+	//loading route
 	routers.LoadUserRouter(g)
 	routers.LoadChainMakerRouters(g)
 	g.Run(":8090")

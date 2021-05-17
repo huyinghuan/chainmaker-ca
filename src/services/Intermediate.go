@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"io/ioutil"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
@@ -11,22 +10,24 @@ import (
 	"go.uber.org/zap"
 )
 
-//CreateIntermediateCert 签发中间机构证书
+//CreateIntermediateCert
 func CreateIntermediateCert() {
-	inmediaCaConfig, err := utils.GetIntermediate()
+	inmediaCaConfig, err := utils.GetIntermediateCaConfig()
 	if err != nil {
 		logger.Error("create intermediate cert error", zap.Error(err))
 		return
 	}
-	inmediaCaConfigOrg := models.Org{
-		OrgID:          inmediaCaConfig.OrgID,
+	inmediaCaConfigOrg := &models.Org{
+		OrgId:          inmediaCaConfig.OrgId,
 		Country:        inmediaCaConfig.Country,
 		Locality:       inmediaCaConfig.Locality,
 		Province:       inmediaCaConfig.Province,
-		PrivateKeyType: inmediaCaConfig.PrivateKeyType,
-		HashType:       inmediaCaConfig.HashType,
+		ExpireYear:     inmediaCaConfig.ExpireYear,
+		PrivateKeyPwd:  inmediaCaConfig.PrivateKeyPwd,
+		HashType:       utils.GetDefaultHashTypeFromConf(),
+		PrivateKeyType: utils.GetDefaultKeyTypeFromConf(),
 	}
-	err = IssueOrgCACert(&inmediaCaConfigOrg, inmediaCaConfig.PrivateKeyPwd, inmediaCaConfig.ExpireYear)
+	err = IssueOrgCACert(inmediaCaConfigOrg)
 	if err != nil {
 		logger.Error("create intermediate cert error", zap.Error(err))
 		return
@@ -34,47 +35,68 @@ func CreateIntermediateCert() {
 }
 
 //IssueOrgCACert .
-func IssueOrgCACert(org *models.Org, privateKeyPwd string, expireYear int32) error {
-	country, locality, province := org.Country, org.Locality, org.Province
+func IssueOrgCACert(org *models.Org) error {
+	err := CheckOrgInfo(org)
+	if err != nil {
+		return err
+	}
 	var user db.KeyPairUser
 	user.CertUsage = db.SIGN
 	user.UserType = db.INTERMRDIARY_CA
-	user.OrgID = org.OrgID
-	//生成公私钥
-	privKey, keyID, err := CreateKeyPair(org.PrivateKeyType, org.HashType, &user, "", false)
+	user.OrgId = org.OrgId
+	//create key pair
+	privKey, keyID, err := CreateKeyPair(org.PrivateKeyType, org.HashType, &user, org.PrivateKeyPwd)
 	if err != nil {
 		return err
 	}
-	_, certIsExist := models.CertIsExist(keyID)
-	if certIsExist {
-		return nil
-	}
-	O := org.OrgID
+	O := org.OrgId
 	OU := "ca"
 	CN := "ca." + O
-	//生成CSR 不以文件形式存在，在内存和数据库中
-	csrBytes, err := createCSR(privKey, country, locality, province, OU, O, CN)
+	csrConf := &CSRRequestConfig{
+		PrivateKey:         privKey,
+		Province:           org.Province,
+		Locality:           org.Locality,
+		Country:            org.Country,
+		OrganizationalUnit: OU,
+		Organization:       O,
+		CommonName:         CN,
+	}
+	csrBytes, err := createCSR(csrConf)
 	if err != nil {
 		return err
 	}
-	//读取签发者私钥（文件或者web端形式）
-	hashType := crypto.HashAlgoMap[utils.GetInputOrDefault(org.HashType, utils.GetHashType())]
-	issuerPrivKeyFilePath, certFilePath := utils.GetRootCertAndKey()
-	privKeyRaw, err := ioutil.ReadFile(issuerPrivKeyFilePath)
-	if err != nil {
-		return fmt.Errorf("[Issue org cert] read file error: %s", err.Error())
-	}
-	//私钥解密
-	issuerPrivKey, err := decryptPrivKey(privKeyRaw, utils.GetRootCaPrivateKeyPwd(), hashType, false)
+	hashType, err := utils.GetHashType(org.HashType)
 	if err != nil {
 		return err
 	}
-	//读取签发者证书
-	certBytes, err := ioutil.ReadFile(certFilePath)
-	if err != nil {
-		return fmt.Errorf("[Issue org cert] read file error: %s", err.Error())
+
+	//find root cert and private key
+	keyPairE, isKeyPairExist := models.KeyPairIsExist("", utils.DefaultRootOrg, db.SIGN, db.ROOT_CA)
+	if !isKeyPairExist {
+		return fmt.Errorf("[Issue org cert] issue org cert failed, the root certificate does not exist")
 	}
-	_, err = IssueCertificate(hashType, true, keyID, issuerPrivKey, csrBytes, certBytes, expireYear, nil)
+	var rootPrivateKey crypto.PrivateKey
+	if utils.GetPrivateKeyIsEncrypted() {
+		hashType := keyPairE.HashType
+		rootPrivateKey, err = decryptPrivKey(keyPairE.PrivateKey, keyPairE.PrivateKeyPwd, hashType)
+		if err != nil {
+			return err
+		}
+	}
+	rootPrivateKey, err = ParsePrivateKey(keyPairE.PrivateKey)
+	if err != nil {
+		return err
+	}
+	rootCert, err := models.GetCertByPrivateKeyID(keyPairE.ID)
+	certConf := &CertRequestConfig{
+		HashType:         hashType,
+		IsCa:             true,
+		IssuerPrivateKey: rootPrivateKey,
+		IssuerCertBytes:  rootCert.Content,
+		CsrBytes:         csrBytes,
+		ExpireYear:       org.ExpireYear,
+	}
+	_, err = IssueCertificate(certConf, keyID)
 	if err != nil {
 		return err
 	}
