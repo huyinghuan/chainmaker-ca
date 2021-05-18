@@ -3,6 +3,7 @@ package services
 import (
 	"crypto/rand"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
+	"chainmaker.org/chainmaker-go/common/cert"
 	"chainmaker.org/chainmaker-go/common/crypto"
 	"chainmaker.org/chainmaker-go/common/crypto/asym"
 	"chainmaker.org/chainmaker-go/common/crypto/hash"
@@ -72,70 +74,51 @@ func decryptPrivKey(privKeyRaw []byte, privKeyPwd string, hashType crypto.HashTy
 }
 
 //CreateKeyPair create key pair and storage into db
-func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, keyPairType *db.KeyPairType, privateKeyPwd string) (crypto.PrivateKey, string, error) {
-	if keyPair := models.IsKeyPairExist(keyPairType.UserId, keyPairType.OrgId, keyPairType.CertUsage, keyPairType.UserType); keyPair != nil {
-		if utils.IsEncryptedPrivatekey() {
-			hashType := keyPair.HashType
-			privateKey, err := decryptPrivKey(keyPair.PrivateKey, keyPair.PrivateKeyPwd, hashType)
-			if err != nil {
-				return nil, "", err
-			}
-			return privateKey, keyPair.Id, nil
-		}
-		privateKey, err := ParsePrivateKey(keyPair.PrivateKey)
-		if err != nil {
-			return nil, "", err
-		}
-		return privateKey, keyPair.Id, nil
-	}
+func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd string) (privateKey crypto.PrivateKey, keyPair *db.KeyPair, err error) {
 
-	privateKey, err := createPrivKey(privateKeyTypeStr)
+	privateKey, err = createPrivKey(privateKeyTypeStr)
 	if err != nil {
-		return nil, "", err
+		return
 	}
-
 	var privKeyPemBytes, hashPwd []byte
+	hashType, err := utils.GetHashType(hashTypeStr)
+	if err != nil {
+		return
+	}
+	if len(privateKeyPwd) == 0 {
+		err = fmt.Errorf("[create key pair] private key pwd can't be empty")
+		return
+	}
+	hashPwd, err = hash.Get(hashType, []byte(privateKeyPwd))
+	if err != nil {
+		err = fmt.Errorf("[create key pair] get pwd hash error: %s", err.Error())
+		return
+	}
 	//slice encryption of the key
-	if utils.IsEncryptedPrivatekey() {
-		privKeyPwd := utils.DefaultPrivateKeyPwd + privateKeyPwd
-		hashType, err := utils.GetHashType(hashTypeStr)
-		if err != nil {
-			return nil, "", err
-		}
-		hashPwd, err = hash.Get(hashType, []byte(privKeyPwd))
-		if err != nil {
-			return nil, "", fmt.Errorf("[Create Key Pair] get pwd hash error: %s", err.Error())
-		}
-		privKeyPemBytes, err = encryptPrivKey(privateKey, hashPwd)
-		if err != nil {
-			return nil, "", err
-		}
-	} else {
-		privKeyPEM, _ := privateKey.String()
-		privKeyPemBytes = []byte(privKeyPEM)
+	pwd := utils.DefaultPrivateKeyPwd + hex.EncodeToString(hashPwd)
+
+	privKeyPemBytes, err = encryptPrivKey(privateKey, []byte(pwd))
+	if err != nil {
+		return
 	}
 	publicKeyPEM, _ := privateKey.PublicKey().String()
-	var hexHashPwd string
-	if len(hashPwd) != 0 {
-		hexHashPwd = hex.EncodeToString(hashPwd)
+	ski, err := cert.ComputeSKI(hashType, privateKey.PublicKey())
+	if err != nil {
+		err = fmt.Errorf("[create key pair] compute ski failed: %s", err.Error())
+		return
 	}
-
 	//key pair into db
-	keyPair := &db.KeyPair{
-		Id:            Getuuid(),
-		PrivateKey:    privKeyPemBytes,
-		PublicKey:     []byte(publicKeyPEM),
-		PrivateKeyPwd: hexHashPwd,
+	keyPair = &db.KeyPair{
+		Ski:           hex.EncodeToString(ski),
+		PrivateKey:    base64.StdEncoding.EncodeToString(privKeyPemBytes),
+		PublicKey:     base64.StdEncoding.EncodeToString([]byte(publicKeyPEM)),
+		PrivateKeyPwd: hex.EncodeToString(hashPwd),
 		HashType:      utils.Name2HashTypeMap[hashTypeStr],
 		KeyType:       crypto.Name2KeyTypeMap[privateKeyTypeStr],
-		UserType:      keyPairType.UserType,
-		CertUsage:     keyPairType.CertUsage,
-		OrgId:         keyPairType.OrgId,
-		UserId:        keyPairType.UserId,
 	}
 	err = models.InsertKeyPair(keyPair)
 	if err != nil {
-		return nil, "", err
+		return
 	}
-	return privateKey, keyPair.Id, nil
+	return
 }

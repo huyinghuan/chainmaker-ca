@@ -3,6 +3,7 @@ package services
 import (
 	"crypto/rand"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
@@ -15,7 +16,6 @@ import (
 	"chainmaker.org/chainmaker-go/common/cert"
 	"chainmaker.org/chainmaker-go/common/crypto"
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
-	"chainmaker.org/chainmaker-go/common/helper"
 )
 
 type CSRRequestConfig struct {
@@ -38,18 +38,7 @@ type CertRequestConfig struct {
 	UserType         db.UserType
 }
 
-//IssueCertificate
-func IssueCertificate(certConf *CertRequestConfig, keyId string) (*db.Cert, error) {
-	//Determine if the certificate in the database already exists
-	dbCert := models.IsCertExist(keyId)
-	if dbCert != nil && dbCert.CertStatus == db.ACTIVE {
-		return dbCert, nil
-	}
-	return IssueCertificateExec(certConf, keyId)
-}
-
-//IssueCertificateExec .
-func IssueCertificateExec(certConf *CertRequestConfig, keyId string) (*db.Cert, error) {
+func IssueCertificate(certConf *CertRequestConfig) (*db.CertContent, error) {
 	issuerCert, err := ParseCertificate(certConf.IssuerCertBytes)
 	if err != nil {
 		return nil, err
@@ -124,36 +113,36 @@ func IssueCertificateExec(certConf *CertRequestConfig, keyId string) (*db.Cert, 
 	if err != nil {
 		return nil, fmt.Errorf("[Issue cert] issue certificate failed, %s", err)
 	}
-	certContent := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: x509certEncode})
-	p2pNodeId, err := GetP2pNetNodeId(certConf.UserType, certConf.CertUsage, certContent)
+	certPemBytes := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: x509certEncode})
+	extKeyUsageStr, err := ExtKeyUsageToString(extKeyUsage)
 	if err != nil {
 		return nil, err
 	}
-	certModel := &db.Cert{
+	certContent := &db.CertContent{
 		SerialNumber:       template.SerialNumber.Int64(),
-		Content:            certContent,
+		Content:            base64.StdEncoding.EncodeToString(certPemBytes),
 		Signature:          hex.EncodeToString(template.Signature),
-		CertEncode:         hex.EncodeToString(x509certEncode),
-		IsCa:               isCA,
+		CertRow:            base64.StdEncoding.EncodeToString(x509certEncode),
 		Country:            template.Subject.Country[0],
 		Locality:           template.Subject.Locality[0],
 		Province:           template.Subject.Province[0],
 		Organization:       template.Subject.Organization[0],
 		OrganizationalUnit: template.Subject.OrganizationalUnit[0],
 		CommonName:         template.Subject.CommonName,
-		CsrContent:         certConf.CsrBytes,
-		CertStatus:         db.ACTIVE,
+		Ski:                hex.EncodeToString(template.SubjectKeyId),
+		Aki:                hex.EncodeToString(template.AuthorityKeyId),
+		KeyUsage:           int(keyUsage),
+		ExtKeyUsage:        extKeyUsageStr,
+		CsrContent:         base64.StdEncoding.EncodeToString(certConf.CsrBytes),
+		IsCa:               isCA,
 		IssueDate:          template.NotBefore.Unix(),
 		InvalidDate:        template.NotAfter.Unix(),
-		PrivateKeyId:       keyId,
-		IssuerSn:           issuerCert.SerialNumber.Int64(),
-		NodeId:             p2pNodeId,
 	}
-	err = models.InsertCert(certModel)
+	err = models.InsertCertContent(certContent)
 	if err != nil {
 		return nil, err
 	}
-	return certModel, nil
+	return certContent, nil
 }
 
 //createCSR create csr
@@ -203,21 +192,6 @@ func getKeyUsageAndExtKeyUsage(userType db.UserType, certUsage db.CertUsage) (x5
 		}
 	}
 	return keyUsage, extKeyUsage
-}
-
-func GetP2pNetNodeId(userType db.UserType, certUsage db.CertUsage, nodeTlsCrtBytes []byte) (string, error) {
-	var (
-		p2pNodeId string
-		err       error
-	)
-	if (userType == db.NODE_COMMON || userType == db.NODE_CONSENSUS) &&
-		(certUsage == db.TLS_ENC || certUsage == db.TLS_SIGN) {
-		p2pNodeId, err = helper.GetLibp2pPeerIdFromCert(nodeTlsCrtBytes)
-		if err != nil {
-			return p2pNodeId, fmt.Errorf("[Get p2p nodeId] get libp2p peer id from cert error :%s", err.Error())
-		}
-	}
-	return p2pNodeId, nil
 }
 
 type CSRRequest struct {

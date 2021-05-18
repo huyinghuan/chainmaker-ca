@@ -2,12 +2,14 @@ package services
 
 import (
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"net"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 
 	"chainmaker.org/chainmaker-go/common/crypto"
 	"chainmaker.org/chainmaker-go/common/crypto/asym"
@@ -106,4 +108,17 @@ func CreateDir(dirPath string) error {
 		}
 	}
 	return nil
+}
+
+func ExtKeyUsageToString(extKeyUsage []x509.ExtKeyUsage) (string, error) {
+	var extKeyUsageStr []string
+	for _, v := range extKeyUsage {
+		vStr := strconv.Itoa(int(v))
+		extKeyUsageStr = append(extKeyUsageStr, vStr)
+	}
+	jsonBytes, err := json.Marshal(extKeyUsageStr)
+	if err != nil {
+		return "", fmt.Errorf("parse extKeyUsage to string faield: %s", err.Error())
+	}
+	return string(jsonBytes), nil
 }

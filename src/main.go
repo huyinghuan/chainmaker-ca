@@ -15,7 +15,7 @@ import (
 
 func init() {
 	utils.SetConfig(utils.GetConfigEnv())
-	db.InitDB()
+	db.DBInit()
 	services.InitServer()
 	go services.InitRPCServer()
 }

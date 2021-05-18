@@ -10,7 +10,7 @@ type CertStatus int
 type CertUsage int
 
 const (
-	ROOT_CA UserType = iota
+	ROOT_CA UserType = iota + 1
 	INTERMRDIARY_CA
 	USER_ADMIN
 	USER_CLIENT
@@ -19,13 +19,13 @@ const (
 )
 
 const (
-	ACTIVE CertStatus = iota
+	ACTIVE CertStatus = iota + 1
 	EXPIRED
 	REVOKED
 	FROZEN
 )
 const (
-	SIGN CertUsage = iota
+	SIGN CertUsage = iota + 1
 	TLS
 	TLS_SIGN
 	TLS_ENC
@@ -87,7 +87,7 @@ var Name2CertUsageMap = map[string]CertUsage{
 type NodeType int
 
 const (
-	COMMON_NODE NodeType = iota
+	COMMON_NODE NodeType = iota + 1
 	CONSENSUS_NODE
 )
 

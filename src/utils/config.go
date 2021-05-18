@@ -180,10 +180,6 @@ func GetDefaultKeyType() string {
 	return viper.GetString("key_type")
 }
 
-func IsEncryptedPrivatekey() bool {
-	return viper.GetBool("is_encrypted_privatekey")
-}
-
 func GetCRLNextTime() time.Duration {
 	d, err := time.ParseDuration(viper.GetString("crl_next_time"))
 	if err != nil {
