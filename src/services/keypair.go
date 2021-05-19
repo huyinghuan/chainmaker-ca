@@ -102,7 +102,7 @@ func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd s
 		return
 	}
 	publicKeyPEM, _ := privateKey.PublicKey().String()
-	ski, err := cert.ComputeSKI(hashType, privateKey.PublicKey())
+	ski, err := cert.ComputeSKI(hashType, privateKey.PublicKey().ToStandardKey())
 	if err != nil {
 		err = fmt.Errorf("[create key pair] compute ski failed: %s", err.Error())
 		return

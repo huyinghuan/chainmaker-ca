@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"chainmaker.org/chainmaker-ca-backend/src/loggers"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
@@ -19,6 +20,7 @@ var zapLog *zap.Logger
 var DB *gorm.DB
 
 func DBInit() {
+	zapLog = loggers.GetLogger()
 	var err error
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
@@ -43,6 +45,7 @@ func DBInit() {
 		},
 	})
 	if err != nil {
+		zapLog.Error("failed to connect [DB]")
 		panic(err)
 	}
 	sqlDB, err := DB.DB()
@@ -54,7 +57,12 @@ func DBInit() {
 	sqlDB.SetConnMaxLifetime(time.Minute)
 	// Set table options
 	DB.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:table_options", "ENGINE=InnoDB")
-	err = DB.Set("gorm:table_options", "CHARSET=utf8").Set("gorm:table_options", "COLLATE=utf8_general_ci").AutoMigrate()
+	err = DB.Set("gorm:table_options", "CHARSET=utf8").Set("gorm:table_options", "COLLATE=utf8_general_ci").AutoMigrate(
+		&CertContent{},
+		&CertInfo{},
+		&KeyPair{},
+		&RevokedCert{},
+		)
 	if err != nil {
 		zapLog.Error("[DB] create table failed", zap.Error(err))
 	}
