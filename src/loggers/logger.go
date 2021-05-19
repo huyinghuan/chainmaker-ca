@@ -18,8 +18,35 @@ type LogConifg struct {
 	MaxBackups int
 }
 
+const (
+	DEFAULT_LOG_LEVEL      = "Debug"
+	DEFAULT_LOG_FILENAME   = "../log/ca.log"
+	DEFAULT_LOG_MAXSIZE    = 1
+	DEFAULT_LOG_MAXAGE     = 30
+	DEFAULT_LOG_MAXBACKUPS = 5
+)
+
+func checkLogConfig(logConf *LogConifg) {
+	if len(logConf.Level) == 0 {
+		logConf.Level = DEFAULT_LOG_LEVEL
+	}
+	if len(logConf.FileName) == 0 {
+		logConf.FileName = DEFAULT_LOG_FILENAME
+	}
+	if logConf.MaxAge == 0 {
+		logConf.MaxAge = DEFAULT_LOG_MAXAGE
+	}
+	if logConf.MaxSize == 0 {
+		logConf.MaxSize = DEFAULT_LOG_MAXSIZE
+	}
+	if logConf.MaxBackups == 0 {
+		logConf.MaxBackups = DEFAULT_LOG_MAXBACKUPS
+	}
+}
+
 //InitLogger init zap logger
 func InitLogger(logConf *LogConifg) error {
+	checkLogConfig(logConf)
 	writeSyncer := getLogWriter(logConf.FileName, logConf.MaxSize, logConf.MaxBackups, logConf.MaxAge)
 	encoder := getEncoder()
 	level := new(zapcore.Level)

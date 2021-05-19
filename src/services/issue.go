@@ -208,10 +208,6 @@ func IssueCertificate(certConf *CertRequestConfig) (*db.CertContent, error) {
 		IssueDate:          template.NotBefore.Unix(),
 		InvalidDate:        template.NotAfter.Unix(),
 	}
-	err = models.InsertCertContent(certContent)
-	if err != nil {
-		return nil, err
-	}
 	return certContent, nil
 }
 

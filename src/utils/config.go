@@ -12,15 +12,14 @@ import (
 var allConf *AllConfig
 
 type AllConfig struct {
-	LogConf            *loggers.LogConifg  `mapstructure:"log_config"`
-	DBConf             *DBConfig           `mapstructure:"db_config"`
-	BaseConf           *BaseConf           `mapstructure:"base_config"`
-	RootCaConf         *CaConfig           `mapstructure:"root_config"`
-	IntermediateCaConf []*CaConfig         `mapstructure:"Intermediate_config"`
-	DoubleRootPathConf *DoubleRootPathConf `mapstructure:"rootpath_double"`
+	logConf            *loggers.LogConifg  `mapstructure:"log_config"`
+	dbConf             *DBConfig           `mapstructure:"db_config"`
+	baseConf           *BaseConf           `mapstructure:"base_config"`
+	rootCaConf         *CaConfig           `mapstructure:"root_config"`
+	intermediateCaConf []*CaConfig         `mapstructure:"Intermediate_config"`
+	doubleRootPathConf *DoubleRootPathConf `mapstructure:"rootpath_double"`
 }
 
-//BaseConf
 type BaseConf struct {
 	CaType            string   `mapstructure:"ca_type"`
 	ExpireYear        int      `mapstructure:"expire_year"`
@@ -31,8 +30,8 @@ type BaseConf struct {
 }
 
 type CaConfig struct {
-	CsrConf  CsrConf  `mapstructure:"csr"`
-	CertConf CertConf `mapstructure:"cert"`
+	CsrConf  *CsrConf  `mapstructure:"csr"`
+	CertConf *CertConf `mapstructure:"cert"`
 }
 
 type CsrConf struct {
@@ -53,8 +52,10 @@ type CertConf struct {
 type DoubleRootPathConf struct {
 	TlsCertPath        string `mapstructure:"tls_cert_path"`
 	TlsPrivateKeyPath  string `mapstructure:"tls_privatekey_path"`
+	TlsPrivateKeyPwd   string `mapstructure:"tls_privatekey_pwd"`
 	SignCertPath       string `mapstructure:"sign_cert_path"`
 	SignPrivateKeyPath string `mapstructure:"sign_privatekey_path"`
+	SignPrivateKeyPwd  string `mapstructure:"sign_privatekey_pwd"`
 }
 
 // GetConfigEnv --Specify the path and name of the configuration file (Env)
@@ -97,20 +98,15 @@ func SetConfig(envPath string) {
 //InitConfig --init config
 func InitConfig(configPath string) {
 	viper.SetConfigFile(configPath)
-	if err := viper.ReadInConfig(); err != nil {
-		panic(err)
-	}
-	var logConf loggers.LogConifg
-	logConf.Level = viper.GetString("log_config.level")
-	logConf.FileName = viper.GetString("log_config.filename")
-	logConf.MaxAge = viper.GetInt("log_config.max_age")
-	logConf.MaxSize = viper.GetInt("log_level.max_size")
-	logConf.MaxBackups = viper.GetInt("log_max_backups")
-	err := loggers.InitLogger(&logConf)
+	err := viper.ReadInConfig()
 	if err != nil {
 		panic(err)
 	}
 	allConf, err = GetAllConf()
+	if err != nil {
+		panic(err)
+	}
+	err = loggers.InitLogger(allConf.GetLogConf())
 	if err != nil {
 		panic(err)
 	}
@@ -179,6 +175,12 @@ func GetAllConf() (*AllConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("[config] get all config failed: %s", err.Error())
 	}
+	if allConf.baseConf == nil {
+		return nil, fmt.Errorf("[config] not found base config")
+	}
+	if allConf.rootCaConf == nil {
+		return nil, fmt.Errorf("[config] not found root config")
+	}
 	return &allConf, nil
 }
 
@@ -187,25 +189,52 @@ func GetAllConfig() *AllConfig {
 }
 
 func (ac *AllConfig) GetHashType() string {
-	return ac.BaseConf.HashType
+	return ac.baseConf.HashType
 }
 
 func (ac *AllConfig) GetKeyType() string {
-	return ac.BaseConf.KeyType
+	return ac.baseConf.KeyType
 }
 
 func (ac *AllConfig) GetDefaultExpireTime() int {
-	return ac.BaseConf.ExpireYear
+	return ac.baseConf.ExpireYear
 }
 
 func (ac *AllConfig) GetCanIssueCa() bool {
-	return ac.BaseConf.CanIssueca
+	return ac.baseConf.CanIssueca
 }
 
 func (ac *AllConfig) GetProvideServiceFor() []string {
-	return ac.BaseConf.ProvideServiceFor
+	return ac.baseConf.ProvideServiceFor
 }
 
 func (ac *AllConfig) GetCaType() string {
-	return ac.BaseConf.CaType
+	return ac.baseConf.CaType
+}
+
+func (ac *AllConfig) GetRootCertPath() string {
+	return ac.rootCaConf.CertConf.CertPath
+}
+func (ac *AllConfig) GetRootKeyPath() string {
+	return ac.rootCaConf.CertConf.PrivateKeyPath
+}
+func (ac *AllConfig) GetRootKeyPwd() string {
+	return ac.rootCaConf.CertConf.PrivateKeyPwd
+}
+
+func (ac *AllConfig) GetRootConf() *CaConfig {
+	return ac.rootCaConf
+}
+func (ac *AllConfig) GetBaseConf() *BaseConf {
+	return ac.baseConf
+}
+func (ac *AllConfig) GetIntermediateConf() []*CaConfig {
+	return ac.intermediateCaConf
+}
+func (ac *AllConfig) GetDoubleRootPathConf() *DoubleRootPathConf {
+	return ac.doubleRootPathConf
+}
+
+func (ac *AllConfig) GetLogConf() *loggers.LogConifg {
+	return ac.logConf
 }

@@ -11,7 +11,6 @@ import (
 	"os"
 	"path"
 
-	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"chainmaker.org/chainmaker-go/common/cert"
@@ -114,10 +113,6 @@ func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd s
 		PrivateKeyPwd: hex.EncodeToString(hashPwd),
 		HashType:      utils.Name2HashTypeMap[hashTypeStr],
 		KeyType:       crypto.Name2KeyTypeMap[privateKeyTypeStr],
-	}
-	err = models.InsertKeyPair(keyPair)
-	if err != nil {
-		return
 	}
 	return
 }
