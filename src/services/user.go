@@ -1,96 +1,91 @@
 package services
 
-import (
-	"crypto/rand"
-	"crypto/x509/pkix"
-	"encoding/json"
-	"encoding/pem"
-	"fmt"
-	"math/big"
-	"time"
+// import (
+// 	"crypto/rand"
+// 	"crypto/x509/pkix"
+// 	"encoding/json"
+// 	"encoding/pem"
+// 	"fmt"
+// 	"math/big"
+// 	"time"
 
-	"chainmaker.org/chainmaker-ca-backend/src/models"
-	"chainmaker.org/chainmaker-ca-backend/src/models/db"
-	"chainmaker.org/chainmaker-ca-backend/src/utils"
-	"chainmaker.org/chainmaker-go/common/crypto"
-	"chainmaker.org/chainmaker-go/common/crypto/asym"
-	"chainmaker.org/chainmaker-go/common/crypto/x509"
-	"go.uber.org/zap"
-)
+// 	"chainmaker.org/chainmaker-ca-backend/src/models"
+// 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
+// 	"chainmaker.org/chainmaker-ca-backend/src/utils"
+// 	"chainmaker.org/chainmaker-go/common/crypto"
+// 	"chainmaker.org/chainmaker-go/common/crypto/asym"
+// 	"chainmaker.org/chainmaker-go/common/crypto/x509"
+// 	"go.uber.org/zap"
+// )
 
+// //在实行服务之前，需要做两件事情
+// //1.看能否提供服务
+// //2.入参是否合法
+// func GenerateCertByCsr(generateCertByCsrReq *models.GenerateCertByCsrReq)([]byte, error){
 
-//在实行服务之前，需要做两件事情
-//1.看能否提供服务
-//2.入参是否合法
-func GenerateCertByCsr(generateCertByCsrReq *models.GenerateCertByCsrReq)([]byte, error){
-	
-	//有了csr流，去构建CertRequestConfig，之后调用IssueCertificate函数就可以了
-	var certRequestConfig CertRequestConfig
-	//之后需要构建完结构体，在完成配置文件后，这里先完成逻辑
-	certRequestConfig.HashType=
-	certRequestConfig.IssuerPrivateKey=
-	certRequestConfig.CsrBytes=generateCertByCsrReq.CsrBytes
-	certRequestConfig.IssuerCertBytes=
-	certRequestConfig.ExpireYear=
-	certRequestConfig.CertUsage=generateCertByCsrReq.CertUsage
-	certRequestConfig.UserType=generateCertByCsrReq.UserType
-	//注意上面没有完成
+// 	//有了csr流，去构建CertRequestConfig，之后调用IssueCertificate函数就可以了
+// 	var certRequestConfig CertRequestConfig
+// 	//之后需要构建完结构体，在完成配置文件后，这里先完成逻辑
+// 	certRequestConfig.HashType=
+// 	certRequestConfig.IssuerPrivateKey=
+// 	certRequestConfig.CsrBytes=generateCertByCsrReq.CsrBytes
+// 	certRequestConfig.IssuerCertBytes=
+// 	certRequestConfig.ExpireYear=
+// 	certRequestConfig.CertUsage=generateCertByCsrReq.CertUsage
+// 	certRequestConfig.UserType=generateCertByCsrReq.UserType
+// 	//注意上面没有完成
 
-	return IssueCertificate(&certRequestConfig)
-}
+// 	return IssueCertificate(&certRequestConfig)
+// }
 
+// func GenCert(genCert *models.GenCert)([]byte, error){
+// 	//先去生成csr流文件
+// 	var csrRequest CSRRequest
+// 	//先createkeypair
+// 	var privateKeyTypeStr string
+// 	var hashTypeStr string
+// 	var privateKeyPwd string
+// 	//这些加密的方式和哈希的方式是从配置文件中读取的
+// 	//需要在配置文件写好之后补上
+// 	privateKeyTypeStr =
+// 	hashTypeStr =
+// 	privateKeyPwd = genCert.PrivateKeyPwd
+// 	privateKey, _, err := CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd)
+// 	if err != nil {
+// 		fmt.Println(err.Error())
+// 		fmt.Print("Create KeyPair Error")
+// 		return
+// 	}
+// 	//构造数据csrRequest的假数据
+// 	csrRequest.PrivateKey=privateKey
+// 	csrRequest.Country=genCert.Country
+// 	csrRequest.Locality=genCert.Locality
+// 	csrRequest.OrgId=genCert.OrgID
+// 	csrRequest.Province=genCert.Province
+// 	csrRequest.UserId=genCert.UserID
+// 	csrRequest.UserType=genCert.UserType
 
-func GenCert(genCert *models.GenCert)([]byte, error){
-	//先去生成csr流文件
-	var csrRequest CSRRequest
-	//先createkeypair
-	var privateKeyTypeStr string
-	var hashTypeStr string
-	var privateKeyPwd string
-	//这些加密的方式和哈希的方式是从配置文件中读取的
-	//需要在配置文件写好之后补上
-	privateKeyTypeStr = 
-	hashTypeStr = 
-	privateKeyPwd = genCert.PrivateKeyPwd
-	privateKey, _, err := CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd)
-	if err != nil {
-		fmt.Println(err.Error())
-		fmt.Print("Create KeyPair Error")
-		return
-	}
-	//构造数据csrRequest的假数据
-	csrRequest.PrivateKey=privateKey
-	csrRequest.Country=genCert.Country
-	csrRequest.Locality=genCert.Locality
-	csrRequest.OrgId=genCert.OrgID
-	csrRequest.Province=genCert.Province
-	csrRequest.UserId=genCert.UserID
-	csrRequest.UserType=genCert.UserType
-	
-	//用BuildCSRReqConf获得CSRRequestConfig
-	csrRequestConf:=BuildCSRReqConf(&csrRequest)
-	//用createCSR获得csr流文件
-	csrByte,err:=createCSR(csrRequestConf)
-	if err!=nil{
-		fmt.Print("createCSR byte failed")
-	}
-	//构建请求结构体
-	var certRequestConfig CertRequestConfig
-	//待完成
-	certRequestConfig.HashType=
-	certRequestConfig.IssuerPrivateKey=
-	certRequestConfig.CsrBytes=csrByte
-	certRequestConfig.IssuerCertBytes=
-	certRequestConfig.ExpireYear=
-	certRequestConfig.CertUsage=genCert.CertUsage
-	certRequestConfig.UserType=genCertReq.UserType
-	//再调用
+// 	//用BuildCSRReqConf获得CSRRequestConfig
+// 	csrRequestConf:=BuildCSRReqConf(&csrRequest)
+// 	//用createCSR获得csr流文件
+// 	csrByte,err:=createCSR(csrRequestConf)
+// 	if err!=nil{
+// 		fmt.Print("createCSR byte failed")
+// 	}
+// 	//构建请求结构体
+// 	var certRequestConfig CertRequestConfig
+// 	//待完成
+// 	certRequestConfig.HashType=
+// 	certRequestConfig.IssuerPrivateKey=
+// 	certRequestConfig.CsrBytes=csrByte
+// 	certRequestConfig.IssuerCertBytes=
+// 	certRequestConfig.ExpireYear=
+// 	certRequestConfig.CertUsage=genCert.CertUsage
+// 	certRequestConfig.UserType=genCertReq.UserType
+// 	//再调用
 
-	return IssueCertificate(&certRequestConfig)
-}
-
-
-
+// 	return IssueCertificate(&certRequestConfig)
+// }
 
 // //ApplyCert 申请证书
 // func ApplyCert(applyCertReq *models.ApplyCertReq) ([]byte, error) {

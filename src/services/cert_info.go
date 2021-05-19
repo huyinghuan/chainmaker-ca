@@ -22,11 +22,15 @@ func CreateCertInfo(certContent *db.CertContent, keyPair *db.KeyPair, conditions
 		return nil, fmt.Errorf("create cert info faield: cert info is exist")
 	}
 	aki := certContent.Aki
-	issueCertInfo, err := models.FindCertInfoByPrivateKey(aki)
-	if err != nil {
-		return nil, err
+	var issueCertSn int64
+	if len(aki) != 0 {
+
+		issueCertInfo, err := models.FindCertInfoByPrivateKey(aki)
+		if err != nil {
+			return nil, err
+		}
+		issueCertSn = issueCertInfo.SerialNumber
 	}
-	issueCertSn := issueCertInfo.SerialNumber
 	certBytes, err := base64.StdEncoding.DecodeString(certContent.Content)
 	if err != nil {
 		return nil, err
