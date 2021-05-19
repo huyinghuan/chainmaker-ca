@@ -15,12 +15,12 @@ func TestGetAllConf(t *testing.T) {
 	TestInitConf(t)
 	allConf := GetAllConfig()
 
-	fmt.Printf("base config: %v\n", allConf.BaseConf)
-	fmt.Printf("root config: %v\n", allConf.RootCaConf)
-	for _, v := range allConf.IntermediateCaConf {
+	fmt.Printf("base config: %v\n", allConf.GetBaseConf())
+	fmt.Printf("root config: %v\n", allConf.GetRootConf())
+	for _, v := range allConf.GetIntermediateConf() {
 		fmt.Printf("Intermediate ca config: %v\n", v)
 	}
-	fmt.Printf("double root config: %v\n", allConf.DoubleRootPathConf)
+	fmt.Printf("double root config: %v\n", allConf.GetDoubleRootPathConf())
 }
 
 func TestGetConf(t *testing.T) {

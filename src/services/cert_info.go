@@ -47,10 +47,6 @@ func CreateCertInfo(certContent *db.CertContent, keyPair *db.KeyPair, conditions
 		OrgId:        conditions.OrgId,
 		UserId:       conditions.UserId,
 	}
-	err = models.InsertCertInfo(certInfo)
-	if err != nil {
-		return nil, err
-	}
 	return certInfo, nil
 }
 

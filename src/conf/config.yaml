@@ -25,6 +25,10 @@ base_config:
 
 # Root CA config
 root_config:
+  cert: 
+    cert_path: ../crypto-config/RootCA/root.crt
+    private_key_path: ../crypto-config/RootCA/root.key
+    private_key_pwd: wx123
   csr:
     CN: root.org-wx
     O: org-wx
@@ -32,17 +36,15 @@ root_config:
     country: CN
     locality: Beijing
     province: Beijing
-  cert: 
-    cert_path: ../crypto-config/RootCA/root.crt
-    private_key_path: ../crypto-config/RootCA/root.key
-    private_key_pwd: wx123
 
 #Root double CA path
 rootpath_double:
     tls_cert_path: ../crypto-config/RootCA/tls/root-tls.crt
     tls_privatekey_path: ../crypto-config/RootCA/tls/root-tls.key
+    tls_privatekey_pwd: 123
     sign_cert_path: ../crypto-config/RootCA/sign/root-sign.crt
-    sign_privatekey_path: ../crypto-config/RootCA/sign/root-sign.crt        
+    sign_privatekey_path: ../crypto-config/RootCA/sign/root-sign.crt   
+    sign_privatekey_pwd: 123     
 
 #Intermediate config
 Intermediate_config:
