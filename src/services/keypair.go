@@ -22,13 +22,13 @@ import (
 
 //CreatePrivKey create key pair
 func createPrivKey(keyTypeStr string) (crypto.PrivateKey, error) {
-	keyType, err := utils.GetPrivateKeyType(keyTypeStr)
+	keyType, err := checkKeyType(keyTypeStr)
 	if err != nil {
 		return nil, err
 	}
 	privKey, err := asym.GenerateKeyPair(keyType)
 	if err != nil {
-		return nil, fmt.Errorf("[Create private key] generate key pair [%s] failed, %s", keyTypeStr, err.Error())
+		return nil, fmt.Errorf("[create private key] generate key pair [%s] failed, %s", keyTypeStr, err.Error())
 	}
 	return privKey, nil
 }
@@ -37,11 +37,11 @@ func createPrivKey(keyTypeStr string) (crypto.PrivateKey, error) {
 func encryptPrivKey(privKey crypto.PrivateKey, privKeyPwd []byte) ([]byte, error) {
 	privKeyBytes, err := privKey.Bytes()
 	if err != nil {
-		return nil, fmt.Errorf("[Encrypt PrivKey] private key to bytes failed: %s", err.Error())
+		return nil, fmt.Errorf("[encrypt privKey] private key to bytes failed: %s", err.Error())
 	}
 	privKeyPem, err := x509.EncryptPEMBlock(rand.Reader, "PRIVATE KEY", privKeyBytes, privKeyPwd, x509.PEMCipherAES256)
 	if err != nil {
-		return nil, fmt.Errorf("[Encrypt PrivKey] x509 encrypt PEM block failed: %s", err.Error())
+		return nil, fmt.Errorf("[encrypt privKey] x509 encrypt PEM block failed: %s", err.Error())
 	}
 	return pem.EncodeToMemory(privKeyPem), nil
 }
@@ -54,7 +54,7 @@ func WritePrivKeyFile(privKeyFilePath string, data []byte) error {
 		return err
 	}
 	if err := ioutil.WriteFile(privKeyFilePath, data, os.ModePerm); err != nil {
-		return fmt.Errorf("[Write Private key] write private key file failed: %s", err.Error())
+		return fmt.Errorf("[write private key] write private key file failed: %s", err.Error())
 	}
 	return nil
 }
@@ -64,24 +64,23 @@ func decryptPrivKey(privKeyRaw []byte, privKeyPwd string, hashType crypto.HashTy
 	privateKeyPwd := utils.DefaultPrivateKeyPwd + privKeyPwd
 	issureHashPwd, err := hash.Get(hashType, []byte(privateKeyPwd))
 	if err != nil {
-		return nil, fmt.Errorf("[Decrypt PrivKey] get issue pwd error: %s", err.Error())
+		return nil, fmt.Errorf("[decrypt privKey] get issue pwd error: %s", err.Error())
 	}
 	issuerPrivKey, err := asym.PrivateKeyFromPEM(privKeyRaw, issureHashPwd)
 	if err != nil {
-		return nil, fmt.Errorf("[Decrypt PrivKey] asym private Key From PEM error: %s", err.Error())
+		return nil, fmt.Errorf("[decrypt privKey] asym private Key From PEM error: %s", err.Error())
 	}
 	return issuerPrivKey, nil
 }
 
 //CreateKeyPair create key pair and storage into db
 func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd string) (privateKey crypto.PrivateKey, keyPair *db.KeyPair, err error) {
-
 	privateKey, err = createPrivKey(privateKeyTypeStr)
 	if err != nil {
 		return
 	}
 	var privKeyPemBytes, hashPwd []byte
-	hashType, err := utils.GetHashType(hashTypeStr)
+	hashType, err := checkHashType(hashTypeStr)
 	if err != nil {
 		return
 	}
@@ -102,7 +101,7 @@ func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd s
 		return
 	}
 	publicKeyPEM, _ := privateKey.PublicKey().String()
-	ski, err := cert.ComputeSKI(hashType, privateKey.PublicKey())
+	ski, err := cert.ComputeSKI(hashType, privateKey.PublicKey().ToStandardKey())
 	if err != nil {
 		err = fmt.Errorf("[create key pair] compute ski failed: %s", err.Error())
 		return

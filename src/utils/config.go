@@ -3,25 +3,51 @@ package utils
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
-	"time"
 
 	"chainmaker.org/chainmaker-ca-backend/src/loggers"
-	"chainmaker.org/chainmaker-go/common/crypto"
 	"github.com/spf13/viper"
 )
 
-//CaConfig
-type RootCaConf struct {
-	Country           string `mapstructure:"country"`
-	Locality          string `mapstructure:"locality"`
-	Province          string `mapstructure:"province"`
-	PrivateKeyPwd     string `mapstructure:"private_key_pwd"`
-	OrgId             string `mapstructure:"org_id"`
-	IsGenerateKeypair bool   `mapstructure:"is_generate_keypair"`
-	CertPath          string `mapstructure:"cert_path"`
-	PrivateKeyPath    string `mapstructure:"privatekey_path"`
+var allConf *AllConfig
+
+type AllConfig struct {
+	LogConf            *loggers.LogConifg  `mapstructure:"log_config"`
+	DBConf             *DBConfig           `mapstructure:"db_config"`
+	BaseConf           *BaseConf           `mapstructure:"base_config"`
+	RootCaConf         *CaConfig           `mapstructure:"root_config"`
+	IntermediateCaConf []*CaConfig         `mapstructure:"Intermediate_config"`
+	DoubleRootPathConf *DoubleRootPathConf `mapstructure:"rootpath_double"`
+}
+
+//BaseConf
+type BaseConf struct {
+	CaType            string   `mapstructure:"ca_type"`
+	ExpireYear        int      `mapstructure:"expire_year"`
+	HashType          string   `mapstructure:"hash_type"`
+	KeyType           string   `mapstructure:"key_type"`
+	CanIssueca        bool     `mapstructure:"can_issue_ca"`
+	ProvideServiceFor []string `mapstructure:"provide_service_for"`
+}
+
+type CaConfig struct {
+	CsrConf  CsrConf  `mapstructure:"csr"`
+	CertConf CertConf `mapstructure:"cert"`
+}
+
+type CsrConf struct {
+	CN       string `mapstructure:"CN"`
+	O        string `mapstructure:"O"`
+	OU       string `mapstructure:"OU"`
+	Country  string `mapstructure:"country"`
+	Locality string `mapstructure:"locality"`
+	Province string `mapstructure:"province"`
+}
+
+type CertConf struct {
+	CertPath       string `mapstructure:"cert_path"`
+	PrivateKeyPath string `mapstructure:"private_key_path"`
+	PrivateKeyPwd  string `mapstructure:"private_key_pwd"`
 }
 
 type DoubleRootPathConf struct {
@@ -72,8 +98,7 @@ func SetConfig(envPath string) {
 func InitConfig(configPath string) {
 	viper.SetConfigFile(configPath)
 	if err := viper.ReadInConfig(); err != nil {
-		log.Println("Init config error: " + err.Error())
-		return
+		panic(err)
 	}
 	var logConf loggers.LogConifg
 	logConf.Level = viper.GetString("log_config.level")
@@ -83,8 +108,11 @@ func InitConfig(configPath string) {
 	logConf.MaxBackups = viper.GetInt("log_max_backups")
 	err := loggers.InitLogger(&logConf)
 	if err != nil {
-		log.Println("Init logger error: " + err.Error())
-		return
+		panic(err)
+	}
+	allConf, err = GetAllConf()
+	if err != nil {
+		panic(err)
 	}
 }
 
@@ -109,81 +137,75 @@ func GetDBConfig() string {
 	return mysqlURL
 }
 
-//GetRootCaConfig Read root CA config file
-func GetRootCaConfig() (*RootCaConf, error) {
-	var rootCaConfig RootCaConf
-	err := viper.UnmarshalKey("root_config", &rootCaConfig)
+func GetBaseConf() (*BaseConf, error) {
+	var baseConf BaseConf
+	err := viper.UnmarshalKey("base_config", &baseConf)
 	if err != nil {
-		return &rootCaConfig, fmt.Errorf("[Config] get root config error: %s", err.Error())
+		return nil, fmt.Errorf("[config] get base config failed: %s", err.Error())
 	}
-	return &rootCaConfig, nil
+	return &baseConf, nil
 }
 
-//GetRootPathConf .
-func GetRootPathConf() (*DoubleRootPathConf, error) {
-	var rootPathConf DoubleRootPathConf
-	err := viper.UnmarshalKey("rootpath_double", &rootPathConf)
+func GetRootCaConf() (*CaConfig, error) {
+	var rootCaConf CaConfig
+	err := viper.UnmarshalKey("root_config", &rootCaConf)
 	if err != nil {
-		return &rootPathConf, fmt.Errorf("[Config] get double root ca path conf error: %s", err.Error())
+		return nil, fmt.Errorf("[config] get root config failed: %s", err.Error())
 	}
-	return &rootPathConf, nil
-}
-func GetHashType(inputHashType string) (crypto.HashType, error) {
-	if inputHashType != "" || len(inputHashType) != 0 {
-		hashType, ok := Name2HashTypeMap[inputHashType]
-		if !ok {
-			return 0, fmt.Errorf("[get hash type] this hash type is not support,[%s]", inputHashType)
-		}
-		return hashType, nil
-	}
-	confHashType := viper.GetString("hash_type")
-	hashType, ok := Name2HashTypeMap[confHashType]
-	if !ok {
-		return 0, fmt.Errorf("[get hash type] hash type in config is not support,[%s]", confHashType)
-	}
-	return hashType, nil
+	return &rootCaConf, nil
 }
 
-func GetPrivateKeyType(inputKeyType string) (crypto.KeyType, error) {
-	if inputKeyType != "" || len(inputKeyType) != 0 {
-		keyType, ok := crypto.Name2KeyTypeMap[inputKeyType]
-		if !ok {
-			return 0, fmt.Errorf("[get hash type] this key type is not support,[%s]", inputKeyType)
-		}
-		return keyType, nil
-	}
-	confKeyType := viper.GetString("key_type")
-	keyType, ok := crypto.Name2KeyTypeMap[confKeyType]
-	if !ok {
-		return 0, fmt.Errorf("[get hash type] key type in config is not support,[%s]", confKeyType)
-	}
-	return keyType, nil
-}
-
-func IsGenerateRootCA() bool {
-	return viper.GetBool("is_generate_rootca")
-}
-
-func GetCaType() string {
-	return viper.GetString("ca_type")
-}
-
-func GetDefaultExpireTime() int32 {
-	return viper.GetInt32("expire_year")
-}
-
-func GetDefaultHashType() string {
-	return viper.GetString("hash_type")
-}
-
-func GetDefaultKeyType() string {
-	return viper.GetString("key_type")
-}
-
-func GetCRLNextTime() time.Duration {
-	d, err := time.ParseDuration(viper.GetString("crl_next_time"))
+func GetIntermediateCaConf() ([]*CaConfig, error) {
+	var intermediateCaConf []*CaConfig
+	err := viper.UnmarshalKey("Intermediate_config", &intermediateCaConf)
 	if err != nil {
-		return time.Hour * 24
+		return nil, fmt.Errorf("[config] get intermediate config failed: %s", err.Error())
 	}
-	return d
+	return intermediateCaConf, nil
+}
+
+func GetDoubleRootPathConf() (*DoubleRootPathConf, error) {
+	var doubleRootPathConf DoubleRootPathConf
+	err := viper.UnmarshalKey("rootpath_double", &doubleRootPathConf)
+	if err != nil {
+		return nil, fmt.Errorf("[config] get double root path config failed: %s", err.Error())
+	}
+	return &doubleRootPathConf, nil
+}
+
+func GetAllConf() (*AllConfig, error) {
+	var allConf AllConfig
+	err := viper.Unmarshal(&allConf)
+	if err != nil {
+		return nil, fmt.Errorf("[config] get all config failed: %s", err.Error())
+	}
+	return &allConf, nil
+}
+
+func GetAllConfig() *AllConfig {
+	return allConf
+}
+
+func (ac *AllConfig) GetHashType() string {
+	return ac.BaseConf.HashType
+}
+
+func (ac *AllConfig) GetKeyType() string {
+	return ac.BaseConf.KeyType
+}
+
+func (ac *AllConfig) GetDefaultExpireTime() int {
+	return ac.BaseConf.ExpireYear
+}
+
+func (ac *AllConfig) GetCanIssueCa() bool {
+	return ac.BaseConf.CanIssueca
+}
+
+func (ac *AllConfig) GetProvideServiceFor() []string {
+	return ac.BaseConf.ProvideServiceFor
+}
+
+func (ac *AllConfig) GetCaType() string {
+	return ac.BaseConf.CaType
 }

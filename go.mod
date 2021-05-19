@@ -9,6 +9,8 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/viper v1.7.1
+	github.com/stretchr/testify v1.6.1
+	github.com/tjfoc/gmsm v1.3.2
 	go.uber.org/zap v1.16.0
 	google.golang.org/grpc v1.34.0
 	google.golang.org/protobuf v1.25.0 // indirect

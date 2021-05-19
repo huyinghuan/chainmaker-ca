@@ -11,22 +11,9 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"chainmaker.org/chainmaker-go/common/cert"
-	"chainmaker.org/chainmaker-go/common/crypto"
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
 	"go.uber.org/zap"
 )
-
-type RootCertRequestConfig struct {
-	PrivateKey         crypto.PrivateKey
-	Country            string
-	Locality           string
-	Province           string
-	OrganizationalUnit string
-	Organization       string
-	CommonName         string
-	HashType           crypto.HashType
-	ExpireYear         int32
-}
 
 //InitRootCA create root ca
 func InitRootCA() {
