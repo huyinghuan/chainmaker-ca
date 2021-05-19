@@ -12,12 +12,12 @@ import (
 var allConf *AllConfig
 
 type AllConfig struct {
-	logConf            *loggers.LogConifg  `mapstructure:"log_config"`
-	dbConf             *DBConfig           `mapstructure:"db_config"`
-	baseConf           *BaseConf           `mapstructure:"base_config"`
-	rootCaConf         *CaConfig           `mapstructure:"root_config"`
-	intermediateCaConf []*CaConfig         `mapstructure:"Intermediate_config"`
-	doubleRootPathConf *DoubleRootPathConf `mapstructure:"rootpath_double"`
+	LogConf            *loggers.LogConifg  `mapstructure:"log_config"`
+	DBConf             *DBConfig           `mapstructure:"db_config"`
+	BaseConf           *BaseConf           `mapstructure:"base_config"`
+	RootCaConf         *CaConfig           `mapstructure:"root_config"`
+	IntermediateCaConf []*CaConfig         `mapstructure:"Intermediate_config"`
+	DoubleRootPathConf *DoubleRootPathConf `mapstructure:"rootpath_double"`
 }
 
 type BaseConf struct {
@@ -175,10 +175,10 @@ func GetAllConf() (*AllConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("[config] get all config failed: %s", err.Error())
 	}
-	if allConf.baseConf == nil {
+	if allConf.BaseConf == nil {
 		return nil, fmt.Errorf("[config] not found base config")
 	}
-	if allConf.rootCaConf == nil {
+	if allConf.RootCaConf == nil {
 		return nil, fmt.Errorf("[config] not found root config")
 	}
 	return &allConf, nil
@@ -189,52 +189,52 @@ func GetAllConfig() *AllConfig {
 }
 
 func (ac *AllConfig) GetHashType() string {
-	return ac.baseConf.HashType
+	return ac.BaseConf.HashType
 }
 
 func (ac *AllConfig) GetKeyType() string {
-	return ac.baseConf.KeyType
+	return ac.BaseConf.KeyType
 }
 
 func (ac *AllConfig) GetDefaultExpireTime() int {
-	return ac.baseConf.ExpireYear
+	return ac.BaseConf.ExpireYear
 }
 
 func (ac *AllConfig) GetCanIssueCa() bool {
-	return ac.baseConf.CanIssueca
+	return ac.BaseConf.CanIssueca
 }
 
 func (ac *AllConfig) GetProvideServiceFor() []string {
-	return ac.baseConf.ProvideServiceFor
+	return ac.BaseConf.ProvideServiceFor
 }
 
 func (ac *AllConfig) GetCaType() string {
-	return ac.baseConf.CaType
+	return ac.BaseConf.CaType
 }
 
 func (ac *AllConfig) GetRootCertPath() string {
-	return ac.rootCaConf.CertConf.CertPath
+	return ac.RootCaConf.CertConf.CertPath
 }
 func (ac *AllConfig) GetRootKeyPath() string {
-	return ac.rootCaConf.CertConf.PrivateKeyPath
+	return ac.RootCaConf.CertConf.PrivateKeyPath
 }
 func (ac *AllConfig) GetRootKeyPwd() string {
-	return ac.rootCaConf.CertConf.PrivateKeyPwd
+	return ac.RootCaConf.CertConf.PrivateKeyPwd
 }
 
 func (ac *AllConfig) GetRootConf() *CaConfig {
-	return ac.rootCaConf
+	return ac.RootCaConf
 }
 func (ac *AllConfig) GetBaseConf() *BaseConf {
-	return ac.baseConf
+	return ac.BaseConf
 }
 func (ac *AllConfig) GetIntermediateConf() []*CaConfig {
-	return ac.intermediateCaConf
+	return ac.IntermediateCaConf
 }
 func (ac *AllConfig) GetDoubleRootPathConf() *DoubleRootPathConf {
-	return ac.doubleRootPathConf
+	return ac.DoubleRootPathConf
 }
 
 func (ac *AllConfig) GetLogConf() *loggers.LogConifg {
-	return ac.logConf
+	return ac.LogConf
 }
