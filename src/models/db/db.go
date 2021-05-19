@@ -62,7 +62,7 @@ func DBInit() {
 		&CertInfo{},
 		&KeyPair{},
 		&RevokedCert{},
-		)
+	)
 	if err != nil {
 		zapLog.Error("[DB] create table failed", zap.Error(err))
 	}

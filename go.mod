@@ -8,6 +8,8 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/viper v1.7.1
+	github.com/stretchr/testify v1.6.1
+	github.com/tjfoc/gmsm v1.3.2
 	go.uber.org/zap v1.16.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gorm.io/driver/mysql v1.1.0

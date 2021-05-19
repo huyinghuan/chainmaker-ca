@@ -28,3 +28,28 @@ var Name2HashTypeMap = map[string]crypto.HashType{
 	"SHA256":   crypto.HASH_TYPE_SHA256,
 	"SHA3_256": crypto.HASH_TYPE_SHA3_256,
 }
+
+type CaType int
+
+const (
+	TLS CaType = iota + 1
+	SIGN
+	SOLO
+	DOUBLE
+)
+
+//CaType2NameMap Ca type to string name
+var CaType2NameMap = map[CaType]string{
+	TLS:    "tls",
+	SIGN:   "sign",
+	SOLO:   "solo",
+	DOUBLE: "double",
+}
+
+//Name2CaTypeMap string name to ca type
+var Name2CaTypeMap = map[string]CaType{
+	"tls":    TLS,
+	"sign":   SIGN,
+	"solo":   SOLO,
+	"double": DOUBLE,
+}

@@ -11,11 +11,18 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"chainmaker.org/chainmaker-go/common/crypto"
 	"chainmaker.org/chainmaker-go/common/crypto/asym"
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
 	uuid "github.com/satori/go.uuid"
 )
+
+var AllConfig *utils.AllConfig
+
+func init() {
+	AllConfig = utils.GetAllConfig()
+}
 
 func dealSANS(sans []string) ([]string, []net.IP) {
 
@@ -121,4 +128,45 @@ func ExtKeyUsageToString(extKeyUsage []x509.ExtKeyUsage) (string, error) {
 		return "", fmt.Errorf("parse extKeyUsage to string faield: %s", err.Error())
 	}
 	return string(jsonBytes), nil
+}
+
+func checkKeyType(keyTypeStr string) (crypto.KeyType, error) {
+	var (
+		keyType crypto.KeyType
+		ok      bool
+	)
+	if keyType, ok = crypto.Name2KeyTypeMap[keyTypeStr]; !ok {
+		return keyType, fmt.Errorf("[check] key type is unsupport!")
+	}
+	return keyType, nil
+}
+
+func checkHashType(hashTypeStr string) (crypto.HashType, error) {
+	var (
+		hashType crypto.HashType
+		ok       bool
+	)
+	if hashType, ok = crypto.HashAlgoMap[hashTypeStr]; !ok {
+		return hashType, fmt.Errorf("[check] hash type is unsupport!")
+	}
+	return hashType, nil
+}
+
+func canIssueCa() bool {
+	return AllConfig.GetCanIssueCa()
+}
+
+func provideServiceFor() []string {
+	return AllConfig.GetProvideServiceFor()
+}
+
+func getCaType() (utils.CaType, error) {
+	var (
+		caType utils.CaType
+		ok     bool
+	)
+	if caType, ok = utils.Name2CaTypeMap[AllConfig.GetCaType()]; !ok {
+		return caType, fmt.Errorf("[check] ca type is unsupport!Currently supported types: [tls],[sign],[solo] or [double]")
+	}
+	return caType, nil
 }

@@ -5,6 +5,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// import (
+// 	"chainmaker.org/chainmaker-ca-backend/src/handlers"
+// 	"github.com/gin-gonic/gin"
+// )
+
 //LoadUserRouter 加载路由
 func LoadUserRouter(e *gin.Engine) {
 	// e.POST("/api/generateprivkey", handlers.GeneratePrivateKey)
