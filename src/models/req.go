@@ -10,7 +10,7 @@ type GenerateCertByCsrReq struct {
 	CsrBytes  []byte       `json:"csrBytes"`
 }
 
-type GenCert struct {
+type GenCertReq struct {
 	OrgID         string       `json:"orgID"`
 	UserID        string       `json:"userID"`
 	UserType      db.UserType  `json:"userType"`

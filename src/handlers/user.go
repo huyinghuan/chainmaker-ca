@@ -66,7 +66,7 @@ func GenerateCertByCsr(c *gin.Context) {
 }
 
 func GenCert(c *gin.Context) {
-	var genCertReq models.GenCert
+	var genCertReq models.GenCertReq
 	if err := c.ShouldBind(&genCertReq); err != nil {
 		msg := "Parameter input error"
 		FailedRespFunc(msg, "", c)

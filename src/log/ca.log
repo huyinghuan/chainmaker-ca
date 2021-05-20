@@ -1,2 +1,13 @@
 {"level":"ERROR","time":"2021-05-19T15:54:06.216+0800","caller":"db/db.go:48","msg":"failed to connect [DB]"}
 {"level":"ERROR","time":"2021-05-19T15:56:52.616+0800","caller":"db/db.go:48","msg":"failed to connect [DB]"}
+{"level":"ERROR","time":"2021-05-20T17:59:12.968+0800","caller":"services/Intermediate.go:26","msg":"Product Intermediate CA failed","error":"[DB] find cert content by sn error: record not found, sn: 0"}
+{"level":"ERROR","time":"2021-05-20T18:00:18.520+0800","caller":"services/Intermediate.go:26","msg":"Product Intermediate CA failed","error":"[DB] find cert content by sn error: record not found, sn: 0"}
+{"level":"ERROR","time":"2021-05-20T18:10:03.994+0800","caller":"services/Intermediate.go:26","msg":"Product Intermediate CA failed","error":"[DB] find cert content by sn error: record not found, sn: 0"}
+{"level":"ERROR","time":"2021-05-20T18:11:08.254+0800","caller":"services/Intermediate.go:26","msg":"Product Intermediate CA failed","error":"[DB] find cert content by sn error: record not found, sn: 0"}
+{"level":"ERROR","time":"2021-05-20T18:12:12.195+0800","caller":"services/Intermediate.go:26","msg":"Product Intermediate CA failed","error":"[DB] find cert content by sn error: record not found, sn: 0"}
+{"level":"ERROR","time":"2021-05-20T18:50:00.326+0800","caller":"services/Intermediate.go:26","msg":"Product Intermediate CA failed","error":"[decrypt] asym private Key From PEM error: fail to decrypt PEM: [x509: decryption password incorrect]"}
+{"level":"ERROR","time":"2021-05-20T20:03:05.688+0800","caller":"services/Intermediate.go:26","msg":"Product Intermediate CA failed","error":"[DB] find cert content by sn error: record not found, sn: 0"}
+{"level":"ERROR","time":"2021-05-20T20:07:14.160+0800","caller":"services/Intermediate.go:26","msg":"Product Intermediate CA failed","error":"[DB] find cert content by sn error: record not found, sn: 0"}
+{"level":"ERROR","time":"2021-05-20T20:07:47.905+0800","caller":"services/Intermediate.go:26","msg":"Product Intermediate CA failed","error":"[DB] find cert content by sn error: record not found, sn: 0"}
+{"level":"ERROR","time":"2021-05-20T20:09:17.044+0800","caller":"services/Intermediate.go:26","msg":"Product Intermediate CA failed","error":"create cert info faield: cert info is exist"}
+{"level":"ERROR","time":"2021-05-20T21:02:09.976+0800","caller":"services/user.go:27","msg":"Generate Cert By Csr error","error":"no service provided"}
