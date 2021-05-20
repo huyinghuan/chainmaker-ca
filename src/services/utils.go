@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"path"
-	"path/filepath"
 	"strconv"
 
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
@@ -42,18 +42,16 @@ func dealSANS(sans []string) ([]string, []net.IP) {
 }
 
 //WirteCertToFile
-func WirteCertToFile(certPath string, x509certEncode []byte) error {
-	dir, file := path.Split(certPath)
+func WirteFile(filePath string, fileBytes []byte) error {
+	dir, _ := path.Split(filePath)
 	err := CreateDir(dir)
 	if err != nil {
 		return err
 	}
-	f, err := os.Create(filepath.Join(dir, file))
+	err = ioutil.WriteFile(filePath, fileBytes, os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("[Write cert to file] os create error: %s", err.Error())
+		return err
 	}
-	defer f.Close()
-	pem.Encode(f, &pem.Block{Type: "CERTIFICATE", Bytes: x509certEncode})
 	return nil
 }
 

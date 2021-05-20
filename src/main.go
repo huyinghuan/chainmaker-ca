@@ -6,7 +6,7 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/handlers"
 	"chainmaker.org/chainmaker-ca-backend/src/loggers"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
-	"chainmaker.org/chainmaker-ca-backend/src/routers"
+	"chainmaker.org/chainmaker-ca-backend/src/services"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"github.com/gin-gonic/gin"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -15,7 +15,7 @@ import (
 func init() {
 	utils.SetConfig(utils.GetConfigEnv())
 	db.DBInit()
-	// services.InitServer()
+	services.InitServer()
 	// go services.InitRPCServer()
 }
 func main() {
@@ -32,7 +32,7 @@ func main() {
 		})
 	})
 	//loading route
-	routers.LoadUserRouter(g)
-	routers.LoadChainMakerRouters(g)
+	// routers.LoadUserRouter(g)
+	// routers.LoadChainMakerRouters(g)
 	g.Run(":8090")
 }

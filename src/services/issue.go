@@ -12,7 +12,6 @@ import (
 	"math/big"
 	"time"
 
-	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-go/common/cert"
 	"chainmaker.org/chainmaker-go/common/crypto"
@@ -119,10 +118,6 @@ func IssueCertBySelf(rootCertConf *RootCertRequestConfig) (*db.CertContent, erro
 		IsCa:               template.IsCA,
 		IssueDate:          template.NotBefore.Unix(),
 		InvalidDate:        template.NotAfter.Unix(),
-	}
-	err = models.InsertCertContent(certContent)
-	if err != nil {
-		return nil, err
 	}
 	return certContent, nil
 }
@@ -360,4 +355,36 @@ func getSignatureAlgorithm(privKey crypto.PrivateKey) x509.SignatureAlgorithm {
 	}
 
 	return signatureAlgorithm
+}
+
+func TransfToCertContent(certBytes []byte) (cert *x509.Certificate, certContent *db.CertContent, err error) {
+	cert, err = ParseCertificate(certBytes)
+	if err != nil {
+		return
+	}
+	var extKeyUsageStr string
+	extKeyUsageStr, err = ExtKeyUsageToString(cert.ExtKeyUsage)
+	if err != nil {
+		return
+	}
+	certContent = &db.CertContent{
+		SerialNumber:       cert.SerialNumber.Int64(),
+		Content:            base64.StdEncoding.EncodeToString(certBytes),
+		Signature:          hex.EncodeToString(cert.Signature),
+		CertRaw:            base64.StdEncoding.EncodeToString(cert.Raw),
+		Country:            cert.Subject.Country[0],
+		Locality:           cert.Subject.Locality[0],
+		Province:           cert.Subject.Province[0],
+		Organization:       cert.Subject.Organization[0],
+		OrganizationalUnit: cert.Subject.OrganizationalUnit[0],
+		CommonName:         cert.Subject.CommonName,
+		Ski:                hex.EncodeToString(cert.SubjectKeyId),
+		Aki:                hex.EncodeToString(cert.AuthorityKeyId),
+		KeyUsage:           int(cert.KeyUsage),
+		ExtKeyUsage:        extKeyUsageStr,
+		IsCa:               cert.IsCA,
+		IssueDate:          cert.NotBefore.Unix(),
+		InvalidDate:        cert.NotAfter.Unix(),
+	}
+	return
 }
