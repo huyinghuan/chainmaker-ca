@@ -5,7 +5,9 @@ import (
 	"fmt"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models"
+	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-go/common/crypto"
+	"go.uber.org/zap"
 )
 
 //init_server里面提供了log
@@ -21,13 +23,15 @@ func GenerateCertByCsr(generateCertByCsrReq *models.GenerateCertByCsrReq) ([]byt
 	//utils里面写了一个否提供服务的函数WhetherOrNotProvideService，参数OrgID
 	var empty []byte
 	if !whetherOrNotProvideService(generateCertByCsrReq.OrgID, generateCertByCsrReq.CertUsage) {
-		err := fmt.Errorf("No service provided")
+		err := fmt.Errorf("no service provided")
+		logger.Error("Generate Cert By Csr error", zap.Error(err))
 		return empty, err
 	}
 
 	//检查入参合法性
 	if _, err := ParseCsr(generateCertByCsrReq.CsrBytes); err != nil {
-		err = fmt.Errorf("The CSR file does not meet the requirements")
+		err = fmt.Errorf("the CSR file does not meet the requirements")
+		logger.Error("Generate Cert By Csr error", zap.Error(err))
 		return empty, err
 	}
 
@@ -42,7 +46,8 @@ func GenerateCertByCsr(generateCertByCsrReq *models.GenerateCertByCsrReq) ([]byt
 	//检查完参数
 	certContent, err := models.FindCertContentByConditions(generateCertByCsrReq.UserID, generateCertByCsrReq.OrgID, generateCertByCsrReq.CertUsage, generateCertByCsrReq.UserType)
 	if err == nil {
-		err = fmt.Errorf("Cert is existed")
+		err = fmt.Errorf("cert is existed")
+		logger.Error("Generate Cert By Csr error", zap.Error(err))
 		reCertContent, _ := base64.StdEncoding.DecodeString(certContent.Content)
 		return reCertContent, err
 	}
@@ -65,19 +70,41 @@ func GenerateCertByCsr(generateCertByCsrReq *models.GenerateCertByCsrReq) ([]byt
 	if err != nil {
 		return empty, err
 	}
-	//创建certInfo
 
-	reCertContent, _ := base64.StdEncoding.DecodeString(certContent.Content)
+	var keyPairEmpty *db.KeyPair
+	//创建certInfo
+	var certConditions CertConditions
+	certConditions.UserType = generateCertByCsrReq.UserType
+	certConditions.CertUsage = generateCertByCsrReq.CertUsage
+	certConditions.UserId = generateCertByCsrReq.UserID
+	certConditions.OrgId = generateCertByCsrReq.OrgID
+
+	certInfo, err := CreateCertInfo(certContent, keyPairEmpty, &certConditions)
+	if err != nil {
+		logger.Error("Generate Cert By Csr error", zap.Error(err))
+		return empty, err
+	}
+	err = models.CreateCertTwoTransaction(certContent, certInfo)
+	if err != nil {
+		return empty, err
+	}
+	reCertContent, err := base64.StdEncoding.DecodeString(certContent.Content)
+	if err != nil {
+		logger.Error("Generate Cert By Csr error", zap.Error(err))
+		return empty, err
+	}
 	return reCertContent, nil
 }
 
 func GenCert(genCertReq *models.GenCertReq) ([]byte, error) {
 	var empty []byte
 	if !whetherOrNotProvideService(genCertReq.OrgID, genCertReq.CertUsage) {
-		err := fmt.Errorf("No service provided")
+		err := fmt.Errorf("no service provided")
+		logger.Error("no service provided")
 		return empty, err
 	}
 	if err := checkParametersUserType(genCertReq.UserType); err != nil {
+		logger.Error("user Type Wrong", zap.Error(err))
 		return empty, err
 	}
 
@@ -97,6 +124,7 @@ func GenCert(genCertReq *models.GenCertReq) ([]byte, error) {
 	privateKeyPwd = genCertReq.PrivateKeyPwd
 	privateKey, keyPair, err := CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd)
 	if err != nil {
+		logger.Error("Create Key Pair failed", zap.Error(err))
 		return empty, err
 	}
 	csrRequest.PrivateKey = privateKey
@@ -112,7 +140,8 @@ func GenCert(genCertReq *models.GenCertReq) ([]byte, error) {
 	//用createCSR获得csr流文件
 	csrByte, err := createCSR(csrRequestConf)
 	if err != nil {
-		fmt.Print("createCSR byte failed")
+		logger.Error("Create Key Pair failed", zap.Error(err))
+		return empty, err
 	}
 	//构建请求结构体
 	var certRequestConfig CertRequestConfig
@@ -128,8 +157,25 @@ func GenCert(genCertReq *models.GenCertReq) ([]byte, error) {
 	if err != nil {
 		return empty, err
 	}
-	reCertContent, _ := base64.StdEncoding.DecodeString(certContent.Content)
-	//
+	var certConditions CertConditions
+	certConditions.UserType = genCertReq.UserType
+	certConditions.CertUsage = genCertReq.CertUsage
+	certConditions.UserId = genCertReq.UserID
+	certConditions.OrgId = genCertReq.OrgID
+
+	certInfo, err := CreateCertInfo(certContent, keyPair, &certConditions)
+	if err != nil {
+		return empty, err
+	}
+	err = models.CreateCertTransaction(certContent, certInfo, keyPair)
+	if err != nil {
+		return empty, err
+	}
+	reCertContent, err := base64.StdEncoding.DecodeString(certContent.Content)
+	if err != nil {
+		logger.Error("Generate Cert By Csr error", zap.Error(err))
+		return empty, err
+	}
 	return reCertContent, nil
 }
 

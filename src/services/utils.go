@@ -21,12 +21,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-var AllConfig *utils.AllConfig
-
-func init() {
-	AllConfig = utils.GetAllConfig()
-}
-
 func dealSANS(sans []string) ([]string, []net.IP) {
 
 	var dnsName []string
@@ -206,7 +200,7 @@ func whetherOrNotProvideService(orgID string, certUsage db.CertUsage) bool {
 //检查一些参数的合法性
 func checkParametersUserType(userType db.UserType) error {
 	if _, ok := db.UserType2NameMap[userType]; !ok {
-		err := fmt.Errorf("The User Type does not meet the requirements")
+		err := fmt.Errorf("the User Type does not meet the requirements")
 		return err
 	}
 	return nil
@@ -214,7 +208,7 @@ func checkParametersUserType(userType db.UserType) error {
 
 func checkParametersCertUsage(certUsage db.CertUsage) error {
 	if _, ok := db.CertUsage2NameMap[certUsage]; !ok {
-		err := fmt.Errorf("The Cert Usage does not meet the requirements")
+		err := fmt.Errorf("the Cert Usage does not meet the requirements")
 		return err
 	}
 	return nil
@@ -244,7 +238,9 @@ func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []
 	keyPair, _ := models.FindKeyPairBySki(certInfo.PrivateKeyId)
 	reCertContent, _ := base64.StdEncoding.DecodeString(certContent.Content)
 	//需要一个能加密的类型密钥，不要字符串,需要再想办法转换
-	return keyPair.PrivateKey, reCertContent, nil
+	dePrivatKey, _ := base64.StdEncoding.DecodeString(keyPair.PrivateKey)
+	privateKey, _ := KeyBytesToPrivateKey(dePrivatKey, keyPair.PrivateKeyPwd, keyPair.HashType)
+	return privateKey, reCertContent, nil
 }
 
 //根据启动模式和用户提供certusage的来确定寻找的CA的certusage字段

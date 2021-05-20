@@ -203,7 +203,7 @@ func GenerateDoubleRootCa(rootCaConf *utils.CaConfig) error {
 	if err != nil {
 		return err
 	}
-	err = genRootCa(rootCaConf, keyTypeStr, hashTypeStr, doubleRootPathConf.TlsPrivateKeyPwd, db.TLS, doubleRootPathConf.TlsPrivateKeyPath, doubleRootPathConf.SignCertPath)
+	err = genRootCa(rootCaConf, keyTypeStr, hashTypeStr, doubleRootPathConf.TlsPrivateKeyPwd, db.TLS, doubleRootPathConf.TlsPrivateKeyPath, doubleRootPathConf.TlsCertPath)
 	if err != nil {
 		return err
 	}
