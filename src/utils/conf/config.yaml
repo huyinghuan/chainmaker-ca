@@ -1,0 +1,80 @@
+# log config
+log_config:
+  level: error
+  filename: ../log/ca.log
+  max_size: 1
+  max_age: 30
+  max_backups: 5
+
+# db config
+db_config:
+  user: root
+  password: 123456
+  ip: 127.0.0.1
+  port: 3306
+  dbname: certs
+
+# Base config
+base_config:
+  ca_type: double                        #sign/tls/double/solo
+  expire_year: 2
+  hash_type: SHA256 
+  key_type: ECC_NISTP256
+  can_issue_ca: true
+  provide_service_for: [org1,org2]
+
+# Root CA config
+root_config:
+  cert: 
+    cert_path: ../crypto-config/RootCA/root.crt
+    private_key_path: ../crypto-config/RootCA/root.key
+    private_key_pwd: wx123
+  csr:
+    CN: root.org-wx
+    O: org-wx
+    OU: root
+    country: CN
+    locality: Beijing
+    province: Beijing
+
+#Root double CA path
+rootpath_double:
+    tls_cert_path: ../crypto-config/RootCA/tls/root-tls.crt
+    tls_privatekey_path: ../crypto-config/RootCA/tls/root-tls.key
+    tls_privatekey_pwd: 123
+    sign_cert_path: ../crypto-config/RootCA/sign/root-sign.crt
+    sign_privatekey_path: ../crypto-config/RootCA/sign/root-sign.crt   
+    sign_privatekey_pwd: 123     
+
+#Intermediate config
+Intermediate_config:
+  -
+    csr:
+      CN: ca.org8
+      O: org8
+      OU: ca111
+      country: CN
+      locality: Beijing
+      province: Beijing
+    cert:
+      private_key_pwd: wx123
+  -
+    csr:
+      CN: ca.org9
+      O: org9
+      OU: ca99
+      country: CN
+      locality: Beijing
+      province: Beijing
+    cert:
+      private_key_pwd: wx123
+  -
+    csr:
+      CN: ca.org7
+      O: org7
+      OU: ca777
+      country: CN
+      locality: Beijing
+      province: Beijing
+    cert:
+      private_key_pwd: wx123
