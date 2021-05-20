@@ -2,6 +2,7 @@ package services
 
 import (
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -222,12 +223,15 @@ func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []
 	//先转换certUsage
 	certUsage = covertCertUsage(certUsage)
 	//先去找相同OrgID的中间ca
-	certInfo, _ := models.FindCertInfoByConditions("", orgID, certUsage, 0)
-	if certInfo == nil { //去找rootca签
+	certInfo, err := models.FindCertInfoByConditions("", orgID, certUsage, 0)
+	if err != nil { //去找rootca签
 		certInfo, _ = models.FindCertInfoByConditions("", "", certUsage, db.ROOT_CA)
 	}
 	certContent, _ := models.FindCertContentBySn(certInfo.IssuerSn)
-
+	keyPair, _ := models.FindKeyPairBySki(certInfo.PrivateKeyId)
+	reCertContent, _ := base64.StdEncoding.DecodeString(certContent.Content)
+	//需要一个能加密的类型密钥，不要字符串,需要再想办法转换
+	return keyPair.PrivateKey, reCertContent, nil
 }
 
 //根据启动模式和用户提供certusage的来确定寻找的CA的certusage字段
