@@ -1,42 +1,76 @@
 package services
 
-// import (
-// 	"crypto/rand"
-// 	"crypto/x509/pkix"
-// 	"encoding/json"
-// 	"encoding/pem"
-// 	"fmt"
-// 	"math/big"
-// 	"time"
+import (
+	"crypto/x509"
+	"encoding/json"
+	"encoding/pem"
+	"fmt"
+	"net"
+	"os"
+	"path"
+	"path/filepath"
+	"strconv"
 
-// 	"chainmaker.org/chainmaker-ca-backend/src/models"
-// 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
-// 	"chainmaker.org/chainmaker-ca-backend/src/utils"
-// 	"chainmaker.org/chainmaker-go/common/crypto"
-// 	"chainmaker.org/chainmaker-go/common/crypto/asym"
-// 	"chainmaker.org/chainmaker-go/common/crypto/x509"
-// 	"go.uber.org/zap"
-// )
+	"chainmaker.org/chainmaker-ca-backend/src/models/db"
+	"chainmaker.org/chainmaker-ca-backend/src/models"
+	"chainmaker.org/chainmaker-ca-backend/src/utils"
+	"chainmaker.org/chainmaker-go/common/crypto"
+	"chainmaker.org/chainmaker-go/common/crypto/asym"
+	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
+	uuid "github.com/satori/go.uuid"
+	"chainmaker.org/chainmaker-ca-backend/src/loggers"
+)
 
-// //在实行服务之前，需要做两件事情
-// //1.看能否提供服务
-// //2.入参是否合法
-// func GenerateCertByCsr(generateCertByCsrReq *models.GenerateCertByCsrReq)([]byte, error){
+//init_server里面提供了log
 
-// 	//有了csr流，去构建CertRequestConfig，之后调用IssueCertificate函数就可以了
-// 	var certRequestConfig CertRequestConfig
-// 	//之后需要构建完结构体，在完成配置文件后，这里先完成逻辑
-// 	certRequestConfig.HashType=
-// 	certRequestConfig.IssuerPrivateKey=
-// 	certRequestConfig.CsrBytes=generateCertByCsrReq.CsrBytes
-// 	certRequestConfig.IssuerCertBytes=
-// 	certRequestConfig.ExpireYear=
-// 	certRequestConfig.CertUsage=generateCertByCsrReq.CertUsage
-// 	certRequestConfig.UserType=generateCertByCsrReq.UserType
-// 	//注意上面没有完成
+//在实行服务之前，需要做两件事情
+//1.看能否提供服务
+//2.入参是否合法
+func GenerateCertByCsr(generateCertByCsrReq *models.GenerateCertByCsrReq)([]byte, error){
+	//utils里面写了一个否提供服务的函数WhetherOrNotProvideService，参数OrgID
+	var empty []byte
+	if !whetherOrNotProvideService(generateCertByCsrReq.OrgID){
+		err:=fmt.Errorf("No service provided")
+		return empty,err
+	}
 
-// 	return IssueCertificate(&certRequestConfig)
-// }
+
+	//检查入参合法性
+	if _,err:=ParseCsr(generateCertByCsrReq.CsrBytes);err!=nil{
+		err=fmt.Errorf("The CSR file does not meet the requirements")
+		return empty,err
+	}
+
+	if err:=checkParametersUserType(generateCertByCsrReq.UserType);err!=nil{
+		return empty,err
+	}
+
+	if err:=checkParametersCertUsage(generateCertByCsrReq.CertUsage);err!=nil{
+		return empty,err
+		
+	}
+	//检查完参数
+
+	//有了csr流，去构建CertRequestConfig
+	var certRequestConfig CertRequestConfig
+	certRequestConfig.HashType=crypto.HashAlgoMap[hashTypeFromConfig()]
+	certRequestConfig.CsrBytes=generateCertByCsrReq.CsrBytes
+	certRequestConfig.ExpireYear=int32(expireYearFromConfig())
+	certRequestConfig.CertUsage=generateCertByCsrReq.CertUsage
+	certRequestConfig.UserType=generateCertByCsrReq.UserType
+	//下面两项没有完成
+
+	//去数据库里面找可以签CA的私钥和证书
+	//先去找相同OrgID的中间CA，找到的话就可以了
+	//若没有 就直接找rootCA签就可以了，OrgID就可以了
+	//需要完成一个函数，找到可签发人的私钥和证书
+
+
+	certRequestConfig.IssuerPrivateKey=
+	certRequestConfig.IssuerCertBytes=
+
+	return IssueCertificate(&certRequestConfig)
+}
 
 // func GenCert(genCert *models.GenCert)([]byte, error){
 // 	//先去生成csr流文件

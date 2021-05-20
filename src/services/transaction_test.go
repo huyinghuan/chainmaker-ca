@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"testing"
 
+	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 )
 
-func TestCreateCertInfo(t *testing.T) {
+func TestCreateCertTransaction(t *testing.T) {
 	InitDB()
-	//构建RootCertRequestConfig假数据
 	var rootCertConf RootCertRequestConfig
 	var privateKeyTypeStr string
 	var hashTypeStr string
@@ -47,12 +47,15 @@ func TestCreateCertInfo(t *testing.T) {
 	certConditions.UserId = "default"
 	certConditions.OrgId = "default"
 
-	//测试函数
 	certInfo, err := CreateCertInfo(certContent, keyPair, &certConditions)
 	if err != nil {
-		fmt.Println("Create Cert Info failed:")
-		fmt.Print(err)
+		fmt.Print("Create Cert Info failed")
 		return
 	}
-	fmt.Printf("SerialNumber=%d", certInfo.SerialNumber)
+	//测试CreateCertTransaction
+	err = models.CreateCertTransaction(certContent, certInfo, keyPair)
+	if err != nil {
+		fmt.Println("Create Cert Transaction failed")
+		fmt.Print(err.Error())
+	}
 }

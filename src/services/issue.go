@@ -12,7 +12,6 @@ import (
 	"math/big"
 	"time"
 
-	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-go/common/cert"
 	"chainmaker.org/chainmaker-go/common/crypto"
@@ -119,10 +118,6 @@ func IssueCertBySelf(rootCertConf *RootCertRequestConfig) (*db.CertContent, erro
 		IsCa:               template.IsCA,
 		IssueDate:          template.NotBefore.Unix(),
 		InvalidDate:        template.NotAfter.Unix(),
-	}
-	err = models.InsertCertContent(certContent)
-	if err != nil {
-		return nil, err
 	}
 	return certContent, nil
 }

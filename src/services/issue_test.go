@@ -10,7 +10,7 @@ import (
 )
 
 func TestIssueCertBySelf(t *testing.T) {
-	initDB()
+	InitDB()
 	//构建RootCertRequestConfig假数据
 	var rootCertConf RootCertRequestConfig
 	var privateKeyTypeStr string
@@ -45,7 +45,7 @@ func TestIssueCertBySelf(t *testing.T) {
 
 //csr请求 -> csr配置 -> csr流文件 -> 用于cert的构建
 func TestIssueCertificate(t *testing.T) {
-	initDB()
+	InitDB()
 	var certRequestConf CertRequestConfig
 	var csrRequest CSRRequest
 	//先createkeypair

@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"chainmaker.org/chainmaker-ca-backend/src/models"
+	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"chainmaker.org/chainmaker-go/common/crypto"
 	"chainmaker.org/chainmaker-go/common/crypto/asym"
@@ -159,6 +161,52 @@ func canIssueCa() bool {
 func provideServiceFor() []string {
 	return AllConfig.GetProvideServiceFor()
 }
+func hashTypeFromConfig() string {
+	return AllConfig.GetHashType()
+}
+func expireYearFromConfig() int {
+	return AllConfig.GetDefaultExpireTime()
+}
+
+func whetherOrNotProvideService(orgID string, certUsage db.CertUsage) bool {
+	if canIssueCa() {
+		caType, _ := getCaType()
+		if certUsage == db.SIGN || certUsage == db.TLS_SIGN {
+			if caType == utils.TLS {
+				return false
+			}
+		}
+		if certUsage == db.TLS || certUsage == db.TLS_ENC || certUsage == db.TLS_SIGN {
+			if caType == utils.SIGN {
+				return false
+			}
+		}
+		orgGroup := provideServiceFor()
+		for i := 0; i < len(orgGroup); i++ {
+			if orgID == orgGroup[i] {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+//检查一些参数的合法性
+func checkParametersUserType(userType db.UserType) error {
+	if _, ok := db.UserType2NameMap[userType]; !ok {
+		err := fmt.Errorf("The User Type does not meet the requirements")
+		return err
+	}
+	return nil
+}
+
+func checkParametersCertUsage(certUsage db.CertUsage) error {
+	if _, ok := db.CertUsage2NameMap[certUsage]; !ok {
+		err := fmt.Errorf("The Cert Usage does not meet the requirements")
+		return err
+	}
+	return nil
+}
 
 func getCaType() (utils.CaType, error) {
 	var (
@@ -169,4 +217,30 @@ func getCaType() (utils.CaType, error) {
 		return caType, fmt.Errorf("[check] ca type is unsupport!Currently supported types: [tls],[sign],[solo] or [double]")
 	}
 	return caType, nil
+}
+
+//通过OrgID寻找签发人，返回签发人的私钥和证书，以及err
+func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []byte, error) {
+	//先转换certUsage
+	certUsage = covertCertUsage(certUsage)
+	//先去找相同OrgID的中间ca
+	certInfo, _ := models.FindCertInfoByConditions("", orgID, certUsage, 0)
+	if certInfo == nil { //去找rootca签
+		certInfo, _ = models.FindCertInfoByConditions("", "", certUsage, db.ROOT_CA)
+	}
+	certContent, _ := models.FindCertContentBySn(certInfo.IssuerSn)
+
+}
+
+//根据启动模式和用户提供certusage的来确定寻找的CA的certusage字段
+//这里已经判断完可以提供了服务了才能使用
+func covertCertUsage(certUsage db.CertUsage) db.CertUsage {
+	caType, _ := getCaType()
+	if caType == utils.DOUBLE {
+		return certUsage
+	}
+	if caType == utils.SOLO || caType == utils.SIGN {
+		return db.SIGN
+	}
+	return db.TLS
 }

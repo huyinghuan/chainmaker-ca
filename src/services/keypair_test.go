@@ -8,13 +8,13 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
 )
 
-func initDB() {
+func InitDB() {
 	utils.SetConfig(utils.GetConfigEnv())
 	db.DBInit()
 }
 
 func TestCreateKeyPair(t *testing.T) {
-	initDB()
+	InitDB()
 	var privateKeyTypeStr string
 	var hashTypeStr string
 	var privateKeyPwd string
