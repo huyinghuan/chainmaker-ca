@@ -65,12 +65,8 @@ func WritePrivKeyFile(privKeyFilePath string, data []byte) error {
 }
 
 //DecryptPrivKey decrypt private key
-func decryptPrivKey(privKeyRaw []byte, privKeyPwd string, hashType crypto.HashType) (crypto.PrivateKey, error) {
-	hashPwd, err := hash.Get(hashType, []byte(privKeyPwd))
-	privatePwd := utils.DefaultPrivateKeyPwd + hex.EncodeToString(hashPwd)
-	if err != nil {
-		return nil, fmt.Errorf("[decrypt] get issue pwd error: %s", err.Error())
-	}
+func decryptPrivKey(privKeyRaw []byte, hexHashPwd string, hashType crypto.HashType) (crypto.PrivateKey, error) {
+	privatePwd := utils.DefaultPrivateKeyPwd + hexHashPwd
 	issuerPrivKey, err := asym.PrivateKeyFromPEM(privKeyRaw, []byte(privatePwd))
 	if err != nil {
 		return nil, fmt.Errorf("[decrypt] asym private Key From PEM error: %s", err.Error())
@@ -115,7 +111,7 @@ func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd s
 	return
 }
 
-func TransfToKeyPair(keyPwd string, privateKeyBytes []byte) (keyPair *db.KeyPair, privateKey crypto.PrivateKey, err error) {
+func TransfToKeyPair(privateKeyPwd string, privateKeyBytes []byte) (keyPair *db.KeyPair, privateKey crypto.PrivateKey, err error) {
 	var (
 		hashType crypto.HashType
 		keyType  crypto.KeyType
@@ -125,30 +121,23 @@ func TransfToKeyPair(keyPwd string, privateKeyBytes []byte) (keyPair *db.KeyPair
 	if err != nil {
 		return
 	}
+	hashPwd, err := hash.Get(hashType, []byte(privateKeyPwd))
+	if err != nil {
+		err = fmt.Errorf("[parse private key] get hash pwd faield: %s", err.Error())
+		return
+	}
 	keyTypeStr := AllConfig.GetKeyType()
 	keyType, err = checkKeyType(keyTypeStr)
 	if err != nil {
 		return
 	}
-	if len(keyPwd) == 0 {
-		privateKey, err = ParsePrivateKey(privateKeyBytes)
-		if err != nil {
-			return
-		}
-	} else {
-		privateKey, err = decryptPrivKey(privateKeyBytes, keyPwd, hashType)
-		if err != nil {
-			return
-		}
+	privateKey, err = KeyBytesToPrivateKey(privateKeyBytes, hex.EncodeToString(hashPwd), hashType)
+	if err != nil {
+		return
 	}
 	ski, err := cert.ComputeSKI(hashType, privateKey.PublicKey().ToStandardKey())
 	if err != nil {
 		err = fmt.Errorf("[parse private key] get private key ski failed: %s", err.Error())
-	}
-	hashPwd, err := hash.Get(hashType, []byte(keyPwd))
-	if err != nil {
-		err = fmt.Errorf("[parse private key] get hash pwd faield: %s", err.Error())
-		return
 	}
 	publicKeyPEM, _ := privateKey.PublicKey().String()
 	keyPair = &db.KeyPair{
