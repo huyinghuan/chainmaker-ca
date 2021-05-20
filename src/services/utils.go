@@ -81,6 +81,19 @@ func ParsePrivateKey(privateKeyBytes []byte) (crypto.PrivateKey, error) {
 	}
 	return privateKey, nil
 }
+func KeyBytesToPrivateKey(privateKeyBytes []byte, hexHashPwd string, hashType crypto.HashType) (privateKey crypto.PrivateKey, err error) {
+	if len(hexHashPwd) == 0 {
+		privateKey, err = ParsePrivateKey(privateKeyBytes)
+		if err != nil {
+			return
+		}
+	}
+	privateKey, err = decryptPrivKey(privateKeyBytes, hexHashPwd, hashType)
+	if err != nil {
+		return
+	}
+	return
+}
 
 //ParseCsr
 func ParseCsr(csrBytes []byte) (*x509.CertificateRequest, error) {
