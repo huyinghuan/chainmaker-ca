@@ -119,8 +119,8 @@ func GenCert(genCertReq *models.GenCertReq) ([]byte, error) {
 	var hashTypeStr string
 	var privateKeyPwd string
 	//这些加密的方式和哈希的方式是从配置文件中读取的
-	privateKeyTypeStr = AllConfig.GetKeyType()
-	hashTypeStr = AllConfig.GetHashType()
+	privateKeyTypeStr = allConfig.GetKeyType()
+	hashTypeStr = allConfig.GetHashType()
 	privateKeyPwd = genCertReq.PrivateKeyPwd
 	privateKey, keyPair, err := CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd)
 	if err != nil {

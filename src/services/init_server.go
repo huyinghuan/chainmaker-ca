@@ -7,15 +7,20 @@ import (
 )
 
 var logger *zap.Logger
-var AllConfig *utils.AllConfig
+var allConfig *utils.AllConfig
 
 //InitServer 初始化CA
 func InitServer() {
 	logger = loggers.GetLogger()
-	AllConfig = utils.GetAllConfig()
+	allConfig = utils.GetAllConfig()
 	err := CreateRootCa()
 	if err != nil {
 		logger.Error("[init] create root ca failed: %s", zap.Error(err))
+		return
+	}
+	err = ProductIntermediateCA()
+	if err != nil {
+		logger.Error("[init] create intermediate ca failed: %s", zap.Error(err))
 		return
 	}
 }

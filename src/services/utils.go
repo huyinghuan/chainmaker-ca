@@ -161,17 +161,17 @@ func checkHashType(hashTypeStr string) (crypto.HashType, error) {
 }
 
 func canIssueCa() bool {
-	return AllConfig.GetCanIssueCa()
+	return allConfig.GetCanIssueCa()
 }
 
 func provideServiceFor() []string {
-	return AllConfig.GetProvideServiceFor()
+	return allConfig.GetProvideServiceFor()
 }
 func hashTypeFromConfig() string {
-	return AllConfig.GetHashType()
+	return allConfig.GetHashType()
 }
 func expireYearFromConfig() int {
-	return AllConfig.GetDefaultExpireTime()
+	return allConfig.GetDefaultExpireTime()
 }
 
 func whetherOrNotProvideService(orgID string, certUsage db.CertUsage) bool {
@@ -219,7 +219,7 @@ func getCaType() (utils.CaType, error) {
 		caType utils.CaType
 		ok     bool
 	)
-	if caType, ok = utils.Name2CaTypeMap[AllConfig.GetCaType()]; !ok {
+	if caType, ok = utils.Name2CaTypeMap[allConfig.GetCaType()]; !ok {
 		return caType, fmt.Errorf("[check] ca type is unsupport!Currently supported types: [tls],[sign],[solo] or [double]")
 	}
 	return caType, nil

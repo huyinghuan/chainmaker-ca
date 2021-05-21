@@ -13,15 +13,15 @@ import (
 //从配置文件里面先检测是否有Intermediate是否为空
 //为空就不生成中间的CA，否则拉起配置好的中间CA
 func ProductIntermediateCA() error {
-	n := len(AllConfig.IntermediateCaConf)
+	n := len(allConfig.IntermediateCaConf)
 	if n == 0 {
 		return nil
 	}
 	for i := 0; i < n; i++ {
-		if exsitIntermediateCA(AllConfig.IntermediateCaConf[i]) {
+		if exsitIntermediateCA(allConfig.IntermediateCaConf[i]) {
 			continue
 		}
-		err := genIntermediateCA(AllConfig.IntermediateCaConf[i])
+		err := genIntermediateCA(allConfig.IntermediateCaConf[i])
 		if err != nil {
 			logger.Error("Product Intermediate CA failed", zap.Error(err))
 			return err
@@ -120,8 +120,8 @@ func genPrivateKey(caConfig *utils.CaConfig) (privateKey crypto.PrivateKey, keyP
 	var hashTypeStr string
 	var privateKeyPwd string
 	//这些加密的方式和哈希的方式是从配置文件中读取的
-	privateKeyTypeStr = AllConfig.GetKeyType()
-	hashTypeStr = AllConfig.GetHashType()
+	privateKeyTypeStr = allConfig.GetKeyType()
+	hashTypeStr = allConfig.GetHashType()
 	privateKeyPwd = caConfig.CertConf.PrivateKeyPwd
 	return CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd)
 }
