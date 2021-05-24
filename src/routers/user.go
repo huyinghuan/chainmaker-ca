@@ -27,4 +27,6 @@ func LoadUserRouter(e *gin.Engine) {
 	// e.POST("/api/unfreezecert", handlers.UnFreeze)
 	e.POST("/api/ca/gencertbycsr", handlers.GenerateCertByCsr)
 	e.POST("/api/ca/gencert", handlers.GenCert)
+	// e.POST("/api/ca/searchcert", handlers.SearchCert) //查询请求
+
 }

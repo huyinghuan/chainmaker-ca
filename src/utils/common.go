@@ -15,6 +15,8 @@ const (
 	DefaultCertOrgSuffix = ".chainmaker.org"
 	//DefaultRootOrg .
 	DefaultRootOrg = "wx-root"
+
+	DefaultWorkDirectory = "./"
 )
 
 var HashType2NameMap = map[crypto.HashType]string{

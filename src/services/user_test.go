@@ -6,6 +6,7 @@ import (
 
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
+	"go.uber.org/zap"
 )
 
 func TestGenerateCertByCsr(t *testing.T) {
@@ -44,8 +45,8 @@ func TestGenerateCertByCsr(t *testing.T) {
 	generateCertByCsrReq := &models.GenerateCertByCsrReq{
 		OrgID:     "org1",
 		UserID:    "default",
-		UserType:  db.USER_ADMIN,
-		CertUsage: db.SIGN,
+		UserType:  "admin",
+		CertUsage: "sign",
 		CsrBytes:  csrByte,
 	}
 	cerContent, err := GenerateCertByCsr(generateCertByCsrReq)
@@ -60,17 +61,35 @@ func TestGenCert(t *testing.T) {
 	InitServer()
 	genCertReq := &models.GenCertReq{
 		OrgID:         "org1",
-		UserID:        "DHM_3",
-		UserType:      db.USER_CLIENT,
-		CertUsage:     db.TLS,
+		UserID:        "2",
+		UserType:      "admin",
+		CertUsage:     "tls",
 		PrivateKeyPwd: "123456",
 		Country:       "China",
-		Locality:      "xx",
-		Province:      "xx",
+		Locality:      "Haidian",
+		Province:      "Beijing",
 	}
-	cerContent, err := GenCert(genCertReq)
+	cerContent, privateKey, err := GenCert(genCertReq)
 	if err != nil {
 		fmt.Print("Generate Cert failed", err.Error())
 	}
-	fmt.Print(cerContent)
+	fmt.Println(cerContent)
+	fmt.Print(privateKey)
+}
+
+func TestSearchCert(t *testing.T) {
+	InitDB()
+	InitServer()
+	queryCertReq := &models.QueryCertReq{
+		OrgID:     "org7",
+		UserID:    "ca.org7",
+		UserType:  "client",
+		CertUsage: "sign",
+	}
+	certContent, err := QueryCert(queryCertReq)
+	if err != nil {
+		fmt.Print("no cert you want ", zap.Error(err))
+	}
+	fmt.Println("find the cert")
+	fmt.Print(certContent)
 }
