@@ -48,7 +48,7 @@ func TestCreateCertInfo(t *testing.T) {
 	certConditions.OrgId = "default"
 
 	//测试函数
-	certInfo, err := CreateCertInfo(certContent, keyPair, &certConditions)
+	certInfo, err := CreateCertInfo(certContent, keyPair.Ski, &certConditions)
 	if err != nil {
 		fmt.Println("Create Cert Info failed:")
 		fmt.Print(err)

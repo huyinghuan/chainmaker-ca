@@ -47,7 +47,7 @@ func TestCreateCertTransaction(t *testing.T) {
 	certConditions.UserId = "default"
 	certConditions.OrgId = "default"
 
-	certInfo, err := CreateCertInfo(certContent, keyPair, &certConditions)
+	certInfo, err := CreateCertInfo(certContent, keyPair.Ski, &certConditions)
 	if err != nil {
 		fmt.Print("Create Cert Info failed")
 		return

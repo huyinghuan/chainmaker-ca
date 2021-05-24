@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
 	"testing"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
@@ -119,4 +120,44 @@ func TestIssueCertificate(t *testing.T) {
 	if err != nil {
 		fmt.Print("Issue Certificate failed")
 	}
+}
+
+func TestCsr(t *testing.T) {
+	var csrRequest CSRRequest
+	//先createkeypair
+	var privateKeyTypeStr string
+	var hashTypeStr string
+	var privateKeyPwd string
+	privateKeyTypeStr = "SM2"
+	hashTypeStr = "SM3"
+	privateKeyPwd = "123456"
+	privateKey, _, err := CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd)
+	if err != nil {
+		fmt.Println(err.Error())
+		fmt.Print("Create KeyPair Error")
+		return
+	}
+	//构造数据csrRequest的假数据
+	csrRequest.PrivateKey = privateKey
+	csrRequest.Country = "China"
+	csrRequest.Locality = "default"
+	csrRequest.OrgId = "default"
+	csrRequest.Province = "default"
+	csrRequest.UserId = "default"
+	csrRequest.UserType = db.USER_ADMIN
+
+	//用BuildCSRReqConf获得CSRRequestConfig
+	csrRequestConf := BuildCSRReqConf(&csrRequest)
+	//用createCSR获得csr流文件
+	csrByte, err := createCSR(csrRequestConf)
+	if err != nil {
+		fmt.Print("createCSR byte failed")
+	}
+	file, err := os.Create("./test.csr")
+	if err != nil {
+		fmt.Print(err.Error())
+		return
+	}
+	defer file.Close()
+	file.Write(csrByte)
 }
