@@ -29,7 +29,7 @@ func TestGenerateCertByCsr(t *testing.T) {
 	csrRequest.PrivateKey = privateKey
 	csrRequest.Country = "China"
 	csrRequest.Locality = "default"
-	csrRequest.OrgId = "default"
+	csrRequest.OrgId = "org1"
 	csrRequest.Province = "default"
 	csrRequest.UserId = "default"
 	csrRequest.UserType = db.USER_ADMIN
@@ -42,7 +42,7 @@ func TestGenerateCertByCsr(t *testing.T) {
 		fmt.Print("createCSR byte failed")
 	}
 	generateCertByCsrReq := &models.GenerateCertByCsrReq{
-		OrgID:     "org9",
+		OrgID:     "org1",
 		UserID:    "default",
 		UserType:  db.USER_ADMIN,
 		CertUsage: db.SIGN,
@@ -50,7 +50,27 @@ func TestGenerateCertByCsr(t *testing.T) {
 	}
 	cerContent, err := GenerateCertByCsr(generateCertByCsrReq)
 	if err != nil {
-		fmt.Print("Generate Cert By Csr failed", err.Error())
+		fmt.Print("Generate Cert By Csr failed ", err.Error())
+	}
+	fmt.Print(cerContent)
+}
+
+func TestGenCert(t *testing.T) {
+	InitDB()
+	InitServer()
+	genCertReq := &models.GenCertReq{
+		OrgID:         "org1",
+		UserID:        "DHM_3",
+		UserType:      db.USER_CLIENT,
+		CertUsage:     db.TLS,
+		PrivateKeyPwd: "123456",
+		Country:       "China",
+		Locality:      "xx",
+		Province:      "xx",
+	}
+	cerContent, err := GenCert(genCertReq)
+	if err != nil {
+		fmt.Print("Generate Cert failed", err.Error())
 	}
 	fmt.Print(cerContent)
 }

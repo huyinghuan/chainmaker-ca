@@ -16,12 +16,12 @@ db_config:
 
 # Base config
 base_config:
-  ca_type: double                        #sign/tls/double/solo
+  ca_type: tls                        #sign/tls/double/solo
   expire_year: 2
   hash_type: SHA256 
   key_type: ECC_NISTP256
   can_issue_ca: true
-  provide_service_for: [org1,org2]
+  provide_service_for: [org1,org2,org7]
 
 # Root CA config
 root_config:

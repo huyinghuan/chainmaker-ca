@@ -231,10 +231,10 @@ func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []
 	certUsage = covertCertUsage(certUsage)
 	//先去找相同OrgID的中间ca
 	certInfo, err := models.FindCertInfoByConditions("", orgID, certUsage, 0)
-	if err != nil { //去找rootca签
+	if err != nil || certInfo.UserType != db.INTERMRDIARY_CA { //去找rootca签
 		certInfo, _ = models.FindCertInfoByConditions("", "", certUsage, db.ROOT_CA)
 	}
-	certContent, _ := models.FindCertContentBySn(certInfo.IssuerSn)
+	certContent, _ := models.FindCertContentBySn(certInfo.SerialNumber)
 	keyPair, _ := models.FindKeyPairBySki(certInfo.PrivateKeyId)
 	reCertContent, _ := base64.StdEncoding.DecodeString(certContent.Content)
 	//需要一个能加密的类型密钥，不要字符串,需要再想办法转换

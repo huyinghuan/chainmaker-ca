@@ -102,7 +102,7 @@ func LoadDoubleRootCa() error {
 		UserId:    signCert.Subject.CommonName,
 		OrgId:     signCert.Subject.Organization[0],
 	}
-	signCertInfo, err := CreateCertInfo(signCertContent, signKeyPair, signConditions)
+	signCertInfo, err := CreateCertInfo(signCertContent, signKeyPair.Ski, signConditions)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func LoadDoubleRootCa() error {
 		UserId:    tlsCert.Subject.CommonName,
 		OrgId:     tlsCert.Subject.Organization[0],
 	}
-	tlsCertInfo, err := CreateCertInfo(tlsCertContent, tlsKeyPair, tlsConditions)
+	tlsCertInfo, err := CreateCertInfo(tlsCertContent, tlsKeyPair.Ski, tlsConditions)
 	if err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func LoadSoloRootCa(rootConfig *utils.CaConfig, certUsage db.CertUsage) error {
 		UserId:    cert.Subject.CommonName,
 		OrgId:     cert.Subject.Organization[0],
 	}
-	certInfo, err := CreateCertInfo(certContent, keyPair, conditions)
+	certInfo, err := CreateCertInfo(certContent, keyPair.Ski, conditions)
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func GenerateSoloRootCa(rootCaConf *utils.CaConfig, certUsage db.CertUsage) erro
 	privateKeyPwd := rootCaConf.CertConf.PrivateKeyPwd
 	keyTypeStr := AllConfig.GetKeyType()
 	hashTypeStr := AllConfig.GetHashType()
-	err := genRootCa(rootCaConf, keyTypeStr, hashTypeStr, privateKeyPwd, db.SIGN, rootCaConf.CertConf.PrivateKeyPath, rootCaConf.CertConf.CertPath)
+	err := genRootCa(rootCaConf, keyTypeStr, hashTypeStr, privateKeyPwd, certUsage, rootCaConf.CertConf.PrivateKeyPath, rootCaConf.CertConf.CertPath)
 	if err != nil {
 		return err
 	}
@@ -251,7 +251,7 @@ func genRootCa(rootCaConf *utils.CaConfig, keyTypeStr, hashTypeStr, privateKeyPw
 			UserId:    rootCaConf.CsrConf.CN,
 			OrgId:     rootCaConf.CsrConf.O,
 		}
-		certInfo, err := CreateCertInfo(certContent, keyPair, certConditions)
+		certInfo, err := CreateCertInfo(certContent, keyPair.Ski, certConditions)
 		if err != nil {
 			return err
 		}
