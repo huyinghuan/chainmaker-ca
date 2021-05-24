@@ -1,3 +1,0 @@
-{"level":"ERROR","time":"2021-05-18T16:57:42.861+0800","caller":"db/db.go:48","msg":"failed to connect [DB]"}
-{"level":"ERROR","time":"2021-05-18T16:58:48.618+0800","caller":"db/db.go:48","msg":"failed to connect [DB]"}
-{"level":"ERROR","time":"2021-05-18T17:00:33.013+0800","caller":"db/db.go:48","msg":"failed to connect [DB]"}
