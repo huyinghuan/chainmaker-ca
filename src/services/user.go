@@ -6,6 +6,7 @@ import (
 
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
+	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"chainmaker.org/chainmaker-go/common/crypto"
 	"go.uber.org/zap"
 )
@@ -124,7 +125,7 @@ func GenCert(genCertReq *models.GenCertReq) ([]byte, []byte, error) {
 		}
 		keyPair, err := models.FindKeyPairByConditions(genCertReq.UserID, genCertReq.OrgID, curCertUsage, curUserType)
 		if err != nil {
-			return empty, empty, err
+			return reCertContent, empty, nil
 		}
 		rePrivateKey, err := base64.StdEncoding.DecodeString(keyPair.PrivateKey)
 		if err != nil {
@@ -180,6 +181,7 @@ func GenCert(genCertReq *models.GenCertReq) ([]byte, []byte, error) {
 	certRequestConfig.IssuerPrivateKey, certRequestConfig.IssuerCertBytes, _ = searchIssuedCa(genCertReq.OrgID, curCertUsage)
 	certContent, err = IssueCertificate(&certRequestConfig)
 	if err != nil {
+		logger.Error("Create Key Pair failed", zap.Error(err))
 		return empty, empty, err
 	}
 	var certConditions CertConditions
@@ -231,10 +233,68 @@ func QueryCert(queryCertReq *models.QueryCertReq) ([]byte, error) {
 	}
 	certContent, err := models.FindCertContentByConditions(queryCertReq.UserID, queryCertReq.OrgID, curCertUsage, curUserType)
 	if err != nil { //找不到符合条件的证书
-		err = fmt.Errorf("cert is not existed")
 		logger.Error("Query Cert failed ", zap.Error(err))
 		return empty, err
 	}
-	reCertContent, _ := base64.StdEncoding.DecodeString(certContent.Content)
-	return reCertContent, err
+	reCertContent, err := base64.StdEncoding.DecodeString(certContent.Content)
+	if err != nil {
+		logger.Error("Query Cert failed ", zap.Error(err))
+		return empty, err
+	}
+	return reCertContent, nil
+}
+
+//根据SN找到证书
+//保留证书，生成个新的证书，certinfo，
+func UpdateCert(updateCert *models.UpdateCertReq) ([]byte, error) {
+	certInfo, err := models.FindCertInfoBySn(updateCert.CertSn)
+	if err != nil {
+		logger.Error("Update Cert failed ", zap.Error(err))
+		return nil, err
+	}
+	certContent, err := models.FindCertContentBySn(updateCert.CertSn)
+	if err != nil {
+		logger.Error("Update Cert failed ", zap.Error(err))
+		return nil, err
+	}
+	issuerPrivateKey, issuerCertBytes, err := searchIssuedCa(certInfo.OrgId, certInfo.CertUsage)
+	if err != nil {
+		logger.Error("Update Cert failed ", zap.Error(err))
+		return nil, err
+	}
+	csrBytes, err := base64.StdEncoding.DecodeString(certContent.CsrContent)
+	if err != nil {
+		logger.Error("Update Cert failed ", zap.Error(err))
+		return nil, err
+	}
+	certRequestConfig := &CertRequestConfig{
+		HashType:         utils.Name2HashTypeMap[AllConfig.GetHashType()],
+		IssuerPrivateKey: issuerPrivateKey,
+		CsrBytes:         csrBytes,
+		IssuerCertBytes:  issuerCertBytes,
+		ExpireYear:       int32(AllConfig.GetDefaultExpireTime()),
+		CertUsage:        certInfo.CertUsage,
+		UserType:         certInfo.UserType,
+	}
+	newcertContent, err := IssueCertificate(certRequestConfig)
+	if err != nil {
+		logger.Error("Update Cert failed", zap.Error(err))
+		return nil, err
+	}
+	//入库证书和更新certInfo 事务
+	err = models.CreateCertAndUpdateTransaction(newcertContent, certInfo)
+	if err != nil {
+		logger.Error("Update Cert failed", zap.Error(err))
+		return nil, err
+	}
+	reCertContent, err := base64.StdEncoding.DecodeString(certContent.Content)
+	if err != nil {
+		logger.Error("Update Cert failed", zap.Error(err))
+		return nil, err
+	}
+	return reCertContent, nil
+}
+
+func RevokedCertReq(revokedCertReq *models.RevokedCertReq) {
+
 }

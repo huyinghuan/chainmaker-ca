@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -128,8 +129,8 @@ func TestCsr(t *testing.T) {
 	var privateKeyTypeStr string
 	var hashTypeStr string
 	var privateKeyPwd string
-	privateKeyTypeStr = "SM2"
-	hashTypeStr = "SM3"
+	privateKeyTypeStr = "ECC_NISTP256" //"SM2"
+	hashTypeStr = "SHA256"             //"SM3"
 	privateKeyPwd = "123456"
 	privateKey, _, err := CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd)
 	if err != nil {
@@ -141,7 +142,7 @@ func TestCsr(t *testing.T) {
 	csrRequest.PrivateKey = privateKey
 	csrRequest.Country = "China"
 	csrRequest.Locality = "default"
-	csrRequest.OrgId = "default"
+	csrRequest.OrgId = "org1"
 	csrRequest.Province = "default"
 	csrRequest.UserId = "default"
 	csrRequest.UserType = db.USER_ADMIN
@@ -160,4 +161,18 @@ func TestCsr(t *testing.T) {
 	}
 	defer file.Close()
 	file.Write(csrByte)
+}
+
+func TestPasrseCsr(t *testing.T) {
+	testCsr, err := ioutil.ReadFile("./test.csr")
+	if err != nil {
+		fmt.Print("read failed")
+	}
+	x509Req, err := ParseCsr(testCsr)
+	if err != nil {
+		fmt.Print("ParseCsr failed")
+		return
+	}
+	fmt.Printf("签名算法是%d ", x509Req.SignatureAlgorithm)
+	fmt.Printf("密钥算法算法是%d ", x509Req.PublicKeyAlgorithm)
 }

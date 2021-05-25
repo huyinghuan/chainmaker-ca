@@ -77,3 +77,12 @@ func FindCertInfoByConditions(userId, orgId string, usage db.CertUsage, userType
 	}
 	return &certInfo, nil
 }
+
+func UpdateCertInfoBySn(certInfo *db.CertInfo, sn int64) error {
+	if err := db.DB.Debug().Model(&db.CertInfo{}).
+		Where("SerialNumber=?", certInfo.SerialNumber).Update("SerialNumber", sn).Error; err != nil {
+		err = fmt.Errorf("[DB] find cert info by an failed: %s", err.Error())
+		return err
+	}
+	return nil
+}

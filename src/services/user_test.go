@@ -17,8 +17,8 @@ func TestGenerateCertByCsr(t *testing.T) {
 	var privateKeyTypeStr string
 	var hashTypeStr string
 	var privateKeyPwd string
-	privateKeyTypeStr = "SM2"
-	hashTypeStr = "SM3"
+	privateKeyTypeStr = "ECC_NISTP256"
+	hashTypeStr = "SHA256"
 	privateKeyPwd = "123456"
 	privateKey, _, err := CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd)
 	if err != nil {
@@ -60,8 +60,8 @@ func TestGenCert(t *testing.T) {
 	InitDB()
 	InitServer()
 	genCertReq := &models.GenCertReq{
-		OrgID:         "org1",
-		UserID:        "2",
+		OrgID:         "org2",
+		UserID:        "default",
 		UserType:      "admin",
 		CertUsage:     "tls",
 		PrivateKeyPwd: "123456",
@@ -92,4 +92,17 @@ func TestSearchCert(t *testing.T) {
 	}
 	fmt.Println("find the cert")
 	fmt.Print(certContent)
+}
+
+func TestUpdateCert(t *testing.T) {
+	InitDB()
+	InitServer()
+	updateCertReq := &models.UpdateCertReq{
+		CertSn: 963474,
+	}
+	cetContent, err := UpdateCert(updateCertReq)
+	if err != nil {
+		fmt.Print("update failed ", err.Error())
+	}
+	fmt.Print(cetContent)
 }

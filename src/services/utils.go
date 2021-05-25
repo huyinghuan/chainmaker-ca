@@ -1,12 +1,15 @@
 package services
 
 import (
+	"archive/zip"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net"
 	"os"
 	"path"
@@ -254,4 +257,49 @@ func covertCertUsage(certUsage db.CertUsage) db.CertUsage {
 		return db.SIGN
 	}
 	return db.TLS
+}
+
+func ReadWithFile(file multipart.File) ([]byte, error) {
+	var result []byte
+	var tmp = make([]byte, 128)
+	for {
+		n, err := file.Read(tmp)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, tmp[:n]...)
+	}
+	return result, nil
+}
+
+func ZipCertAndPrivateKey(certContent []byte, privateKey []byte) ([]byte, error) {
+	fileName := "cert&privateKey.zip"
+	file, err := os.Create(utils.DefaultWorkDirectory + fileName)
+	if err != nil {
+		return nil, err
+	}
+	writer := zip.NewWriter(file)
+	f, err := writer.Create("cert.crt")
+	if err != nil {
+		return nil, err
+	}
+	f.Write(certContent)
+	if privateKey != nil {
+		f, err = writer.Create("privateKey.key")
+		if err != nil {
+			return nil, err
+		}
+		f.Write(privateKey)
+	}
+	writer.Close()
+	content, err := ioutil.ReadFile(utils.DefaultWorkDirectory + fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(utils.DefaultWorkDirectory + fileName)
+	defer file.Close()
+	return content, nil
 }

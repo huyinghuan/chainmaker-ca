@@ -34,3 +34,17 @@ func CreateCertTwoTransaction(certContent *db.CertContent, certInfo *db.CertInfo
 	})
 	return err
 }
+func CreateCertAndUpdateTransaction(certContent *db.CertContent, certInfo *db.CertInfo) error {
+	err := db.DB.Debug().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(certContent).Error; err != nil {
+			return fmt.Errorf("[DB] create cert content to db failed: %s, sn: %d", err.Error(), certContent.SerialNumber)
+		}
+		if err := db.DB.Debug().Model(&db.CertInfo{}).
+			Where("serial_number=?", certInfo.SerialNumber).Update("serial_number", certContent.SerialNumber).Error; err != nil {
+			err = fmt.Errorf("[DB] find cert info by sn failed: %s", err.Error())
+			return err
+		}
+		return nil
+	})
+	return err
+}

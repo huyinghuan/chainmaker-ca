@@ -1,15 +1,10 @@
 package handlers
 
 import (
-	"archive/zip"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"os"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/services"
-	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,20 +28,12 @@ func GenerateCertByCsr(c *gin.Context) {
 	if err != nil {
 		fmt.Print("open file failed")
 	}
-	var tmp = make([]byte, 128)
-	for {
-		n, err := file.Read(tmp)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			msg := err.Error()
-			FailedRespFunc(msg, "", c)
-			return
-		}
-		generateCertByCsrReq.CsrBytes = append(generateCertByCsrReq.CsrBytes, tmp[:n]...)
+	generateCertByCsrReq.CsrBytes, err = services.ReadWithFile(file)
+	if err != nil {
+		msg := "Generate Cert By Csr failed"
+		FailedRespFunc(msg, err.Error(), c)
+		return
 	}
-
 	certContent, err := services.GenerateCertByCsr(&generateCertByCsrReq)
 	if err != nil {
 		msg := "Generate Cert By Csr failed"
@@ -65,42 +52,48 @@ func GenCert(c *gin.Context) {
 		return
 	}
 	certContent, privateKey, err := services.GenCert(&genCertReq)
-	//这里可以拿到私钥，分别存两个文件后，压缩打包
-	//未完成，待写
 	if err != nil {
 		msg := "Gen Cert failed"
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
-	fileName := "cert&privateKey.zip"
-	file, err := os.Create(utils.DefaultWorkDirectory + fileName)
+	content, err := services.ZipCertAndPrivateKey(certContent, privateKey)
 	if err != nil {
-		msg := "create file failed"
+		msg := "Gen Cert failed"
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
-	defer file.Close()
-	writer := zip.NewWriter(file)
-	f, err := writer.Create("cert.crt")
-	if err != nil {
-		msg := "compress file failed"
-		FailedRespFunc(msg, err.Error(), c)
+	SuccessfulFileRespFunc("cert&privateKey.zip", content, c)
+}
+
+func QueryCert(c *gin.Context) {
+	var querycertReq models.QueryCertReq
+	if err := c.ShouldBind(&querycertReq); err != nil {
+		msg := "Parameter input error"
+		FailedRespFunc(msg, "", c)
 		return
 	}
-	f.Write(certContent)
-	f, err = writer.Create("privateKey.key")
+	certContent, err := services.QueryCert(&querycertReq)
 	if err != nil {
-		msg := "compress file failed"
-		FailedRespFunc(msg, err.Error(), c)
+		msg := "Query Cert error"
+		FailedRespFunc(msg, "", c)
 		return
 	}
-	f.Write(privateKey)
-	writer.Close()
-	content, err := ioutil.ReadFile(utils.DefaultWorkDirectory + fileName)
-	if err != nil {
-		msg := "read file failed"
-		FailedRespFunc(msg, err.Error(), c)
+	SuccessfulFileRespFunc("cert.crt", certContent, c)
+}
+
+func UpdateCert(c *gin.Context) {
+	var updatecertReq models.UpdateCertReq
+	if err := c.ShouldBind(&updatecertReq); err != nil {
+		msg := "Parameter input error"
+		FailedRespFunc(msg, "", c)
 		return
 	}
-	SuccessfulFileRespFunc(fileName, content, c)
+	certContent, err := services.UpdateCert(&updatecertReq)
+	if err != nil {
+		msg := "Update Cert error"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+	SuccessfulFileRespFunc("cert.crt", certContent, c)
 }

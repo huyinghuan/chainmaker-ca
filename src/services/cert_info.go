@@ -43,7 +43,6 @@ func CreateCertInfo(certContent *db.CertContent, privateKeyId string, conditions
 	certInfo := &db.CertInfo{
 		SerialNumber: certContent.SerialNumber,
 		PrivateKeyId: privateKeyId,
-		CertStatus:   db.ACTIVE,
 		IssuerSn:     issueCertSn,
 		P2pNodeId:    p2pNodeId,
 		UserType:     conditions.UserType,
