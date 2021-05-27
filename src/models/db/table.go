@@ -67,6 +67,7 @@ type KeyPair struct {
 //RevokedCert revoked cert
 type RevokedCert struct {
 	TableModel
+	OrgId            string
 	RevokedCertSN    int64
 	Reason           string
 	RevokedStartTime int64

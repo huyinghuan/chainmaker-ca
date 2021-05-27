@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"encoding/base64"
+	"encoding/pem"
 	"fmt"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models"
@@ -40,8 +42,7 @@ func GenerateCertByCsr(c *gin.Context) {
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
-	fileName := "cert.crt"
-	SuccessfulFileRespFunc(fileName, certContent, c)
+	SuccessfulJSONRespFunc("cert", certContent, c)
 }
 
 func GenCert(c *gin.Context) {
@@ -57,13 +58,10 @@ func GenCert(c *gin.Context) {
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
-	content, err := services.ZipCertAndPrivateKey(certContent, privateKey)
-	if err != nil {
-		msg := "Gen Cert failed"
-		FailedRespFunc(msg, err.Error(), c)
-		return
+	SuccessfulJSONRespFunc("cert", certContent, c)
+	if privateKey != "" {
+		SuccessfulJSONRespFunc("privateKey", privateKey, c)
 	}
-	SuccessfulFileRespFunc("cert&privateKey.zip", content, c)
 }
 
 func QueryCert(c *gin.Context) {
@@ -79,7 +77,7 @@ func QueryCert(c *gin.Context) {
 		FailedRespFunc(msg, "", c)
 		return
 	}
-	SuccessfulFileRespFunc("cert.crt", certContent, c)
+	SuccessfulJSONRespFunc("cert", certContent, c)
 }
 
 func UpdateCert(c *gin.Context) {
@@ -95,5 +93,42 @@ func UpdateCert(c *gin.Context) {
 		FailedRespFunc(msg, "", c)
 		return
 	}
-	SuccessfulFileRespFunc("cert.crt", certContent, c)
+	SuccessfulJSONRespFunc("cert", certContent, c)
+}
+
+func RevokedCert(c *gin.Context) {
+	var revokedCertReq models.RevokedCertReq
+	if err := c.ShouldBind(&revokedCertReq); err != nil {
+		msg := "Parameter input error"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+	crlList, err := services.RevokedCert(&revokedCertReq)
+	if err != nil {
+		msg := " Revoked Cert failed"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+
+	crlList = pem.EncodeToMemory(&pem.Block{Type: "CRL", Bytes: crlList})
+	reCrlList := base64.StdEncoding.EncodeToString(crlList)
+	SuccessfulJSONRespFunc("crlList", reCrlList, c)
+}
+
+func CrlList(c *gin.Context) {
+	var crlListReq models.CrlListReq
+	if err := c.ShouldBind(&crlListReq); err != nil {
+		msg := "Parameter input error"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+	crlList, err := services.CrlList(&crlListReq)
+	if err != nil {
+		msg := "CrlList get failed"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+	crlList = pem.EncodeToMemory(&pem.Block{Type: "CRL", Bytes: crlList})
+	reCrlList := base64.StdEncoding.EncodeToString(crlList)
+	SuccessfulJSONRespFunc("crlList", reCrlList, c)
 }

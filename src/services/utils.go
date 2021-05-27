@@ -235,14 +235,32 @@ func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []
 	//先去找相同OrgID的中间ca
 	certInfo, err := models.FindCertInfoByConditions("", orgID, certUsage, 0)
 	if err != nil || certInfo.UserType != db.INTERMRDIARY_CA { //去找rootca签
-		certInfo, _ = models.FindCertInfoByConditions("", "", certUsage, db.ROOT_CA)
+		certInfo, err = models.FindCertInfoByConditions("", "", certUsage, db.ROOT_CA)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
-	certContent, _ := models.FindCertContentBySn(certInfo.SerialNumber)
-	keyPair, _ := models.FindKeyPairBySki(certInfo.PrivateKeyId)
-	reCertContent, _ := base64.StdEncoding.DecodeString(certContent.Content)
+	certContent, err := models.FindCertContentBySn(certInfo.SerialNumber)
+	if err != nil {
+		return nil, nil, err
+	}
+	keyPair, err := models.FindKeyPairBySki(certInfo.PrivateKeyId)
+	if err != nil {
+		return nil, nil, err
+	}
+	reCertContent, err := base64.StdEncoding.DecodeString(certContent.Content)
+	if err != nil {
+		return nil, nil, err
+	}
 	//需要一个能加密的类型密钥，不要字符串,需要再想办法转换
-	dePrivatKey, _ := base64.StdEncoding.DecodeString(keyPair.PrivateKey)
-	privateKey, _ := KeyBytesToPrivateKey(dePrivatKey, keyPair.PrivateKeyPwd, keyPair.HashType)
+	dePrivatKey, err := base64.StdEncoding.DecodeString(keyPair.PrivateKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	privateKey, err := KeyBytesToPrivateKey(dePrivatKey, keyPair.PrivateKeyPwd, keyPair.HashType)
+	if err != nil {
+		return nil, nil, err
+	}
 	return privateKey, reCertContent, nil
 }
 
@@ -302,4 +320,20 @@ func ZipCertAndPrivateKey(certContent []byte, privateKey []byte) ([]byte, error)
 	defer os.RemoveAll(utils.DefaultWorkDirectory + fileName)
 	defer file.Close()
 	return content, nil
+}
+
+func GetX509Certificate(Sn int64) (*x509.Certificate, error) {
+	certContent, err := models.FindCertContentBySn(Sn)
+	if err != nil {
+		return nil, err
+	}
+	certContentByte, err := base64.StdEncoding.DecodeString(certContent.Content)
+	if err != nil {
+		return nil, err
+	}
+	certContentByteUse, err := ParseCertificate(certContentByte)
+	if err != nil {
+		return nil, err
+	}
+	return certContentByteUse, nil
 }

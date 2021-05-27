@@ -106,3 +106,17 @@ func TestUpdateCert(t *testing.T) {
 	}
 	fmt.Print(cetContent)
 }
+
+func TestRevokedCert(t *testing.T) {
+	InitDB()
+	InitServer()
+	revokedCertReq := &models.RevokedCertReq{
+		RevokedCertSn: 480460,
+		IssueCertSn:   0,
+	}
+	crl, err := RevokedCert(revokedCertReq)
+	if err != nil {
+		fmt.Print("Revoked Cert failed ", err.Error())
+	}
+	fmt.Print(crl)
+}

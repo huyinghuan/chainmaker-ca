@@ -12,3 +12,21 @@ func InsertRevokedCert(revokedCert *db.RevokedCert) error {
 	}
 	return nil
 }
+
+func QueryRevokedCertByIssueSn(sn int64) ([]*db.RevokedCert, error) {
+	var revokedCerts []*db.RevokedCert
+	err := db.DB.Debug().Model(&db.RevokedCert{}).Where("revoked_by=?", sn).Find(&revokedCerts).Error
+	if err != nil {
+		return nil, err
+	}
+	return revokedCerts, nil
+}
+
+func QueryRevokedCertByRevokedSn(sn int64) (*db.RevokedCert, error) {
+	var revokedCert *db.RevokedCert
+	err := db.DB.Debug().Model(&db.RevokedCert{}).Where("revoked_cert_sn=?", sn).First(&revokedCert).Error
+	if err != nil {
+		return nil, err
+	}
+	return revokedCert, nil
+}
