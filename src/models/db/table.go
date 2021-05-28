@@ -47,10 +47,11 @@ type CertInfo struct {
 	PrivateKeyId string
 	IssuerSn     int64
 	P2pNodeId    string
-	UserType     UserType  `gorm:"uniqueIndex:usertype_certusage_userid_orgid_index"`
-	CertUsage    CertUsage `gorm:"uniqueIndex:usertype_certusage_userid_orgid_index"`
-	UserId       string    `gorm:"uniqueIndex:usertype_certusage_userid_orgid_index"`
-	OrgId        string    `gorm:"uniqueIndex:usertype_certusage_userid_orgid_index"`
+	UserType     UserType
+	CertUsage    CertUsage
+	CertStatus   CertStatus
+	UserId       string
+	OrgId        string
 }
 
 //KeyPair public/private key pair informations

@@ -17,7 +17,8 @@ const (
 	DefaultRootOrg = "wx-root"
 
 	DefaultWorkDirectory = "./"
-	DefaultTime          = 4
+
+	DefaultTime = 4
 )
 
 var HashType2NameMap = map[crypto.HashType]string{

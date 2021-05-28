@@ -233,9 +233,9 @@ func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []
 	//先转换certUsage
 	certUsage = covertCertUsage(certUsage)
 	//先去找相同OrgID的中间ca
-	certInfo, err := models.FindCertInfoByConditions("", orgID, certUsage, 0)
+	certInfo, err := models.FindActiveCertInfoByConditions("", orgID, certUsage, 0)
 	if err != nil || certInfo.UserType != db.INTERMRDIARY_CA { //去找rootca签
-		certInfo, err = models.FindCertInfoByConditions("", "", certUsage, db.ROOT_CA)
+		certInfo, err = models.FindActiveCertInfoByConditions("", "", certUsage, db.ROOT_CA)
 		if err != nil {
 			return nil, nil, err
 		}

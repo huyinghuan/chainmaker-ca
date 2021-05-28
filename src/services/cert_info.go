@@ -10,14 +10,15 @@ import (
 )
 
 type CertConditions struct {
-	UserType  db.UserType
-	CertUsage db.CertUsage
-	UserId    string
-	OrgId     string
+	UserType   db.UserType
+	CertUsage  db.CertUsage
+	UserId     string
+	OrgId      string
+	CertStatus db.CertStatus
 }
 
 func CreateCertInfo(certContent *db.CertContent, privateKeyId string, conditions *CertConditions) (*db.CertInfo, error) {
-	_, err := models.FindCertInfoByConditions(conditions.UserId, conditions.OrgId, conditions.CertUsage, conditions.UserType)
+	_, err := models.FindActiveCertInfoByConditions(conditions.UserId, conditions.OrgId, conditions.CertUsage, conditions.UserType)
 	if err == nil {
 		return nil, fmt.Errorf("create cert info faield: cert info is exist")
 	}
@@ -49,6 +50,7 @@ func CreateCertInfo(certContent *db.CertContent, privateKeyId string, conditions
 		CertUsage:    conditions.CertUsage,
 		OrgId:        conditions.OrgId,
 		UserId:       conditions.UserId,
+		CertStatus:   conditions.CertStatus,
 	}
 	return certInfo, nil
 }

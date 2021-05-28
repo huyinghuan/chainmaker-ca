@@ -223,7 +223,7 @@ func TestCsr2(t *testing.T) {
 	file.Write(csrByte)
 }
 
-func TestPasrseCsr(t *testing.T) {
+func TestPasrseCsr2(t *testing.T) {
 	testCsr, err := ioutil.ReadFile("./test.csr")
 	if err != nil {
 		fmt.Print("read failed")

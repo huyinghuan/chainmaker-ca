@@ -2,8 +2,8 @@ package models
 
 import "chainmaker.org/chainmaker-ca-backend/src/models/db"
 
-func FindCertContentByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType) (*db.CertContent, error) {
-	certInfo, err := FindCertInfoByConditions(userId, orgId, usage, userType)
+func FindActiveCertContentByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType) (*db.CertContent, error) {
+	certInfo, err := FindActiveCertInfoByConditions(userId, orgId, usage, userType)
 	if err != nil {
 		return nil, err
 	}
@@ -15,8 +15,8 @@ func FindCertContentByConditions(userId, orgId string, usage db.CertUsage, userT
 	return certContent, nil
 }
 
-func FindKeyPairByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType) (*db.KeyPair, error) {
-	certInfo, err := FindCertInfoByConditions(userId, orgId, usage, userType)
+func FindActiveKeyPairByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType) (*db.KeyPair, error) {
+	certInfo, err := FindActiveCertInfoByConditions(userId, orgId, usage, userType)
 	if err != nil {
 		return nil, err
 	}

@@ -52,7 +52,7 @@ func GenerateCertByCsr(generateCertByCsrReq *models.GenerateCertByCsrReq) (strin
 	}
 	//检查完参数
 	//看看证书是否存在
-	certContent, err := models.FindCertContentByConditions(generateCertByCsrReq.UserID, generateCertByCsrReq.OrgID, curCertUsage, curUserType)
+	certContent, err := models.FindActiveCertContentByConditions(generateCertByCsrReq.UserID, generateCertByCsrReq.OrgID, curCertUsage, curUserType)
 	if err == nil {
 		return certContent.Content, err
 	}
@@ -114,10 +114,10 @@ func GenCert(genCertReq *models.GenCertReq) (string, string, error) {
 	}
 
 	//检查完参数看看证书是否存在
-	certContent, err := models.FindCertContentByConditions(genCertReq.UserID, genCertReq.OrgID, curCertUsage, curUserType)
+	certContent, err := models.FindActiveCertContentByConditions(genCertReq.UserID, genCertReq.OrgID, curCertUsage, curUserType)
 	if err == nil {
 		//证书存在
-		keyPair, err := models.FindKeyPairByConditions(genCertReq.UserID, genCertReq.OrgID, curCertUsage, curUserType)
+		keyPair, err := models.FindActiveKeyPairByConditions(genCertReq.UserID, genCertReq.OrgID, curCertUsage, curUserType)
 		if err != nil {
 			return certContent.Content, empty, nil
 		}
@@ -212,7 +212,7 @@ func QueryCert(queryCertReq *models.QueryCertReq) (string, error) {
 		logger.Error("Query Cert failed", zap.Error(err))
 		return empty, err
 	}
-	certContent, err := models.FindCertContentByConditions(queryCertReq.UserID, queryCertReq.OrgID, curCertUsage, curUserType)
+	certContent, err := models.FindActiveCertContentByConditions(queryCertReq.UserID, queryCertReq.OrgID, curCertUsage, curUserType)
 	if err != nil { //找不到符合条件的证书
 		logger.Error("Query Cert failed ", zap.Error(err))
 		return empty, err

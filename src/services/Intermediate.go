@@ -30,7 +30,7 @@ func ProductIntermediateCA() error {
 	return nil
 }
 func exsitIntermediateCA(caConfig *utils.CaConfig) bool {
-	_, err := models.FindCertInfoByConditions(caConfig.CsrConf.CN, caConfig.CsrConf.O, 0, db.INTERMRDIARY_CA)
+	_, err := models.FindActiveCertInfoByConditions(caConfig.CsrConf.CN, caConfig.CsrConf.O, 0, db.INTERMRDIARY_CA)
 	return err == nil
 }
 
@@ -138,7 +138,7 @@ func createCsrReq(caConfig *utils.CaConfig, privateKey crypto.PrivateKey) *CSRRe
 }
 
 func createCertRequestConfig(caConfig *utils.CaConfig, csrByte []byte, certUsage db.CertUsage) (*CertRequestConfig, error) {
-	certInfo, err := models.FindCertInfoByConditions("", "", certUsage, db.ROOT_CA)
+	certInfo, err := models.FindActiveCertInfoByConditions("", "", certUsage, db.ROOT_CA)
 	if err != nil {
 		return nil, err
 	}

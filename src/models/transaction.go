@@ -22,6 +22,7 @@ func CreateCertTransaction(certContent *db.CertContent, certInfo *db.CertInfo, k
 	})
 	return err
 }
+
 func CreateCertTwoTransaction(certContent *db.CertContent, certInfo *db.CertInfo) error {
 	err := db.DB.Debug().Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(certContent).Error; err != nil {
@@ -34,6 +35,7 @@ func CreateCertTwoTransaction(certContent *db.CertContent, certInfo *db.CertInfo
 	})
 	return err
 }
+
 func CreateCertAndUpdateTransaction(certContent *db.CertContent, certInfo *db.CertInfo) error {
 	err := db.DB.Debug().Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(certContent).Error; err != nil {

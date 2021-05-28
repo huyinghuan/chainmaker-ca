@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
-	"gorm.io/gorm"
 )
 
 func InsertCertContent(certContent *db.CertContent) error {
@@ -12,17 +11,6 @@ func InsertCertContent(certContent *db.CertContent) error {
 		return fmt.Errorf("[DB] create cert content to db failed: %s, sn: %d", err.Error(), certContent.SerialNumber)
 	}
 	return nil
-}
-
-func MulInsertCertContents(certContents []*db.CertContent) error {
-	len := len(certContents)
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.CreateInBatches(certContents, len).Error; err != nil {
-			return fmt.Errorf("[DB] create multiple cert contents to db failed: %s", err.Error())
-		}
-		return nil
-	})
-	return err
 }
 
 func FindCertContentBySn(sn int64) (*db.CertContent, error) {

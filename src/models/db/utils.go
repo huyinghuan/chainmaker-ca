@@ -21,8 +21,6 @@ const (
 const (
 	ACTIVE CertStatus = iota + 1
 	EXPIRED
-	REVOKED
-	FROZEN
 )
 const (
 	SIGN CertUsage = iota + 1
@@ -55,16 +53,12 @@ var Name2UserTypeMap = map[string]UserType{
 var CertStatus2NameMap = map[CertStatus]string{
 	ACTIVE:  "ACTIVE",
 	EXPIRED: "EXPIRED",
-	REVOKED: "REVOKED",
-	FROZEN:  "FROZEN",
 }
 
 //Name2CertStatusMap string name to cert status
 var Name2CertStatusMap = map[string]CertStatus{
 	"ACTIVE":  ACTIVE,
 	"EXPIRED": EXPIRED,
-	"REVOKED": REVOKED,
-	"FROZEN":  FROZEN,
 }
 
 //CertUsage2NameMap .
@@ -101,12 +95,4 @@ var NodeType2NameMap = map[NodeType]string{
 var Name2NodeTypeMap = map[string]NodeType{
 	"COMMON_NODE":    COMMON_NODE,
 	"CONSENSUS_NODE": CONSENSUS_NODE,
-}
-
-//KeyPairType
-type KeyPairType struct {
-	UserType  UserType
-	CertUsage CertUsage
-	UserId    string
-	OrgId     string
 }

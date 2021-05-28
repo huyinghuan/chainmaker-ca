@@ -222,7 +222,7 @@ func GenerateSoloRootCa(rootCaConf *utils.CaConfig, certUsage db.CertUsage) erro
 }
 
 func genRootCa(rootCaConf *utils.CaConfig, keyTypeStr, hashTypeStr, privateKeyPwd string, certUsage db.CertUsage, keyPath, certPath string) error {
-	_, err := models.FindCertInfoByConditions(rootCaConf.CsrConf.CN, rootCaConf.CsrConf.O, certUsage, db.ROOT_CA)
+	_, err := models.FindActiveCertInfoByConditions(rootCaConf.CsrConf.CN, rootCaConf.CsrConf.O, certUsage, db.ROOT_CA)
 	if err != nil {
 		privateKey, keyPair, err := CreateKeyPair(keyTypeStr, hashTypeStr, privateKeyPwd)
 		if err != nil {
