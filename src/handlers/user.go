@@ -12,6 +12,11 @@ import (
 
 //通过CSR流文件申请证书
 
+type CertAndPrivateKey struct {
+	Cert       string
+	PrivateKey string
+}
+
 func GenerateCertByCsr(c *gin.Context) {
 	var generateCertByCsrReq models.GenerateCertByCsrReq
 	//从新更改从前端拿数据的模式，这里是先通过表单拿到id类数据，再通过文件上传形式拿到csr流文件
@@ -42,7 +47,7 @@ func GenerateCertByCsr(c *gin.Context) {
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
-	SuccessfulJSONRespFunc("cert", certContent, c)
+	SuccessfulJSONRespFunc("", certContent, c)
 }
 
 func GenCert(c *gin.Context) {
@@ -58,10 +63,11 @@ func GenCert(c *gin.Context) {
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
-	SuccessfulJSONRespFunc("cert", certContent, c)
-	if privateKey != "" {
-		SuccessfulJSONRespFunc("privateKey", privateKey, c)
+	certAndPrivateKey := CertAndPrivateKey{
+		Cert:       certContent,
+		PrivateKey: privateKey,
 	}
+	SuccessfulJSONRespFunc("", certAndPrivateKey, c)
 }
 
 func QueryCert(c *gin.Context) {
@@ -77,7 +83,7 @@ func QueryCert(c *gin.Context) {
 		FailedRespFunc(msg, "", c)
 		return
 	}
-	SuccessfulJSONRespFunc("cert", certContent, c)
+	SuccessfulJSONRespFunc("", certContent, c)
 }
 func QueryCertByStatus(c *gin.Context) {
 	var queryCertByStatusReq models.QueryCertByStatusReq
@@ -92,10 +98,7 @@ func QueryCertByStatus(c *gin.Context) {
 		FailedRespFunc(msg, "", c)
 		return
 	}
-	for index, value := range certContentList {
-		certName := fmt.Sprint("cert", index)
-		SuccessfulJSONRespFunc(certName, value, c)
-	}
+	SuccessfulJSONRespFunc("", certContentList, c)
 }
 
 func UpdateCert(c *gin.Context) {
@@ -111,7 +114,7 @@ func UpdateCert(c *gin.Context) {
 		FailedRespFunc(msg, "", c)
 		return
 	}
-	SuccessfulJSONRespFunc("cert", certContent, c)
+	SuccessfulJSONRespFunc("", certContent, c)
 }
 
 func RevokedCert(c *gin.Context) {
@@ -130,7 +133,7 @@ func RevokedCert(c *gin.Context) {
 
 	crlList = pem.EncodeToMemory(&pem.Block{Type: "CRL", Bytes: crlList})
 	reCrlList := base64.StdEncoding.EncodeToString(crlList)
-	SuccessfulJSONRespFunc("crlList", reCrlList, c)
+	SuccessfulJSONRespFunc("", reCrlList, c)
 }
 
 func CrlList(c *gin.Context) {
@@ -148,5 +151,5 @@ func CrlList(c *gin.Context) {
 	}
 	crlList = pem.EncodeToMemory(&pem.Block{Type: "CRL", Bytes: crlList})
 	reCrlList := base64.StdEncoding.EncodeToString(crlList)
-	SuccessfulJSONRespFunc("crlList", reCrlList, c)
+	SuccessfulJSONRespFunc("", reCrlList, c)
 }
