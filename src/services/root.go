@@ -97,20 +97,22 @@ func LoadDoubleRootCa() error {
 		return err
 	}
 	signConditions := &CertConditions{
-		UserType:  db.ROOT_CA,
-		CertUsage: db.SIGN,
-		UserId:    signCert.Subject.CommonName,
-		OrgId:     signCert.Subject.Organization[0],
+		UserType:   db.ROOT_CA,
+		CertUsage:  db.SIGN,
+		UserId:     signCert.Subject.CommonName,
+		OrgId:      signCert.Subject.Organization[0],
+		CertStatus: db.ACTIVE,
 	}
 	signCertInfo, err := CreateCertInfo(signCertContent, signKeyPair.Ski, signConditions)
 	if err != nil {
 		return err
 	}
 	tlsConditions := &CertConditions{
-		UserType:  db.ROOT_CA,
-		CertUsage: db.TLS,
-		UserId:    tlsCert.Subject.CommonName,
-		OrgId:     tlsCert.Subject.Organization[0],
+		UserType:   db.ROOT_CA,
+		CertUsage:  db.TLS,
+		UserId:     tlsCert.Subject.CommonName,
+		OrgId:      tlsCert.Subject.Organization[0],
+		CertStatus: db.ACTIVE,
 	}
 	tlsCertInfo, err := CreateCertInfo(tlsCertContent, tlsKeyPair.Ski, tlsConditions)
 	if err != nil {
@@ -146,10 +148,11 @@ func LoadSoloRootCa(rootConfig *utils.CaConfig, certUsage db.CertUsage) error {
 	}
 
 	conditions := &CertConditions{
-		UserType:  db.ROOT_CA,
-		CertUsage: certUsage,
-		UserId:    cert.Subject.CommonName,
-		OrgId:     cert.Subject.Organization[0],
+		UserType:   db.ROOT_CA,
+		CertUsage:  certUsage,
+		UserId:     cert.Subject.CommonName,
+		OrgId:      cert.Subject.Organization[0],
+		CertStatus: db.ACTIVE,
 	}
 	certInfo, err := CreateCertInfo(certContent, keyPair.Ski, conditions)
 	if err != nil {
@@ -246,10 +249,11 @@ func genRootCa(rootCaConf *utils.CaConfig, keyTypeStr, hashTypeStr, privateKeyPw
 			return err
 		}
 		certConditions := &CertConditions{
-			UserType:  db.ROOT_CA,
-			CertUsage: certUsage,
-			UserId:    rootCaConf.CsrConf.CN,
-			OrgId:     rootCaConf.CsrConf.O,
+			UserType:   db.ROOT_CA,
+			CertUsage:  certUsage,
+			UserId:     rootCaConf.CsrConf.CN,
+			OrgId:      rootCaConf.CsrConf.O,
+			CertStatus: db.ACTIVE,
 		}
 		certInfo, err := CreateCertInfo(certContent, keyPair.Ski, certConditions)
 		if err != nil {

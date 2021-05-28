@@ -77,7 +77,7 @@ func TestGenCert(t *testing.T) {
 	fmt.Print(privateKey)
 }
 
-func TestSearchCert(t *testing.T) {
+func TestQueryCert(t *testing.T) {
 	InitDB()
 	InitServer()
 	queryCertReq := &models.QueryCertReq{
@@ -94,11 +94,32 @@ func TestSearchCert(t *testing.T) {
 	fmt.Print(certContent)
 }
 
+func TestQueryCertByStatus(t *testing.T) {
+	InitDB()
+	InitServer()
+	queryCertByStatusReq := &models.QueryCertByStatusReq{
+		OrgID:      "org2",
+		UserID:     "org2_2",
+		UserType:   "admin",
+		CertUsage:  "sign",
+		CertStatus: "EXPIRED",
+	}
+	certContentList, err := QueryCertByStatus(queryCertByStatusReq)
+	if err != nil {
+		fmt.Print("no cert you want ", zap.Error(err))
+	}
+	fmt.Println("find the cert")
+	for index, _ := range certContentList {
+		fmt.Printf("这个是%d\n", index)
+		//fmt.Println(value)
+	}
+}
+
 func TestUpdateCert(t *testing.T) {
 	InitDB()
 	InitServer()
 	updateCertReq := &models.UpdateCertReq{
-		CertSn: 963474,
+		CertSn: 806294,
 	}
 	cetContent, err := UpdateCert(updateCertReq)
 	if err != nil {

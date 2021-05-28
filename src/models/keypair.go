@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
-	"gorm.io/gorm"
 )
 
 func InsertKeyPair(keyPair *db.KeyPair) error {
@@ -12,17 +11,6 @@ func InsertKeyPair(keyPair *db.KeyPair) error {
 		return fmt.Errorf("[DB] create key pair error: %s", err.Error())
 	}
 	return nil
-}
-
-func MulInsertKeyPairs(keyPairs []*db.KeyPair) error {
-	len := len(keyPairs)
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.CreateInBatches(keyPairs, len).Error; err != nil {
-			return fmt.Errorf("[DB] create multiple key pairs to db failed: %s", err.Error())
-		}
-		return nil
-	})
-	return err
 }
 
 func FindKeyPairBySki(ski string) (*db.KeyPair, error) {

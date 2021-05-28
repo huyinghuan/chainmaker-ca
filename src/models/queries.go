@@ -27,3 +27,19 @@ func FindActiveKeyPairByConditions(userId, orgId string, usage db.CertUsage, use
 	}
 	return keyPair, nil
 }
+
+func FindCertContentByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType, certStatus db.CertStatus) ([]*db.CertContent, error) {
+	certInfoList, err := FindCertInfoByConditions(userId, orgId, usage, userType, certStatus)
+	if err != nil {
+		return nil, err
+	}
+	var res []*db.CertContent
+	for _, value := range certInfoList {
+		tmp, err := FindCertContentBySn(value.SerialNumber)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, tmp)
+	}
+	return res, nil
+}

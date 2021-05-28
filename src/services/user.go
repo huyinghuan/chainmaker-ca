@@ -80,7 +80,7 @@ func GenerateCertByCsr(generateCertByCsrReq *models.GenerateCertByCsrReq) (strin
 	certConditions.CertUsage = curCertUsage
 	certConditions.UserId = generateCertByCsrReq.UserID
 	certConditions.OrgId = generateCertByCsrReq.OrgID
-
+	certConditions.CertStatus = db.ACTIVE
 	certInfo, err := CreateCertInfo(certContent, "", &certConditions)
 	if err != nil {
 		logger.Error("Generate Cert By Csr error", zap.Error(err))
@@ -174,7 +174,7 @@ func GenCert(genCertReq *models.GenCertReq) (string, string, error) {
 	certConditions.CertUsage = curCertUsage
 	certConditions.UserId = genCertReq.UserID
 	certConditions.OrgId = genCertReq.OrgID
-
+	certConditions.CertStatus = db.ACTIVE
 	certInfo, err := CreateCertInfo(certContent, keyPair.Ski, &certConditions)
 	if err != nil {
 		return empty, empty, err
@@ -220,12 +220,62 @@ func QueryCert(queryCertReq *models.QueryCertReq) (string, error) {
 	return certContent.Content, nil
 }
 
+func QueryCertByStatus(queryCertByStatusReq *models.QueryCertByStatusReq) ([]string, error) {
+	if queryCertByStatusReq.UserID == "" {
+		err := fmt.Errorf("UserID is empty")
+		logger.Error("Query Cert failed ", zap.Error(err))
+		return nil, err
+	}
+	if queryCertByStatusReq.OrgID == "" {
+		err := fmt.Errorf("OrgID is empty")
+		logger.Error("Query Cert failed ", zap.Error(err))
+		return nil, err
+	}
+	curUserType, ok := db.Name2UserTypeMap[queryCertByStatusReq.UserType]
+	if !ok {
+		err := fmt.Errorf("the User Type does not meet the requirements")
+		logger.Error("Query Cert failed", zap.Error(err))
+		return nil, err
+	}
+	curCertUsage, ok := db.Name2CertUsageMap[queryCertByStatusReq.CertUsage]
+	if !ok {
+		err := fmt.Errorf("the Cert Usage does not meet the requirements")
+		logger.Error("Query Cert failed", zap.Error(err))
+		return nil, err
+	}
+	curCertStatus, ok := db.Name2CertStatusMap[queryCertByStatusReq.CertStatus]
+	if !ok {
+		err := fmt.Errorf("the Cert Status does not meet the requirements")
+		logger.Error("Query Cert failed", zap.Error(err))
+		return nil, err
+	}
+	certContentList, err := models.FindCertContentByConditions(queryCertByStatusReq.UserID, queryCertByStatusReq.OrgID, curCertUsage, curUserType, curCertStatus)
+	if err != nil { //找不到符合条件的证书
+		logger.Error("Query Cert By Status failed ", zap.Error(err))
+		return nil, err
+	}
+	var res []string
+	for _, value := range certContentList {
+		res = append(res, value.Content)
+	}
+	return res, nil
+}
+
 //根据SN找到证书
 //保留证书，生成个新的证书，certinfo，
 func UpdateCert(updateCert *models.UpdateCertReq) (string, error) {
-	certInfo, err := models.FindCertInfoBySn(updateCert.CertSn)
 	empty := ""
+	certInfo, err := models.FindCertInfoBySn(updateCert.CertSn)
 	if err != nil {
+		logger.Error("Update Cert failed ", zap.Error(err))
+		return empty, err
+	}
+	if err != nil {
+		logger.Error("Update Cert failed ", zap.Error(err))
+		return empty, err
+	}
+	if certInfo.CertStatus == db.EXPIRED {
+		err = fmt.Errorf("cert Has expired")
 		logger.Error("Update Cert failed ", zap.Error(err))
 		return empty, err
 	}
@@ -258,8 +308,20 @@ func UpdateCert(updateCert *models.UpdateCertReq) (string, error) {
 		logger.Error("Update Cert failed", zap.Error(err))
 		return empty, err
 	}
-	//入库证书和更新certInfo 事务
-	err = models.CreateCertAndUpdateTransaction(newcertContent, certInfo)
+	certConditions := &CertConditions{
+		UserType:   certInfo.UserType,
+		CertUsage:  certInfo.CertUsage,
+		UserId:     certInfo.UserId,
+		OrgId:      certInfo.OrgId,
+		CertStatus: db.ACTIVE,
+	}
+	//入库证书和新certInfo 还有更新老的certInfo
+	newCertInfo, err := createCertInfo(newcertContent, certInfo.PrivateKeyId, certConditions)
+	if err != nil {
+		logger.Error("Update Cert failed", zap.Error(err))
+		return empty, err
+	}
+	err = models.CreateCertAndUpdateTransaction(newcertContent, certInfo, newCertInfo)
 	if err != nil {
 		logger.Error("Update Cert failed", zap.Error(err))
 		return empty, err

@@ -77,21 +77,21 @@ func UpdateCertInfoBySn(certInfo *db.CertInfo, sn int64) error {
 
 func FindCertInfoByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType, certStatus db.CertStatus) ([]*db.CertInfo, error) {
 	var certInfos []*db.CertInfo
-	tx := db.DB.Debug().Where("cert_status = ?", db.ACTIVE)
+	tx := db.DB.Debug()
 	if userId != "" {
-		tx.Where("user_id=?", userId)
+		tx = tx.Where("user_id=?", userId)
 	}
 	if orgId != "" {
-		tx.Where("org_id=?", orgId)
+		tx = tx.Where("org_id=?", orgId)
 	}
 	if userType != 0 {
-		tx.Where("user_type =?", userType)
+		tx = tx.Where("user_type =?", userType)
 	}
 	if usage != 0 {
-		tx.Where("cert_usage=?", usage)
+		tx = tx.Where("cert_usage=?", usage)
 	}
 	if certStatus != 0 {
-		tx.Where("cert_status=?", certStatus)
+		tx = tx.Where("cert_status=?", certStatus)
 	}
 	err := tx.Find(&certInfos).Error
 	if err != nil {

@@ -102,7 +102,7 @@ func GenIntermediateCASelect(caConfig *utils.CaConfig, certUsage db.CertUsage) e
 		return err
 	}
 	//再创建一个certInfo
-	certConditions := createCertInfoCond(caConfig, certRequestConfig.CertUsage)
+	certConditions := createCertInfoCond(caConfig, certRequestConfig.CertUsage, db.ACTIVE)
 	certInfo, err := CreateCertInfo(certContent, generateKeyPair.Ski, certConditions)
 	if err != nil {
 		return err
@@ -175,11 +175,12 @@ func createCertRequestConfig(caConfig *utils.CaConfig, csrByte []byte, certUsage
 	return certRequestConfig, nil
 }
 
-func createCertInfoCond(caConfig *utils.CaConfig, certUsage db.CertUsage) *CertConditions {
+func createCertInfoCond(caConfig *utils.CaConfig, certUsage db.CertUsage, certStatus db.CertStatus) *CertConditions {
 	var certConditions CertConditions
 	certConditions.CertUsage = certUsage
 	certConditions.UserType = db.INTERMRDIARY_CA
 	certConditions.UserId = caConfig.CsrConf.CN
 	certConditions.OrgId = caConfig.CsrConf.O
+	certConditions.CertStatus = certStatus
 	return &certConditions
 }

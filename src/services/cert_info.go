@@ -22,6 +22,14 @@ func CreateCertInfo(certContent *db.CertContent, privateKeyId string, conditions
 	if err == nil {
 		return nil, fmt.Errorf("create cert info faield: cert info is exist")
 	}
+	cerInfo, err := createCertInfo(certContent, privateKeyId, conditions)
+	if err != nil {
+		return nil, err
+	}
+	return cerInfo, nil
+}
+
+func createCertInfo(certContent *db.CertContent, privateKeyId string, conditions *CertConditions) (*db.CertInfo, error) {
 	aki := certContent.Aki
 	var issueCertSn int64
 	if len(aki) != 0 {

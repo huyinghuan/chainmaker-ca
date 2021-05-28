@@ -65,19 +65,37 @@ func GenCert(c *gin.Context) {
 }
 
 func QueryCert(c *gin.Context) {
-	var querycertReq models.QueryCertReq
-	if err := c.ShouldBind(&querycertReq); err != nil {
+	var queryCertReq models.QueryCertReq
+	if err := c.ShouldBind(&queryCertReq); err != nil {
 		msg := "Parameter input error"
 		FailedRespFunc(msg, "", c)
 		return
 	}
-	certContent, err := services.QueryCert(&querycertReq)
+	certContent, err := services.QueryCert(&queryCertReq)
 	if err != nil {
 		msg := "Query Cert error"
 		FailedRespFunc(msg, "", c)
 		return
 	}
 	SuccessfulJSONRespFunc("cert", certContent, c)
+}
+func QueryCertByStatus(c *gin.Context) {
+	var queryCertByStatusReq models.QueryCertByStatusReq
+	if err := c.ShouldBind(&queryCertByStatusReq); err != nil {
+		msg := "Parameter input error"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+	certContentList, err := services.QueryCertByStatus(&queryCertByStatusReq)
+	if err != nil {
+		msg := "Query Cert By Status error"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+	for index, value := range certContentList {
+		certName := fmt.Sprint("cert", index)
+		SuccessfulJSONRespFunc(certName, value, c)
+	}
 }
 
 func UpdateCert(c *gin.Context) {
