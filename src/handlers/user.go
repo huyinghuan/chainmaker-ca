@@ -1,15 +1,12 @@
 package handlers
 
 import (
-	"archive/zip"
+	"encoding/base64"
+	"encoding/pem"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"os"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/services"
-	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,28 +30,19 @@ func GenerateCertByCsr(c *gin.Context) {
 	if err != nil {
 		fmt.Print("open file failed")
 	}
-	var tmp = make([]byte, 128)
-	for {
-		n, err := file.Read(tmp)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			msg := err.Error()
-			FailedRespFunc(msg, "", c)
-			return
-		}
-		generateCertByCsrReq.CsrBytes = append(generateCertByCsrReq.CsrBytes, tmp[:n]...)
+	generateCertByCsrReq.CsrBytes, err = services.ReadWithFile(file)
+	if err != nil {
+		msg := "Generate Cert By Csr failed"
+		FailedRespFunc(msg, err.Error(), c)
+		return
 	}
-
 	certContent, err := services.GenerateCertByCsr(&generateCertByCsrReq)
 	if err != nil {
 		msg := "Generate Cert By Csr failed"
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
-	fileName := "cert.crt"
-	SuccessfulFileRespFunc(fileName, certContent, c)
+	SuccessfulJSONRespFunc("cert", certContent, c)
 }
 
 func GenCert(c *gin.Context) {
@@ -65,42 +53,82 @@ func GenCert(c *gin.Context) {
 		return
 	}
 	certContent, privateKey, err := services.GenCert(&genCertReq)
-	//这里可以拿到私钥，分别存两个文件后，压缩打包
-	//未完成，待写
 	if err != nil {
 		msg := "Gen Cert failed"
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
-	fileName := "cert&privateKey.zip"
-	file, err := os.Create(utils.DefaultWorkDirectory + fileName)
-	if err != nil {
-		msg := "create file failed"
-		FailedRespFunc(msg, err.Error(), c)
+	SuccessfulJSONRespFunc("cert", certContent, c)
+	if privateKey != "" {
+		SuccessfulJSONRespFunc("privateKey", privateKey, c)
+	}
+}
+
+func QueryCert(c *gin.Context) {
+	var querycertReq models.QueryCertReq
+	if err := c.ShouldBind(&querycertReq); err != nil {
+		msg := "Parameter input error"
+		FailedRespFunc(msg, "", c)
 		return
 	}
-	defer file.Close()
-	writer := zip.NewWriter(file)
-	f, err := writer.Create("cert.crt")
+	certContent, err := services.QueryCert(&querycertReq)
 	if err != nil {
-		msg := "compress file failed"
-		FailedRespFunc(msg, err.Error(), c)
+		msg := "Query Cert error"
+		FailedRespFunc(msg, "", c)
 		return
 	}
-	f.Write(certContent)
-	f, err = writer.Create("privateKey.key")
-	if err != nil {
-		msg := "compress file failed"
-		FailedRespFunc(msg, err.Error(), c)
+	SuccessfulJSONRespFunc("cert", certContent, c)
+}
+
+func UpdateCert(c *gin.Context) {
+	var updatecertReq models.UpdateCertReq
+	if err := c.ShouldBind(&updatecertReq); err != nil {
+		msg := "Parameter input error"
+		FailedRespFunc(msg, "", c)
 		return
 	}
-	f.Write(privateKey)
-	writer.Close()
-	content, err := ioutil.ReadFile(utils.DefaultWorkDirectory + fileName)
+	certContent, err := services.UpdateCert(&updatecertReq)
 	if err != nil {
-		msg := "read file failed"
-		FailedRespFunc(msg, err.Error(), c)
+		msg := "Update Cert error"
+		FailedRespFunc(msg, "", c)
 		return
 	}
-	SuccessfulFileRespFunc(fileName, content, c)
+	SuccessfulJSONRespFunc("cert", certContent, c)
+}
+
+func RevokedCert(c *gin.Context) {
+	var revokedCertReq models.RevokedCertReq
+	if err := c.ShouldBind(&revokedCertReq); err != nil {
+		msg := "Parameter input error"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+	crlList, err := services.RevokedCert(&revokedCertReq)
+	if err != nil {
+		msg := " Revoked Cert failed"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+
+	crlList = pem.EncodeToMemory(&pem.Block{Type: "CRL", Bytes: crlList})
+	reCrlList := base64.StdEncoding.EncodeToString(crlList)
+	SuccessfulJSONRespFunc("crlList", reCrlList, c)
+}
+
+func CrlList(c *gin.Context) {
+	var crlListReq models.CrlListReq
+	if err := c.ShouldBind(&crlListReq); err != nil {
+		msg := "Parameter input error"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+	crlList, err := services.CrlList(&crlListReq)
+	if err != nil {
+		msg := "CrlList get failed"
+		FailedRespFunc(msg, "", c)
+		return
+	}
+	crlList = pem.EncodeToMemory(&pem.Block{Type: "CRL", Bytes: crlList})
+	reCrlList := base64.StdEncoding.EncodeToString(crlList)
+	SuccessfulJSONRespFunc("crlList", reCrlList, c)
 }

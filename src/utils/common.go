@@ -17,6 +17,7 @@ const (
 	DefaultRootOrg = "wx-root"
 
 	DefaultWorkDirectory = "./"
+	DefaultTime          = 4
 )
 
 var HashType2NameMap = map[crypto.HashType]string{
@@ -44,14 +45,14 @@ const (
 var CaType2NameMap = map[CaType]string{
 	TLS:    "tls",
 	SIGN:   "sign",
-	SOLO:   "solo",
-	DOUBLE: "double",
+	SOLO:   "single_root",
+	DOUBLE: "double_root",
 }
 
 //Name2CaTypeMap string name to ca type
 var Name2CaTypeMap = map[string]CaType{
-	"tls":    TLS,
-	"sign":   SIGN,
-	"solo":   SOLO,
-	"double": DOUBLE,
+	"tls":         TLS,
+	"sign":        SIGN,
+	"solo_root":   SOLO,
+	"double_root": DOUBLE,
 }

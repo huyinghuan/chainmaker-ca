@@ -20,7 +20,7 @@ func InitServer() {
 	}
 	err = ProductIntermediateCA()
 	if err != nil {
-		logger.Error("[init] create intermediate ca failed: %s", zap.Error(err))
+		logger.Error("[init] Product IntermediateCA failed: %s", zap.Error(err))
 		return
 	}
 }

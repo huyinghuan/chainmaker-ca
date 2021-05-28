@@ -234,10 +234,11 @@ func createCSR(csrConf *CSRRequestConfig) ([]byte, error) {
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: data}), nil
 }
 
-func getKeyUsageAndExtKeyUsage(userType db.UserType, certUsage db.CertUsage) (x509.KeyUsage, []x509.ExtKeyUsage) {
+func getKeyUsageAndExtKeyUsage(userType db.UserType, certUsage db.CertUsage) (x509.KeyUsage, []x509.ExtKeyUsage, error) {
 	var (
 		keyUsage    x509.KeyUsage
 		extKeyUsage []x509.ExtKeyUsage
+		err         error
 	)
 	if userType == db.INTERMRDIARY_CA || userType == db.ROOT_CA {
 		keyUsage = x509.KeyUsageCRLSign | x509.KeyUsageCertSign
@@ -251,6 +252,9 @@ func getKeyUsageAndExtKeyUsage(userType db.UserType, certUsage db.CertUsage) (x5
 			keyUsage = x509.KeyUsageDigitalSignature | x509.KeyUsageContentCommitment
 		case db.SIGN:
 			keyUsage = x509.KeyUsageDigitalSignature | x509.KeyUsageContentCommitment
+		case db.TLS:
+			err = fmt.Errorf("the Cert Usage does not match the UserType")
+			return keyUsage, extKeyUsage, err
 		}
 	}
 	if userType == db.NODE_COMMON || userType == db.NODE_CONSENSUS {
@@ -263,7 +267,7 @@ func getKeyUsageAndExtKeyUsage(userType db.UserType, certUsage db.CertUsage) (x5
 			extKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
 		}
 	}
-	return keyUsage, extKeyUsage
+	return keyUsage, extKeyUsage, nil
 }
 
 type CSRRequest struct {
@@ -321,7 +325,10 @@ func generateCertTemplate(genConf *GenCertRequestConfig) (*x509.Certificate, err
 		dnsName = genConf.CommonName
 	}
 
-	keyUsage, extKeyUsage := getKeyUsageAndExtKeyUsage(genConf.UserType, genConf.CertUsage)
+	keyUsage, extKeyUsage, err := getKeyUsageAndExtKeyUsage(genConf.UserType, genConf.CertUsage)
+	if err != nil {
+		return nil, err
+	}
 	notBefore := time.Now().Add(-10 * time.Minute).UTC()
 
 	template := &x509.Certificate{

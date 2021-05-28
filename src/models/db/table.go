@@ -45,7 +45,6 @@ type CertInfo struct {
 	TableModel
 	SerialNumber int64
 	PrivateKeyId string
-	CertStatus   CertStatus
 	IssuerSn     int64
 	P2pNodeId    string
 	UserType     UserType  `gorm:"uniqueIndex:usertype_certusage_userid_orgid_index"`
@@ -68,6 +67,7 @@ type KeyPair struct {
 //RevokedCert revoked cert
 type RevokedCert struct {
 	TableModel
+	OrgId            string
 	RevokedCertSN    int64
 	Reason           string
 	RevokedStartTime int64

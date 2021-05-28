@@ -1,12 +1,15 @@
 package services
 
 import (
+	"archive/zip"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net"
 	"os"
 	"path"
@@ -232,14 +235,32 @@ func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []
 	//先去找相同OrgID的中间ca
 	certInfo, err := models.FindCertInfoByConditions("", orgID, certUsage, 0)
 	if err != nil || certInfo.UserType != db.INTERMRDIARY_CA { //去找rootca签
-		certInfo, _ = models.FindCertInfoByConditions("", "", certUsage, db.ROOT_CA)
+		certInfo, err = models.FindCertInfoByConditions("", "", certUsage, db.ROOT_CA)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
-	certContent, _ := models.FindCertContentBySn(certInfo.SerialNumber)
-	keyPair, _ := models.FindKeyPairBySki(certInfo.PrivateKeyId)
-	reCertContent, _ := base64.StdEncoding.DecodeString(certContent.Content)
+	certContent, err := models.FindCertContentBySn(certInfo.SerialNumber)
+	if err != nil {
+		return nil, nil, err
+	}
+	keyPair, err := models.FindKeyPairBySki(certInfo.PrivateKeyId)
+	if err != nil {
+		return nil, nil, err
+	}
+	reCertContent, err := base64.StdEncoding.DecodeString(certContent.Content)
+	if err != nil {
+		return nil, nil, err
+	}
 	//需要一个能加密的类型密钥，不要字符串,需要再想办法转换
-	dePrivatKey, _ := base64.StdEncoding.DecodeString(keyPair.PrivateKey)
-	privateKey, _ := KeyBytesToPrivateKey(dePrivatKey, keyPair.PrivateKeyPwd, keyPair.HashType)
+	dePrivatKey, err := base64.StdEncoding.DecodeString(keyPair.PrivateKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	privateKey, err := KeyBytesToPrivateKey(dePrivatKey, keyPair.PrivateKeyPwd, keyPair.HashType)
+	if err != nil {
+		return nil, nil, err
+	}
 	return privateKey, reCertContent, nil
 }
 
@@ -254,4 +275,65 @@ func covertCertUsage(certUsage db.CertUsage) db.CertUsage {
 		return db.SIGN
 	}
 	return db.TLS
+}
+
+func ReadWithFile(file multipart.File) ([]byte, error) {
+	var result []byte
+	var tmp = make([]byte, 128)
+	for {
+		n, err := file.Read(tmp)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, tmp[:n]...)
+	}
+	return result, nil
+}
+
+func ZipCertAndPrivateKey(certContent []byte, privateKey []byte) ([]byte, error) {
+	fileName := "cert&privateKey.zip"
+	file, err := os.Create(utils.DefaultWorkDirectory + fileName)
+	if err != nil {
+		return nil, err
+	}
+	writer := zip.NewWriter(file)
+	f, err := writer.Create("cert.crt")
+	if err != nil {
+		return nil, err
+	}
+	f.Write(certContent)
+	if privateKey != nil {
+		f, err = writer.Create("privateKey.key")
+		if err != nil {
+			return nil, err
+		}
+		f.Write(privateKey)
+	}
+	writer.Close()
+	content, err := ioutil.ReadFile(utils.DefaultWorkDirectory + fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(utils.DefaultWorkDirectory + fileName)
+	defer file.Close()
+	return content, nil
+}
+
+func GetX509Certificate(Sn int64) (*x509.Certificate, error) {
+	certContent, err := models.FindCertContentBySn(Sn)
+	if err != nil {
+		return nil, err
+	}
+	certContentByte, err := base64.StdEncoding.DecodeString(certContent.Content)
+	if err != nil {
+		return nil, err
+	}
+	certContentByteUse, err := ParseCertificate(certContentByte)
+	if err != nil {
+		return nil, err
+	}
+	return certContentByteUse, nil
 }

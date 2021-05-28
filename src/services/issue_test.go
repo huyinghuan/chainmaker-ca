@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -66,7 +67,7 @@ func TestIssueCertificate(t *testing.T) {
 	csrRequest.PrivateKey = privateKey
 	csrRequest.Country = "China"
 	csrRequest.Locality = "default"
-	csrRequest.OrgId = "default"
+	csrRequest.OrgId = "org1"
 	csrRequest.Province = "default"
 	csrRequest.UserId = "default"
 	csrRequest.UserType = db.USER_ADMIN
@@ -87,7 +88,7 @@ func TestIssueCertificate(t *testing.T) {
 	}
 	certRequestConf.CsrBytes = csrByte
 	certRequestConf.ExpireYear = 2
-	certRequestConf.CertUsage = db.SIGN
+	certRequestConf.CertUsage = db.TLS
 	certRequestConf.UserType = db.USER_ADMIN
 	//接着去拿一个证书流IssuerCertBytes文件 通过自签函数IssueCertBySelf 随便生成一个
 
@@ -116,13 +117,73 @@ func TestIssueCertificate(t *testing.T) {
 	}
 	//测试对应函数
 
-	_, err = IssueCertificate(&certRequestConf)
+	certContent, err = IssueCertificate(&certRequestConf)
 	if err != nil {
-		fmt.Print("Issue Certificate failed")
+		fmt.Print("Issue Certificate failed ", err.Error())
+		return
 	}
+	reCertContent, _ := base64.StdEncoding.DecodeString(certContent.Content)
+	file, _ := os.Create("cert.crt")
+	defer file.Close()
+	file.Write(reCertContent)
+
 }
 
 func TestCsr(t *testing.T) {
+	var csrRequest CSRRequest
+	//先createkeypair
+	var privateKeyTypeStr string
+	var hashTypeStr string
+	var privateKeyPwd string
+	privateKeyTypeStr = "ECC_NISTP256" //"SM2"
+	hashTypeStr = "SHA256"             //"SM3"
+	privateKeyPwd = "123456"
+	privateKey, _, err := CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd)
+	if err != nil {
+		fmt.Println(err.Error())
+		fmt.Print("Create KeyPair Error")
+		return
+	}
+	//构造数据csrRequest的假数据
+	csrRequest.PrivateKey = privateKey
+	csrRequest.Country = "China"
+	csrRequest.Locality = "default"
+	csrRequest.OrgId = "org1"
+	csrRequest.Province = "default"
+	csrRequest.UserId = "default"
+	csrRequest.UserType = db.USER_ADMIN
+
+	//用BuildCSRReqConf获得CSRRequestConfig
+	csrRequestConf := BuildCSRReqConf(&csrRequest)
+	//用createCSR获得csr流文件
+	csrByte, err := createCSR(csrRequestConf)
+	if err != nil {
+		fmt.Print("createCSR byte failed")
+	}
+	file, err := os.Create("./test.csr")
+	if err != nil {
+		fmt.Print(err.Error())
+		return
+	}
+	defer file.Close()
+	file.Write(csrByte)
+}
+
+func TestPasrseCsr(t *testing.T) {
+	testCsr, err := ioutil.ReadFile("./test.csr")
+	if err != nil {
+		fmt.Print("read failed")
+	}
+	x509Req, err := ParseCsr(testCsr)
+	if err != nil {
+		fmt.Print("ParseCsr failed")
+		return
+	}
+	fmt.Printf("签名算法是%d ", x509Req.SignatureAlgorithm)
+	fmt.Printf("密钥算法算法是%d ", x509Req.PublicKeyAlgorithm)
+}
+
+func TestCsr2(t *testing.T) {
 	var csrRequest CSRRequest
 	//先createkeypair
 	var privateKeyTypeStr string
