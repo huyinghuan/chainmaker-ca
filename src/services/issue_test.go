@@ -67,7 +67,7 @@ func TestIssueCertificate(t *testing.T) {
 	csrRequest.PrivateKey = privateKey
 	csrRequest.Country = "China"
 	csrRequest.Locality = "default"
-	csrRequest.OrgId = "default"
+	csrRequest.OrgId = "org1"
 	csrRequest.Province = "default"
 	csrRequest.UserId = "default"
 	csrRequest.UserType = db.USER_ADMIN
@@ -88,7 +88,7 @@ func TestIssueCertificate(t *testing.T) {
 	}
 	certRequestConf.CsrBytes = csrByte
 	certRequestConf.ExpireYear = 2
-	certRequestConf.CertUsage = db.SIGN
+	certRequestConf.CertUsage = db.TLS
 	certRequestConf.UserType = db.USER_ADMIN
 	//接着去拿一个证书流IssuerCertBytes文件 通过自签函数IssueCertBySelf 随便生成一个
 
@@ -117,10 +117,16 @@ func TestIssueCertificate(t *testing.T) {
 	}
 	//测试对应函数
 
-	_, err = IssueCertificate(&certRequestConf)
+	certContent, err = IssueCertificate(&certRequestConf)
 	if err != nil {
-		fmt.Print("Issue Certificate failed")
+		fmt.Print("Issue Certificate failed ", err.Error())
+		return
 	}
+	reCertContent, _ := base64.StdEncoding.DecodeString(certContent.Content)
+	file, _ := os.Create("cert.crt")
+	defer file.Close()
+	file.Write(reCertContent)
+
 }
 
 func TestCsr(t *testing.T) {
