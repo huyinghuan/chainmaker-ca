@@ -63,7 +63,7 @@ func TestGenCert(t *testing.T) {
 		OrgID:         "org2",
 		UserID:        "default",
 		UserType:      "admin",
-		CertUsage:     "tls",
+		CertUsage:     "tls-enc",
 		PrivateKeyPwd: "123456",
 		Country:       "China",
 		Locality:      "Haidian",

@@ -163,10 +163,14 @@ func GenCert(genCertReq *models.GenCertReq) (string, string, error) {
 	certRequestConfig.CertUsage = curCertUsage
 	certRequestConfig.UserType = curUserType
 	//再调用
-	certRequestConfig.IssuerPrivateKey, certRequestConfig.IssuerCertBytes, _ = searchIssuedCa(genCertReq.OrgID, curCertUsage)
+	certRequestConfig.IssuerPrivateKey, certRequestConfig.IssuerCertBytes, err = searchIssuedCa(genCertReq.OrgID, curCertUsage)
+	if err != nil {
+		logger.Error("issue certificate failed", zap.Error(err))
+		return empty, empty, err
+	}
 	certContent, err = IssueCertificate(&certRequestConfig)
 	if err != nil {
-		logger.Error("Create Key Pair failed", zap.Error(err))
+		logger.Error("issue certificate failed", zap.Error(err))
 		return empty, empty, err
 	}
 	var certConditions CertConditions

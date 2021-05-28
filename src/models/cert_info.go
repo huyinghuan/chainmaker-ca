@@ -48,16 +48,16 @@ func FindActiveCertInfoByConditions(userId, orgId string, usage db.CertUsage, us
 	var certInfo db.CertInfo
 	tx := db.DB.Debug().Where("cert_status = ?", db.ACTIVE)
 	if userId != "" {
-		tx.Where("user_id=?", userId)
+		tx = tx.Where("user_id=?", userId)
 	}
 	if orgId != "" {
-		tx.Where("org_id=?", orgId)
+		tx = tx.Where("org_id=?", orgId)
 	}
 	if userType != 0 {
-		tx.Where("user_type =?", userType)
+		tx = tx.Where("user_type =?", userType)
 	}
 	if usage != 0 {
-		tx.Where("cert_usage=?", usage)
+		tx = tx.Where("cert_usage=?", usage)
 	}
 	err := tx.First(&certInfo).Error
 	if err != nil {

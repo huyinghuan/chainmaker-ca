@@ -269,7 +269,11 @@ func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []
 func covertCertUsage(certUsage db.CertUsage) db.CertUsage {
 	caType, _ := getCaType()
 	if caType == utils.DOUBLE {
-		return certUsage
+		if certUsage == db.SIGN {
+			return db.SIGN
+		} else {
+			return db.TLS
+		}
 	}
 	if caType == utils.SOLO || caType == utils.SIGN {
 		return db.SIGN
