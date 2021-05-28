@@ -222,3 +222,17 @@ func TestCsr2(t *testing.T) {
 	defer file.Close()
 	file.Write(csrByte)
 }
+
+func TestPasrseCsr(t *testing.T) {
+	testCsr, err := ioutil.ReadFile("./test.csr")
+	if err != nil {
+		fmt.Print("read failed")
+	}
+	x509Req, err := ParseCsr(testCsr)
+	if err != nil {
+		fmt.Print("ParseCsr failed")
+		return
+	}
+	fmt.Printf("签名算法是%d ", x509Req.SignatureAlgorithm)
+	fmt.Printf("密钥算法算法是%d ", x509Req.PublicKeyAlgorithm)
+}
