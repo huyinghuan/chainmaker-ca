@@ -69,7 +69,10 @@ func GenerateCertByCsr(generateCertByCsrReq *models.GenerateCertByCsrReq) (strin
 	//若没有 就直接找rootCA签就可以了，OrgID就可以了
 	//需要完成一个函数，找到可签发人的私钥和证书
 
-	certRequestConfig.IssuerPrivateKey, certRequestConfig.IssuerCertBytes, _ = searchIssuedCa(generateCertByCsrReq.OrgID, curCertUsage)
+	certRequestConfig.IssuerPrivateKey, certRequestConfig.IssuerCertBytes, err = searchIssuedCa(generateCertByCsrReq.OrgID, curCertUsage)
+	if err != nil {
+		return empty, err
+	}
 	certContent, err = IssueCertificate(&certRequestConfig)
 	if err != nil {
 		return empty, err

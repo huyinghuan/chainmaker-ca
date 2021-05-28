@@ -30,7 +30,7 @@ func TestGenerateCertByCsr(t *testing.T) {
 	csrRequest.PrivateKey = privateKey
 	csrRequest.Country = "China"
 	csrRequest.Locality = "default"
-	csrRequest.OrgId = "org1"
+	csrRequest.OrgId = "org2"
 	csrRequest.Province = "default"
 	csrRequest.UserId = "default"
 	csrRequest.UserType = db.USER_ADMIN
@@ -43,7 +43,7 @@ func TestGenerateCertByCsr(t *testing.T) {
 		fmt.Print("createCSR byte failed")
 	}
 	generateCertByCsrReq := &models.GenerateCertByCsrReq{
-		OrgID:     "org1",
+		OrgID:     "org7",
 		UserID:    "default",
 		UserType:  "admin",
 		CertUsage: "sign",

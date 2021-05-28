@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/base64"
 	"encoding/pem"
-	"fmt"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/services"
@@ -33,8 +32,11 @@ func GenerateCertByCsr(c *gin.Context) {
 	}
 	file, err := upLoadFile.Open()
 	if err != nil {
-		fmt.Print("open file failed")
+		msg := "Generate Cert By Csr failed"
+		FailedRespFunc(msg, err.Error(), c)
+		return
 	}
+	defer file.Close()
 	generateCertByCsrReq.CsrBytes, err = services.ReadWithFile(file)
 	if err != nil {
 		msg := "Generate Cert By Csr failed"
@@ -47,7 +49,7 @@ func GenerateCertByCsr(c *gin.Context) {
 		FailedRespFunc(msg, err.Error(), c)
 		return
 	}
-	SuccessfulJSONRespFunc(err.Error(), certContent, c)
+	SuccessfulJSONRespFunc("", certContent, c)
 }
 
 func GenCert(c *gin.Context) {
