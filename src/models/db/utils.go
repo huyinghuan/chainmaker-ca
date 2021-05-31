@@ -51,14 +51,14 @@ var Name2UserTypeMap = map[string]UserType{
 
 //CertStatus2NameMap CertStatus to string name
 var CertStatus2NameMap = map[CertStatus]string{
-	ACTIVE:  "ACTIVE",
-	EXPIRED: "EXPIRED",
+	ACTIVE:  "active",
+	EXPIRED: "expired",
 }
 
 //Name2CertStatusMap string name to cert status
 var Name2CertStatusMap = map[string]CertStatus{
-	"ACTIVE":  ACTIVE,
-	"EXPIRED": EXPIRED,
+	"active":  ACTIVE,
+	"expired": EXPIRED,
 }
 
 //CertUsage2NameMap .

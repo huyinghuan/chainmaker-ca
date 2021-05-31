@@ -10,20 +10,17 @@ import (
 	"go.uber.org/zap"
 )
 
-//从配置文件里面先检测是否有Intermediate是否为空
-//为空就不生成中间的CA，否则拉起配置好的中间CA
-func ProductIntermediateCA() error {
-	n := len(allConfig.IntermediateCaConf)
-	if n == 0 {
+func CreateIntermediateCA() error {
+	if checkIntermediateCaConf() == nil {
 		return nil
 	}
-	for i := 0; i < n; i++ {
+	for i := 0; i < len(checkIntermediateCaConf()); i++ {
 		if exsitIntermediateCA(allConfig.IntermediateCaConf[i]) {
 			continue
 		}
-		err := genIntermediateCA(allConfig.IntermediateCaConf[i])
+		err := createIntermediateCA(allConfig.IntermediateCaConf[i])
 		if err != nil {
-			logger.Error("Product Intermediate CA failed", zap.Error(err))
+			logger.Error("product intermediate CA failed", zap.Error(err))
 			return err
 		}
 	}
@@ -34,16 +31,19 @@ func exsitIntermediateCA(caConfig *utils.CaConfig) bool {
 	return err == nil
 }
 
-func genIntermediateCA(caConfig *utils.CaConfig) error {
-	caType, _ := getCaType()
-	if caType == utils.SOLO || caType == utils.SIGN || caType == utils.TLS {
-		err := GenIntermediateCASoloOrSignOrTls(caConfig)
+func createIntermediateCA(caConfig *utils.CaConfig) error {
+	caType, err := getCaType()
+	if err != nil {
+		return err
+	}
+	if caType == utils.SINGLE_ROOT || caType == utils.SIGN || caType == utils.TLS {
+		err := GenSingleIntermediateCA(caConfig, caType)
 		if err != nil {
 			return err
 		}
 	}
-	if caType == utils.DOUBLE {
-		err := GenIntermediateCADouble(caConfig)
+	if caType == utils.DOUBLE_ROOT {
+		err := GenDoubleIntermediateCA(caConfig)
 		if err != nil {
 			return err
 		}
@@ -51,49 +51,43 @@ func genIntermediateCA(caConfig *utils.CaConfig) error {
 	return nil
 }
 
-func GenIntermediateCASoloOrSignOrTls(caConfig *utils.CaConfig) error {
-	caType, err := getCaType()
-	if err != nil {
-		return err
-	}
+func GenSingleIntermediateCA(caConfig *utils.CaConfig, caType utils.CaType) error {
 	if caType == utils.TLS {
-		err = GenIntermediateCASelect(caConfig, db.TLS)
-		if err != nil {
-			return err
-		}
-	} else {
-		err := GenIntermediateCASelect(caConfig, db.SIGN)
+		err := genIntermediateCA(caConfig, db.TLS)
 		if err != nil {
 			return err
 		}
 	}
-	return nil
-}
-func GenIntermediateCADouble(caConfig *utils.CaConfig) error {
-	//这个需要签两次
-	err := GenIntermediateCASelect(caConfig, db.SIGN)
-	if err != nil {
-		return err
-	}
-	err = GenIntermediateCASelect(caConfig, db.TLS)
+	err := genIntermediateCA(caConfig, db.SIGN)
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func GenIntermediateCASelect(caConfig *utils.CaConfig, certUsage db.CertUsage) error {
-	//先createkeypair
-	generatePrivateKey, generateKeyPair, err := genPrivateKey(caConfig)
+func GenDoubleIntermediateCA(caConfig *utils.CaConfig) error {
+	err := genIntermediateCA(caConfig, db.SIGN)
 	if err != nil {
 		return err
 	}
-	csrRequest := createCsrReq(caConfig, generatePrivateKey)
-	csrRequestConf := BuildCSRReqConf(csrRequest)
+	err = genIntermediateCA(caConfig, db.TLS)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func genIntermediateCA(caConfig *utils.CaConfig, certUsage db.CertUsage) error {
+	keyTypeStr := allConfig.GetKeyType()
+	hashTypeStr := allConfig.GetHashType()
+	generatePrivateKey, generateKeyPair, err := CreateKeyPair(keyTypeStr, hashTypeStr, caConfig.CertConf.PrivateKeyPwd)
+	if err != nil {
+		return err
+	}
+	csrRequestConf := createCsrReqConf(caConfig, generatePrivateKey)
 	csrByte, err := createCSR(csrRequestConf)
 	if err != nil {
 		return err
 	}
-	certRequestConfig, err := createCertRequestConfig(caConfig, csrByte, certUsage)
+	certRequestConfig, err := createIMCACertReqConf(caConfig, csrByte, certUsage)
 	if err != nil {
 		return err
 	}
@@ -101,13 +95,17 @@ func GenIntermediateCASelect(caConfig *utils.CaConfig, certUsage db.CertUsage) e
 	if err != nil {
 		return err
 	}
-	//再创建一个certInfo
-	certConditions := createCertInfoCond(caConfig, certRequestConfig.CertUsage, db.ACTIVE)
+	certConditions := &CertConditions{
+		UserType:   db.INTERMRDIARY_CA,
+		CertUsage:  certUsage,
+		UserId:     caConfig.CsrConf.CN,
+		OrgId:      caConfig.CsrConf.O,
+		CertStatus: db.ACTIVE,
+	}
 	certInfo, err := CreateCertInfo(certContent, generateKeyPair.Ski, certConditions)
 	if err != nil {
 		return err
 	}
-	//这里入库
 	err = models.CreateCertTransaction(certContent, certInfo, generateKeyPair)
 	if err != nil {
 		return err
@@ -115,29 +113,19 @@ func GenIntermediateCASelect(caConfig *utils.CaConfig, certUsage db.CertUsage) e
 	return nil
 }
 
-func genPrivateKey(caConfig *utils.CaConfig) (privateKey crypto.PrivateKey, keyPair *db.KeyPair, err error) {
-	var privateKeyTypeStr string
-	var hashTypeStr string
-	var privateKeyPwd string
-	//这些加密的方式和哈希的方式是从配置文件中读取的
-	privateKeyTypeStr = allConfig.GetKeyType()
-	hashTypeStr = allConfig.GetHashType()
-	privateKeyPwd = caConfig.CertConf.PrivateKeyPwd
-	return CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd)
-}
-func createCsrReq(caConfig *utils.CaConfig, privateKey crypto.PrivateKey) *CSRRequest {
-	var csrRequest CSRRequest
-	csrRequest.PrivateKey = privateKey
-	csrRequest.Country = caConfig.CsrConf.Country
-	csrRequest.Locality = caConfig.CsrConf.Locality
-	csrRequest.OrgId = caConfig.CsrConf.O
-	csrRequest.Province = caConfig.CsrConf.Province
-	csrRequest.UserId = caConfig.CsrConf.CN
-	csrRequest.UserType = db.INTERMRDIARY_CA
-	return &csrRequest
+func createCsrReqConf(caConfig *utils.CaConfig, privateKey crypto.PrivateKey) *CSRRequestConfig {
+	return &CSRRequestConfig{
+		PrivateKey:         privateKey,
+		Country:            caConfig.CsrConf.Country,
+		Locality:           caConfig.CsrConf.Locality,
+		Province:           caConfig.CsrConf.Province,
+		OrganizationalUnit: caConfig.CsrConf.OU,
+		Organization:       caConfig.CsrConf.O,
+		CommonName:         caConfig.CsrConf.CN,
+	}
 }
 
-func createCertRequestConfig(caConfig *utils.CaConfig, csrByte []byte, certUsage db.CertUsage) (*CertRequestConfig, error) {
+func createIMCACertReqConf(caConfig *utils.CaConfig, csrByte []byte, certUsage db.CertUsage) (*CertRequestConfig, error) {
 	certInfo, err := models.FindActiveCertInfoByConditions("", "", certUsage, db.ROOT_CA)
 	if err != nil {
 		return nil, err
@@ -150,7 +138,7 @@ func createCertRequestConfig(caConfig *utils.CaConfig, csrByte []byte, certUsage
 	if err != nil {
 		return nil, err
 	}
-	reCertContent, err := base64.StdEncoding.DecodeString(certContent.Content)
+	deCertContent, err := base64.StdEncoding.DecodeString(certContent.Content)
 	if err != nil {
 		return nil, err
 	}
@@ -162,10 +150,14 @@ func createCertRequestConfig(caConfig *utils.CaConfig, csrByte []byte, certUsage
 	if err != nil {
 		return nil, err
 	}
+	hashType, err := checkHashType(allConfig.GetHashType())
+	if err != nil {
+		return nil, err
+	}
 	certRequestConfig := &CertRequestConfig{
-		HashType:         crypto.HashAlgoMap[hashTypeFromConfig()],
+		HashType:         hashType,
 		IssuerPrivateKey: issueprivateKey,
-		IssuerCertBytes:  reCertContent,
+		IssuerCertBytes:  deCertContent,
 		ExpireYear:       int32(expireYearFromConfig()),
 		CertUsage:        certUsage,
 		UserType:         db.INTERMRDIARY_CA,
@@ -173,14 +165,4 @@ func createCertRequestConfig(caConfig *utils.CaConfig, csrByte []byte, certUsage
 	}
 
 	return certRequestConfig, nil
-}
-
-func createCertInfoCond(caConfig *utils.CaConfig, certUsage db.CertUsage, certStatus db.CertStatus) *CertConditions {
-	var certConditions CertConditions
-	certConditions.CertUsage = certUsage
-	certConditions.UserType = db.INTERMRDIARY_CA
-	certConditions.UserId = caConfig.CsrConf.CN
-	certConditions.OrgId = caConfig.CsrConf.O
-	certConditions.CertStatus = certStatus
-	return &certConditions
 }

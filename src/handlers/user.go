@@ -12,8 +12,8 @@ import (
 //通过CSR流文件申请证书
 
 type CertAndPrivateKey struct {
-	Cert       string
-	PrivateKey string
+	Cert       string `json:"cert"`
+	PrivateKey string `json:"privateKey"`
 }
 
 func GenerateCertByCsr(c *gin.Context) {

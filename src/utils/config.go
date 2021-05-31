@@ -133,42 +133,6 @@ func GetDBConfig() string {
 	return mysqlURL
 }
 
-func GetBaseConf() (*BaseConf, error) {
-	var baseConf BaseConf
-	err := viper.UnmarshalKey("base_config", &baseConf)
-	if err != nil {
-		return nil, fmt.Errorf("[config] get base config failed: %s", err.Error())
-	}
-	return &baseConf, nil
-}
-
-func GetRootCaConf() (*CaConfig, error) {
-	var rootCaConf CaConfig
-	err := viper.UnmarshalKey("root_config", &rootCaConf)
-	if err != nil {
-		return nil, fmt.Errorf("[config] get root config failed: %s", err.Error())
-	}
-	return &rootCaConf, nil
-}
-
-func GetIntermediateCaConf() ([]*CaConfig, error) {
-	var intermediateCaConf []*CaConfig
-	err := viper.UnmarshalKey("Intermediate_config", &intermediateCaConf)
-	if err != nil {
-		return nil, fmt.Errorf("[config] get intermediate config failed: %s", err.Error())
-	}
-	return intermediateCaConf, nil
-}
-
-func GetDoubleRootPathConf() (*DoubleRootPathConf, error) {
-	var doubleRootPathConf DoubleRootPathConf
-	err := viper.UnmarshalKey("rootpath_double", &doubleRootPathConf)
-	if err != nil {
-		return nil, fmt.Errorf("[config] get double root path config failed: %s", err.Error())
-	}
-	return &doubleRootPathConf, nil
-}
-
 func GetAllConf() (*AllConfig, error) {
 	var allConf AllConfig
 	err := viper.Unmarshal(&allConf)

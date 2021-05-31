@@ -18,7 +18,7 @@ func InitServer() {
 		logger.Error("[init] create root ca failed: %s", zap.Error(err))
 		return
 	}
-	err = ProductIntermediateCA()
+	err = CreateIntermediateCA()
 	if err != nil {
 		logger.Error("[init] Product IntermediateCA failed: %s", zap.Error(err))
 		return

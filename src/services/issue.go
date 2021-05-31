@@ -253,7 +253,7 @@ func getKeyUsageAndExtKeyUsage(userType db.UserType, certUsage db.CertUsage) (x5
 		case db.SIGN:
 			keyUsage = x509.KeyUsageDigitalSignature | x509.KeyUsageContentCommitment
 		case db.TLS:
-			err = fmt.Errorf("the Cert Usage does not match the UserType")
+			err = fmt.Errorf("the cert usage does not match the user type")
 			return keyUsage, extKeyUsage, err
 		}
 	}

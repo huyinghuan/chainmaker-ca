@@ -177,6 +177,13 @@ func expireYearFromConfig() int {
 	return allConfig.GetDefaultExpireTime()
 }
 
+func checkIntermediateCaConf() []*utils.CaConfig {
+	if len(allConfig.GetIntermediateConf()) == 0 {
+		return nil
+	}
+	return allConfig.GetIntermediateConf()
+}
+
 func whetherOrNotProvideService(orgID string, certUsage db.CertUsage) bool {
 	if canIssueCa() {
 		caType, _ := getCaType()
@@ -268,14 +275,14 @@ func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []
 //这里已经判断完可以提供了服务了才能使用
 func covertCertUsage(certUsage db.CertUsage) db.CertUsage {
 	caType, _ := getCaType()
-	if caType == utils.DOUBLE {
+	if caType == utils.DOUBLE_ROOT {
 		if certUsage == db.SIGN {
 			return db.SIGN
 		} else {
 			return db.TLS
 		}
 	}
-	if caType == utils.SOLO || caType == utils.SIGN {
+	if caType == utils.SINGLE_ROOT || caType == utils.SIGN {
 		return db.SIGN
 	}
 	return db.TLS

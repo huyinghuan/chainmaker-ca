@@ -35,23 +35,23 @@ func LoadRootCaFromConfig(rootConfig *utils.CaConfig) error {
 		return err
 	}
 	switch caType {
-	case utils.DOUBLE:
+	case utils.DOUBLE_ROOT:
 		err := LoadDoubleRootCa()
 		if err != nil {
 			return err
 		}
-	case utils.SOLO:
-		err := LoadSoloRootCa(rootConfig, db.SIGN)
+	case utils.SINGLE_ROOT:
+		err := LoadSingleRootCa(rootConfig, db.SIGN)
 		if err != nil {
 			return err
 		}
 	case utils.SIGN:
-		err := LoadSoloRootCa(rootConfig, db.SIGN)
+		err := LoadSingleRootCa(rootConfig, db.SIGN)
 		if err != nil {
 			return err
 		}
 	case utils.TLS:
-		err := LoadSoloRootCa(rootConfig, db.TLS)
+		err := LoadSingleRootCa(rootConfig, db.TLS)
 		if err != nil {
 			return err
 		}
@@ -129,7 +129,7 @@ func LoadDoubleRootCa() error {
 	return nil
 }
 
-func LoadSoloRootCa(rootConfig *utils.CaConfig, certUsage db.CertUsage) error {
+func LoadSingleRootCa(rootConfig *utils.CaConfig, certUsage db.CertUsage) error {
 	keyBytes, err := ioutil.ReadFile(rootConfig.CertConf.PrivateKeyPath)
 	if err != nil {
 		return fmt.Errorf("[load solo] read private key file failed: %s", err.Error())
@@ -171,23 +171,23 @@ func GenerateRootCa(rootCaConf *utils.CaConfig) error {
 		return err
 	}
 	switch caType {
-	case utils.DOUBLE:
+	case utils.DOUBLE_ROOT:
 		err := GenerateDoubleRootCa(rootCaConf)
 		if err != nil {
 			return err
 		}
-	case utils.SOLO:
-		err := GenerateSoloRootCa(rootCaConf, db.SIGN)
+	case utils.SINGLE_ROOT:
+		err := GenerateSingleRootCa(rootCaConf, db.SIGN)
 		if err != nil {
 			return err
 		}
 	case utils.SIGN:
-		err := GenerateSoloRootCa(rootCaConf, db.SIGN)
+		err := GenerateSingleRootCa(rootCaConf, db.SIGN)
 		if err != nil {
 			return err
 		}
 	case utils.TLS:
-		err := GenerateSoloRootCa(rootCaConf, db.TLS)
+		err := GenerateSingleRootCa(rootCaConf, db.TLS)
 		if err != nil {
 			return err
 		}
@@ -213,7 +213,7 @@ func GenerateDoubleRootCa(rootCaConf *utils.CaConfig) error {
 	return nil
 }
 
-func GenerateSoloRootCa(rootCaConf *utils.CaConfig, certUsage db.CertUsage) error {
+func GenerateSingleRootCa(rootCaConf *utils.CaConfig, certUsage db.CertUsage) error {
 	privateKeyPwd := rootCaConf.CertConf.PrivateKeyPwd
 	keyTypeStr := allConfig.GetKeyType()
 	hashTypeStr := allConfig.GetHashType()

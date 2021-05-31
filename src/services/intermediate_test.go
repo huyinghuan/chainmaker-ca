@@ -8,7 +8,7 @@ import (
 func TestProductIntermediateCA(t *testing.T) {
 	InitDB()
 	InitServer()
-	err := ProductIntermediateCA()
+	err := CreateIntermediateCA()
 	if err != nil {
 		fmt.Println(err.Error())
 	}

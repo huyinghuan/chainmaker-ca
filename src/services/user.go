@@ -89,7 +89,7 @@ func GenerateCertByCsr(generateCertByCsrReq *models.GenerateCertByCsrReq) (strin
 		logger.Error("Generate Cert By Csr error", zap.Error(err))
 		return empty, err
 	}
-	err = models.CreateCertTwoTransaction(certContent, certInfo)
+	err = models.CreateCertAndInfoTransaction(certContent, certInfo)
 	if err != nil {
 		return empty, err
 	}
@@ -432,7 +432,7 @@ func CrlList(crlListReq *models.CrlListReq) ([]byte, error) {
 		revokedCerts = append(revokedCerts, revoked)
 	}
 	now := time.Now()
-	next := now.Add(time.Duration(utils.DefaultTime) * time.Hour) //撤销列表过期时间（4小时候这个撤销列表就不是最新的了）
+	next := now.Add(utils.DefaultCRLNextTime)
 	crlBytes, err := x509.CreateCRL(rand.Reader, issueCertUse, issuePrivateKey.ToStandardKey(), revokedCerts, now, next)
 	if err != nil {
 		logger.Error("Crl List get failed", zap.Error(err))
