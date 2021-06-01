@@ -15,10 +15,10 @@ func CreateIntermediateCA() error {
 		return nil
 	}
 	for i := 0; i < len(checkIntermediateCaConf()); i++ {
-		if exsitIntermediateCA(allConfig.IntermediateCaConf[i]) {
+		if exsitIntermediateCA(getIMCaConf()[i]) {
 			continue
 		}
-		err := createIntermediateCA(allConfig.IntermediateCaConf[i])
+		err := createIntermediateCA(getIMCaConf()[i])
 		if err != nil {
 			logger.Error("product intermediate CA failed", zap.Error(err))
 			return err
@@ -76,8 +76,8 @@ func GenDoubleIntermediateCA(caConfig *utils.CaConfig) error {
 	return nil
 }
 func genIntermediateCA(caConfig *utils.CaConfig, certUsage db.CertUsage) error {
-	keyTypeStr := allConfig.GetKeyType()
-	hashTypeStr := allConfig.GetHashType()
+	keyTypeStr := keyTypeFromConfig()
+	hashTypeStr := hashTypeFromConfig()
 	generatePrivateKey, generateKeyPair, err := CreateKeyPair(keyTypeStr, hashTypeStr, caConfig.CertConf.PrivateKeyPwd)
 	if err != nil {
 		return err
@@ -150,7 +150,7 @@ func createIMCACertReqConf(caConfig *utils.CaConfig, csrByte []byte, certUsage d
 	if err != nil {
 		return nil, err
 	}
-	hashType, err := checkHashType(allConfig.GetHashType())
+	hashType, err := checkHashType(hashTypeFromConfig())
 	if err != nil {
 		return nil, err
 	}

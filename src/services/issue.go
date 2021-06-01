@@ -318,7 +318,7 @@ func generateCertTemplate(genConf *GenCertRequestConfig) (*x509.Certificate, err
 	}
 
 	if genConf.ExpireYear <= 0 {
-		genConf.ExpireYear = int32(allConfig.GetDefaultExpireTime())
+		genConf.ExpireYear = int32(expireYearFromConfig())
 	}
 	var dnsName string
 	if genConf.UserType == db.NODE_COMMON || genConf.UserType == db.NODE_CONSENSUS {

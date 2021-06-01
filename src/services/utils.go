@@ -68,7 +68,7 @@ func ParseCertificate(certBytes []byte) (*x509.Certificate, error) {
 		cert, err = bcx509.ParseCertificate(block.Bytes)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("[Parse certificate] x509 parse cert error: %s", err.Error())
+		return nil, fmt.Errorf("[parse certificate] x509 parse cert error: %s", err.Error())
 	}
 	return bcx509.ChainMakerCertToX509Cert(cert)
 }
@@ -77,7 +77,7 @@ func ParsePrivateKey(privateKeyBytes []byte) (crypto.PrivateKey, error) {
 	block, _ := pem.Decode(privateKeyBytes)
 	privateKey, err := asym.PrivateKeyFromDER(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("[Parse private key] asym parse private key from DER error: %s", err.Error())
+		return nil, fmt.Errorf("[parse private key] asym parse private key from DER error: %s", err.Error())
 	}
 	return privateKey, nil
 }
@@ -100,7 +100,7 @@ func ParseCsr(csrBytes []byte) (*x509.CertificateRequest, error) {
 	block, _ := pem.Decode(csrBytes)
 	csrBC, err := bcx509.ParseCertificateRequest(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("[Parse csr] parse certificate request error: %s", err.Error())
+		return nil, fmt.Errorf("[parse csr] parse certificate request error: %s", err.Error())
 	}
 
 	return bcx509.ChainMakerCertCsrToX509CertCsr(csrBC)
@@ -119,10 +119,10 @@ func CreateDir(dirPath string) error {
 		if os.IsNotExist(err) {
 			err := os.MkdirAll(dirPath, os.ModePerm)
 			if err != nil {
-				return fmt.Errorf("[Create dir] os mkdir all error: %s", err.Error())
+				return fmt.Errorf("[create dir] os mkdir all error: %s", err.Error())
 			}
 		} else {
-			return fmt.Errorf("[Create dir] os stat error: %s", err.Error())
+			return fmt.Errorf("[create dir] os stat error: %s", err.Error())
 		}
 	}
 	return nil
@@ -163,6 +163,18 @@ func checkHashType(hashTypeStr string) (crypto.HashType, error) {
 	return hashType, nil
 }
 
+func getRootCaConf() *utils.CaConfig {
+	return allConfig.GetRootConf()
+}
+
+func getIMCaConf() []*utils.CaConfig {
+	return allConfig.GetIntermediateConf()
+}
+
+func getDoubleRootPathConf() *utils.DoubleRootPathConf {
+	return allConfig.GetDoubleRootPathConf()
+}
+
 func canIssueCa() bool {
 	return allConfig.GetCanIssueCa()
 }
@@ -173,6 +185,11 @@ func provideServiceFor() []string {
 func hashTypeFromConfig() string {
 	return allConfig.GetHashType()
 }
+
+func keyTypeFromConfig() string {
+	return allConfig.GetKeyType()
+}
+
 func expireYearFromConfig() int {
 	return allConfig.GetDefaultExpireTime()
 }
@@ -184,44 +201,61 @@ func checkIntermediateCaConf() []*utils.CaConfig {
 	return allConfig.GetIntermediateConf()
 }
 
-func whetherOrNotProvideService(orgID string, certUsage db.CertUsage) bool {
-	if canIssueCa() {
-		caType, _ := getCaType()
-		if certUsage == db.SIGN || certUsage == db.TLS_SIGN {
-			if caType == utils.TLS {
-				return false
-			}
-		}
-		if certUsage == db.TLS || certUsage == db.TLS_ENC || certUsage == db.TLS_SIGN {
-			if caType == utils.SIGN {
-				return false
-			}
-		}
-		orgGroup := provideServiceFor()
-		for i := 0; i < len(orgGroup); i++ {
-			if orgID == orgGroup[i] {
-				return true
-			}
-		}
+func checkParamsOfCertReq(orgID string, userType db.UserType, certUsage db.CertUsage) error {
+	if userType == db.ROOT_CA {
+		return fmt.Errorf("[check params] cannot apply for a CA of type root")
 	}
-	return false
-}
+	if userType == db.INTERMRDIARY_CA && !canIssueCa() {
+		return fmt.Errorf("[check params] cannot continue to apply for a intermediate CA")
+	}
 
-//检查一些参数的合法性
-func checkParametersUserType(userType db.UserType) error {
-	if _, ok := db.UserType2NameMap[userType]; !ok {
-		err := fmt.Errorf("the User Type does not meet the requirements")
+	caType, err := getCaType()
+	if err != nil {
 		return err
 	}
-	return nil
+
+	if certUsage == db.TLS || certUsage == db.TLS_ENC || certUsage == db.TLS_SIGN {
+		if caType == utils.SIGN {
+			return fmt.Errorf("[check params] sign CA cannot issue a tls certificate")
+		}
+	}
+	if certUsage == db.SIGN {
+		if caType == utils.TLS {
+			return fmt.Errorf("[check params] tls CA cannot issue a sign certificate")
+		}
+	}
+
+	orgGroup := provideServiceFor()
+	for i := 0; i < len(orgGroup); i++ {
+		if orgID == orgGroup[i] {
+			return nil
+		}
+	}
+	return fmt.Errorf("[check params] the organization cannot be serviced")
 }
 
-func checkParametersCertUsage(certUsage db.CertUsage) error {
-	if _, ok := db.CertUsage2NameMap[certUsage]; !ok {
-		err := fmt.Errorf("the Cert Usage does not meet the requirements")
-		return err
+func checkParametersUserType(userTypeStr string) (db.UserType, error) {
+	var (
+		userType db.UserType
+		ok       bool
+	)
+	if userType, ok = db.Name2UserTypeMap[userTypeStr]; !ok {
+		err := fmt.Errorf("[check params] the user type does not meet the requirements")
+		return userType, err
 	}
-	return nil
+	return userType, nil
+}
+
+func checkParametersCertUsage(certUsageStr string) (db.CertUsage, error) {
+	var (
+		certUsage db.CertUsage
+		ok        bool
+	)
+	if certUsage, ok = db.Name2CertUsageMap[certUsageStr]; !ok {
+		err := fmt.Errorf("[check params] the user type does not meet the requirements")
+		return certUsage, err
+	}
+	return certUsage, nil
 }
 
 func getCaType() (utils.CaType, error) {
@@ -273,8 +307,7 @@ func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []
 
 //根据启动模式和用户提供certusage的来确定寻找的CA的certusage字段
 //这里已经判断完可以提供了服务了才能使用
-func covertCertUsage(certUsage db.CertUsage) db.CertUsage {
-	caType, _ := getCaType()
+func covertCertUsage(certUsage db.CertUsage, caType utils.CaType) db.CertUsage {
 	if caType == utils.DOUBLE_ROOT {
 		if certUsage == db.SIGN {
 			return db.SIGN

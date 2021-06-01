@@ -32,7 +32,7 @@ func main() {
 		})
 	})
 	//loading route
-	routers.LoadUserRouter(g)
+	routers.LoadCAServerRouter(g)
 	//routers.LoadChainMakerRouters(g)
 	g.Run(":8090")
 }

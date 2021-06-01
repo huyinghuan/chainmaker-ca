@@ -11,7 +11,7 @@ import (
 )
 
 func CreateRootCa() error {
-	rootConfig := allConfig.GetRootConf()
+	rootConfig := getRootCaConf()
 	if rootConfig.CertConf == nil {
 		return fmt.Errorf("[create root] root cert config can't be empty")
 	}
@@ -60,7 +60,7 @@ func LoadRootCaFromConfig(rootConfig *utils.CaConfig) error {
 }
 
 func LoadDoubleRootCa() error {
-	doubleRootPathConf := allConfig.GetDoubleRootPathConf()
+	doubleRootPathConf := getDoubleRootPathConf()
 	if doubleRootPathConf == nil {
 		return fmt.Errorf("[load double] double root config cant't be empty")
 	}
@@ -196,12 +196,12 @@ func GenerateRootCa(rootCaConf *utils.CaConfig) error {
 }
 
 func GenerateDoubleRootCa(rootCaConf *utils.CaConfig) error {
-	doubleRootPathConf := allConfig.GetDoubleRootPathConf()
+	doubleRootPathConf := getDoubleRootPathConf()
 	if doubleRootPathConf == nil {
 		return fmt.Errorf("[gen double] double root config cant't be empty")
 	}
-	keyTypeStr := allConfig.GetKeyType()
-	hashTypeStr := allConfig.GetHashType()
+	keyTypeStr := hashTypeFromConfig()
+	hashTypeStr := keyTypeFromConfig()
 	err := genRootCa(rootCaConf, keyTypeStr, hashTypeStr, doubleRootPathConf.SignPrivateKeyPwd, db.SIGN, doubleRootPathConf.SignPrivateKeyPath, doubleRootPathConf.SignCertPath)
 	if err != nil {
 		return err
@@ -215,8 +215,8 @@ func GenerateDoubleRootCa(rootCaConf *utils.CaConfig) error {
 
 func GenerateSingleRootCa(rootCaConf *utils.CaConfig, certUsage db.CertUsage) error {
 	privateKeyPwd := rootCaConf.CertConf.PrivateKeyPwd
-	keyTypeStr := allConfig.GetKeyType()
-	hashTypeStr := allConfig.GetHashType()
+	keyTypeStr := hashTypeFromConfig()
+	hashTypeStr := keyTypeFromConfig()
 	err := genRootCa(rootCaConf, keyTypeStr, hashTypeStr, privateKeyPwd, certUsage, rootCaConf.CertConf.PrivateKeyPath, rootCaConf.CertConf.CertPath)
 	if err != nil {
 		return err
@@ -239,7 +239,7 @@ func genRootCa(rootCaConf *utils.CaConfig, keyTypeStr, hashTypeStr, privateKeyPw
 			OrganizationalUnit: rootCaConf.CsrConf.OU,
 			Organization:       rootCaConf.CsrConf.O,
 			CommonName:         rootCaConf.CsrConf.CN,
-			ExpireYear:         int32(allConfig.GetDefaultExpireTime()),
+			ExpireYear:         int32(expireYearFromConfig()),
 			CertUsage:          certUsage,
 			UserType:           db.ROOT_CA,
 			HashType:           hashTypeStr,

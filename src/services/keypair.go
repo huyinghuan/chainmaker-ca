@@ -116,7 +116,7 @@ func TransfToKeyPair(privateKeyPwd string, privateKeyBytes []byte) (keyPair *db.
 		hashType crypto.HashType
 		keyType  crypto.KeyType
 	)
-	hashTypeStr := allConfig.GetHashType()
+	hashTypeStr := hashTypeFromConfig()
 	hashType, err = checkHashType(hashTypeStr)
 	if err != nil {
 		return
@@ -126,7 +126,7 @@ func TransfToKeyPair(privateKeyPwd string, privateKeyBytes []byte) (keyPair *db.
 		err = fmt.Errorf("[parse private key] get hash pwd faield: %s", err.Error())
 		return
 	}
-	keyTypeStr := allConfig.GetKeyType()
+	keyTypeStr := keyTypeFromConfig()
 	keyType, err = checkKeyType(keyTypeStr)
 	if err != nil {
 		return
