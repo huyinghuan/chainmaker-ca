@@ -15,4 +15,5 @@ func LoadCAServerRouter(e *gin.Engine) {
 	e.POST(ROUTERS_HEADER+"/updatecert", handlers.UpdateCert())
 	e.POST(ROUTERS_HEADER+"/revokedcert", handlers.RevokedCert())
 	e.POST(ROUTERS_HEADER+"/crllist", handlers.CrlList())
+	e.POST(ROUTERS_HEADER+"/createcsr", handlers.CreateCsr())
 }

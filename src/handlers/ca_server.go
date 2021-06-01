@@ -150,12 +150,31 @@ func CrlList() gin.HandlerFunc {
 		}
 		crlList, err := services.CrlList(&crlListReq)
 		if err != nil {
-			msg := "CrlList get failed"
+			msg := "crlList get failed"
 			FailedJSONResp(msg, err.Error(), c)
 			return
 		}
 		crlList = pem.EncodeToMemory(&pem.Block{Type: "CRL", Bytes: crlList})
 		reCrlList := base64.StdEncoding.EncodeToString(crlList)
 		SuccessfulJSONResp("", reCrlList, c)
+	}
+}
+
+func CreateCsr() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var createCsrReq models.CreateCsrReq
+		if err := c.ShouldBind(&createCsrReq); err != nil {
+			msg := "parameters input error"
+			FailedJSONResp(msg, err.Error(), c)
+			return
+		}
+		csrByte, err := services.CreateCsr(&createCsrReq)
+		if err != nil {
+			msg := "create csr failed"
+			FailedJSONResp(msg, err.Error(), c)
+			return
+		}
+		reCsr := base64.StdEncoding.EncodeToString(csrByte)
+		SuccessfulJSONResp("", reCsr, c)
 	}
 }

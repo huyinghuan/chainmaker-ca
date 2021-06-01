@@ -421,6 +421,46 @@ func CrlList(crlListReq *models.CrlListReq) ([]byte, error) {
 	}
 	return crlBytes, nil
 }
+func CreateCsr(createCsrReq *models.CreateCsrReq) ([]byte, error) {
+	curUserType, _, err := CheckParameters(createCsrReq.OrgID, createCsrReq.UserID, createCsrReq.UserType, "sign")
+	if err != nil {
+		return nil, err
+	}
+	_, err = checkHashType(hashTypeFromConfig())
+	if err != nil {
+		return nil, err
+	}
+	//先去生成csr流文件
+	//要先createkeypair
+	//这些加密的方式和哈希的方式是从配置文件中读取的
+	privateKeyTypeStr := keyTypeFromConfig()
+	hashTypeStr := hashTypeFromConfig()
+	privateKeyPwd := createCsrReq.PrivateKeyPwd
+	privateKey, _, err := CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd)
+	if err != nil {
+		logger.Error("generate cert failed", zap.Error(err))
+		return nil, err
+	}
+	csrRequest := &CSRRequest{
+		OrgId:      createCsrReq.OrgID,
+		UserId:     createCsrReq.UserID,
+		UserType:   curUserType,
+		Country:    createCsrReq.Country,
+		Locality:   createCsrReq.Locality,
+		Province:   createCsrReq.Province,
+		PrivateKey: privateKey,
+	}
+	//用BuildCSRReqConf获得CSRRequestConfig
+	csrRequestConf := BuildCSRReqConf(csrRequest)
+	//用createCSR获得csr流文件
+	csrByte, err := createCSR(csrRequestConf)
+	if err != nil {
+		logger.Error("generate cert failed", zap.Error(err))
+		return nil, err
+	}
+	return csrByte, nil
+}
+
 func CheckParameters(orgId, userId, userTypeStr, certUsageStr string) (userType db.UserType, certUsage db.CertUsage, err error) {
 	if len(orgId) == 0 || len(userId) == 0 {
 		err = fmt.Errorf("org id or user id can't be empty")

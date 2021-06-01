@@ -1,6 +1,8 @@
 package services
 
 import (
+	"fmt"
+
 	"chainmaker.org/chainmaker-ca-backend/src/loggers"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"go.uber.org/zap"
@@ -13,14 +15,19 @@ var allConfig *utils.AllConfig
 func InitServer() {
 	logger = loggers.GetLogger()
 	allConfig = utils.GetAllConfig()
+	if hashTypeFromConfig() == "SM3" && keyTypeFromConfig() != "SM2" || hashTypeFromConfig() != "SM3" && keyTypeFromConfig() == "SM2" {
+		err := fmt.Errorf("the sm3 should be used with the sm2")
+		logger.Error("init server failed", zap.Error(err))
+
+	}
 	err := CreateRootCa()
 	if err != nil {
-		logger.Error("[init] create root ca failed: %s", zap.Error(err))
+		logger.Error("init server failed", zap.Error(err))
 		return
 	}
 	err = CreateIntermediateCA()
 	if err != nil {
-		logger.Error("[init] Product IntermediateCA failed: %s", zap.Error(err))
+		logger.Error("init server failed", zap.Error(err))
 		return
 	}
 }
