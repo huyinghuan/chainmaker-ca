@@ -9,10 +9,28 @@ import (
 )
 
 //FailedJSONResp
-func FailedJSONResp(msg, err string, c *gin.Context) {
+func ServerErrorJSONResp(err string, c *gin.Context) {
 	resp := &models.StandardResp{
-		Code: models.FAILED_RESP_CODE,
-		Msg:  msg,
+		Code: models.SERVER_ERROR_RESP_CODE,
+		Msg:  models.SERVER_ERROR_MSG,
+		Data: err,
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+func InputErrorJSONResp(err string, c *gin.Context) {
+	resp := &models.StandardResp{
+		Code: models.INPUT_ERROR_RESP_CODE,
+		Msg:  models.INPUT_ERROR_MSG,
+		Data: err,
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+func InputMissingJSONResp(err string, c *gin.Context) {
+	resp := &models.StandardResp{
+		Code: models.INPUT_MISSING_PESP_CODE,
+		Msg:  models.INPUT_MISSING_MSG,
 		Data: err,
 	}
 	c.JSON(http.StatusOK, resp)
@@ -22,7 +40,7 @@ func FailedJSONResp(msg, err string, c *gin.Context) {
 func SuccessfulJSONResp(msg string, data interface{}, c *gin.Context) {
 	resp := models.StandardResp{
 		Code: models.SUCCESS_PESP_CODE,
-		Msg:  msg,
+		Msg:  models.SUCCESS_MSG,
 		Data: data,
 	}
 	c.JSON(http.StatusOK, resp)
