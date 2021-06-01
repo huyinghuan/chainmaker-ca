@@ -1,7 +1,6 @@
 package services
 
 import (
-	"archive/zip"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -297,7 +296,7 @@ func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []
 	if err != nil {
 		return nil, nil, err
 	}
-	//需要一个能加密的类型密钥，不要字符串,需要再想办法转换
+
 	dePrivatKey, err := base64.StdEncoding.DecodeString(keyPair.PrivateKey)
 	if err != nil {
 		return nil, nil, err
@@ -339,35 +338,6 @@ func ReadWithFile(file multipart.File) ([]byte, error) {
 		result = append(result, tmp[:n]...)
 	}
 	return result, nil
-}
-
-func ZipCertAndPrivateKey(certContent []byte, privateKey []byte) ([]byte, error) {
-	fileName := "cert&privateKey.zip"
-	file, err := os.Create(utils.DefaultWorkDirectory + fileName)
-	if err != nil {
-		return nil, err
-	}
-	writer := zip.NewWriter(file)
-	f, err := writer.Create("cert.crt")
-	if err != nil {
-		return nil, err
-	}
-	f.Write(certContent)
-	if privateKey != nil {
-		f, err = writer.Create("privateKey.key")
-		if err != nil {
-			return nil, err
-		}
-		f.Write(privateKey)
-	}
-	writer.Close()
-	content, err := ioutil.ReadFile(utils.DefaultWorkDirectory + fileName)
-	if err != nil {
-		return nil, err
-	}
-	defer os.RemoveAll(utils.DefaultWorkDirectory + fileName)
-	defer file.Close()
-	return content, nil
 }
 
 func GetX509Certificate(Sn int64) (*x509.Certificate, error) {

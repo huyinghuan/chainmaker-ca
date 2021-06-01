@@ -234,11 +234,10 @@ func createCSR(csrConf *CSRRequestConfig) ([]byte, error) {
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: data}), nil
 }
 
-func getKeyUsageAndExtKeyUsage(userType db.UserType, certUsage db.CertUsage) (x509.KeyUsage, []x509.ExtKeyUsage, error) {
+func getKeyUsageAndExtKeyUsage(userType db.UserType, certUsage db.CertUsage) (x509.KeyUsage, []x509.ExtKeyUsage) {
 	var (
 		keyUsage    x509.KeyUsage
 		extKeyUsage []x509.ExtKeyUsage
-		err         error
 	)
 	if userType == db.INTERMRDIARY_CA || userType == db.ROOT_CA {
 		keyUsage = x509.KeyUsageCRLSign | x509.KeyUsageCertSign
@@ -253,21 +252,21 @@ func getKeyUsageAndExtKeyUsage(userType db.UserType, certUsage db.CertUsage) (x5
 		case db.SIGN:
 			keyUsage = x509.KeyUsageDigitalSignature | x509.KeyUsageContentCommitment
 		case db.TLS:
-			err = fmt.Errorf("the cert usage does not match the user type")
-			return keyUsage, extKeyUsage, err
+			keyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDataEncipherment | x509.KeyUsageKeyAgreement |
+				x509.KeyUsageDigitalSignature | x509.KeyUsageContentCommitment
 		}
 	}
 	if userType == db.NODE_COMMON || userType == db.NODE_CONSENSUS {
-		if certUsage == db.TLS_ENC || certUsage == db.TLS_SIGN {
+		if certUsage == db.TLS_ENC || certUsage == db.TLS_SIGN || certUsage == db.TLS {
 			extKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth}
 		}
 	}
 	if userType == db.USER_ADMIN || userType == db.USER_CLIENT {
-		if certUsage == db.TLS_ENC || certUsage == db.TLS_SIGN {
+		if certUsage == db.TLS_ENC || certUsage == db.TLS_SIGN || certUsage == db.TLS {
 			extKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
 		}
 	}
-	return keyUsage, extKeyUsage, nil
+	return keyUsage, extKeyUsage
 }
 
 type CSRRequest struct {
@@ -325,10 +324,8 @@ func generateCertTemplate(genConf *GenCertRequestConfig) (*x509.Certificate, err
 		dnsName = genConf.CommonName
 	}
 
-	keyUsage, extKeyUsage, err := getKeyUsageAndExtKeyUsage(genConf.UserType, genConf.CertUsage)
-	if err != nil {
-		return nil, err
-	}
+	keyUsage, extKeyUsage := getKeyUsageAndExtKeyUsage(genConf.UserType, genConf.CertUsage)
+
 	notBefore := time.Now().Add(-10 * time.Minute).UTC()
 
 	template := &x509.Certificate{

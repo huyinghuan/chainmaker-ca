@@ -179,9 +179,11 @@ func (ac *AllConfig) GetCaType() string {
 func (ac *AllConfig) GetRootCertPath() string {
 	return ac.RootCaConf.CertConf.CertPath
 }
+
 func (ac *AllConfig) GetRootKeyPath() string {
 	return ac.RootCaConf.CertConf.PrivateKeyPath
 }
+
 func (ac *AllConfig) GetRootKeyPwd() string {
 	return ac.RootCaConf.CertConf.PrivateKeyPwd
 }
@@ -189,12 +191,15 @@ func (ac *AllConfig) GetRootKeyPwd() string {
 func (ac *AllConfig) GetRootConf() *CaConfig {
 	return ac.RootCaConf
 }
+
 func (ac *AllConfig) GetBaseConf() *BaseConf {
 	return ac.BaseConf
 }
+
 func (ac *AllConfig) GetIntermediateConf() []*CaConfig {
 	return ac.IntermediateCaConf
 }
+
 func (ac *AllConfig) GetDoubleRootPathConf() *DoubleRootPathConf {
 	return ac.DoubleRootPathConf
 }
