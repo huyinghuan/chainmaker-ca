@@ -72,7 +72,7 @@ func GetP2pNetNodeId(userType db.UserType, certUsage db.CertUsage, nodeTlsCrtByt
 		(certUsage == db.TLS_ENC || certUsage == db.TLS_SIGN) {
 		p2pNodeId, err = helper.GetLibp2pPeerIdFromCert(nodeTlsCrtBytes)
 		if err != nil {
-			return p2pNodeId, fmt.Errorf("[Get p2p nodeId] get libp2p peer id from cert error :%s", err.Error())
+			return p2pNodeId, fmt.Errorf("get libp2p peer id from cert failed :%s", err.Error())
 		}
 	}
 	return p2pNodeId, nil

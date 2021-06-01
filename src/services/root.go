@@ -13,7 +13,7 @@ import (
 func CreateRootCa() error {
 	rootConfig := getRootCaConf()
 	if rootConfig.CertConf == nil {
-		return fmt.Errorf("[create root] root cert config can't be empty")
+		return fmt.Errorf("create root ca failed: root cert config can't be empty")
 	}
 	if rootConfig.CsrConf == nil {
 		err := LoadRootCaFromConfig(rootConfig)
@@ -62,23 +62,23 @@ func LoadRootCaFromConfig(rootConfig *utils.CaConfig) error {
 func LoadDoubleRootCa() error {
 	doubleRootPathConf := getDoubleRootPathConf()
 	if doubleRootPathConf == nil {
-		return fmt.Errorf("[load double] double root config cant't be empty")
+		return fmt.Errorf("load double root ca faile: double root config cant't be empty")
 	}
 	signKeyBytes, err := ioutil.ReadFile(doubleRootPathConf.SignPrivateKeyPath)
 	if err != nil {
-		return fmt.Errorf("[load double] read sign private key file failed: %s", err.Error())
+		return fmt.Errorf("load double root ca faile: %s", err.Error())
 	}
 	tlsKeyBytes, err := ioutil.ReadFile(doubleRootPathConf.TlsPrivateKeyPath)
 	if err != nil {
-		return fmt.Errorf("[load double] read tls private key file failed: %s", err.Error())
+		return fmt.Errorf("load double root ca faile: %s", err.Error())
 	}
 	signCertBytes, err := ioutil.ReadFile(doubleRootPathConf.SignCertPath)
 	if err != nil {
-		return fmt.Errorf("[load double] read sign cert file failed: %s", err.Error())
+		return fmt.Errorf("load double root ca faile: %s", err.Error())
 	}
 	tlsCertBytes, err := ioutil.ReadFile(doubleRootPathConf.TlsCertPath)
 	if err != nil {
-		return fmt.Errorf("[load double] read tls cert file failed: %s", err.Error())
+		return fmt.Errorf("load double root ca faile: %s", err.Error())
 	}
 	signKeyPair, _, err := TransfToKeyPair(doubleRootPathConf.SignPrivateKeyPwd, signKeyBytes)
 	if err != nil {
@@ -132,11 +132,11 @@ func LoadDoubleRootCa() error {
 func LoadSingleRootCa(rootConfig *utils.CaConfig, certUsage db.CertUsage) error {
 	keyBytes, err := ioutil.ReadFile(rootConfig.CertConf.PrivateKeyPath)
 	if err != nil {
-		return fmt.Errorf("[load solo] read private key file failed: %s", err.Error())
+		return fmt.Errorf("load single root ca failed: %s", err.Error())
 	}
 	certBytes, err := ioutil.ReadFile(rootConfig.CertConf.CertPath)
 	if err != nil {
-		return fmt.Errorf("[load solo] read cert file failed: %s", err.Error())
+		return fmt.Errorf("load single root ca failed: %s", err.Error())
 	}
 	keyPair, _, err := TransfToKeyPair(rootConfig.CertConf.PrivateKeyPwd, keyBytes)
 	if err != nil {
@@ -198,7 +198,7 @@ func GenerateRootCa(rootCaConf *utils.CaConfig) error {
 func GenerateDoubleRootCa(rootCaConf *utils.CaConfig) error {
 	doubleRootPathConf := getDoubleRootPathConf()
 	if doubleRootPathConf == nil {
-		return fmt.Errorf("[gen double] double root config cant't be empty")
+		return fmt.Errorf("generate double root ca failed: double root config cant't be empty")
 	}
 	keyTypeStr := keyTypeFromConfig()
 	hashTypeStr := hashTypeFromConfig()
@@ -266,12 +266,12 @@ func genRootCa(rootCaConf *utils.CaConfig, keyTypeStr, hashTypeStr, privateKeyPw
 		keyBytes, _ := base64.StdEncoding.DecodeString(keyPair.PrivateKey)
 		err = WirteFile(keyPath, keyBytes)
 		if err != nil {
-			return fmt.Errorf("[gen root] write file failed: %s", err.Error())
+			return fmt.Errorf("generate root ca failed:: %s", err.Error())
 		}
 		certBytes, _ := base64.StdEncoding.DecodeString(certContent.Content)
 		err = WirteFile(certPath, certBytes)
 		if err != nil {
-			return fmt.Errorf("[gen root] write file failed: %s", err.Error())
+			return fmt.Errorf("generate root ca failed: %s", err.Error())
 		}
 		return nil
 	}

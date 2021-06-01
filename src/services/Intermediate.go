@@ -7,7 +7,6 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"chainmaker.org/chainmaker-go/common/crypto"
-	"go.uber.org/zap"
 )
 
 func CreateIntermediateCA() error {
@@ -20,7 +19,6 @@ func CreateIntermediateCA() error {
 		}
 		err := createIntermediateCA(getIMCaConf()[i])
 		if err != nil {
-			logger.Error("product intermediate CA failed", zap.Error(err))
 			return err
 		}
 	}

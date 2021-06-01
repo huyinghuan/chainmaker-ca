@@ -137,13 +137,13 @@ func GetAllConf() (*AllConfig, error) {
 	var allConf AllConfig
 	err := viper.Unmarshal(&allConf)
 	if err != nil {
-		return nil, fmt.Errorf("[config] get all config failed: %s", err.Error())
+		return nil, fmt.Errorf("get all config failed: %s", err.Error())
 	}
 	if allConf.BaseConf == nil {
-		return nil, fmt.Errorf("[config] not found base config")
+		return nil, fmt.Errorf("get all config failed: not found base config")
 	}
 	if allConf.RootCaConf == nil {
-		return nil, fmt.Errorf("[config] not found root config")
+		return nil, fmt.Errorf("get all config failed: not found root config")
 	}
 	return &allConf, nil
 }

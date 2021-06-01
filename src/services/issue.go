@@ -88,12 +88,12 @@ func IssueCertBySelf(rootCertConf *RootCertRequestConfig) (*db.CertContent, erro
 	}
 	template.SubjectKeyId, err = cert.ComputeSKI(hashType, rootCertConf.PrivateKey.PublicKey().ToStandardKey())
 	if err != nil {
-		return nil, fmt.Errorf("[Create ca cert] create CA cert compute SKI failed, %s", err.Error())
+		return nil, fmt.Errorf("issue cert by self failed: %s", err.Error())
 	}
 	x509certEncode, err := bcx509.CreateCertificate(rand.Reader, template, template,
 		rootCertConf.PrivateKey.PublicKey().ToStandardKey(), rootCertConf.PrivateKey.ToStandardKey())
 	if err != nil {
-		return nil, fmt.Errorf("[Create ca cert] create CA cert failed, %s", err.Error())
+		return nil, fmt.Errorf("issue cert by self failed: %s", err.Error())
 	}
 	certPemBytes := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: x509certEncode})
 	extKeyUsageStr, err := ExtKeyUsageToString(template.ExtKeyUsage)
@@ -133,11 +133,11 @@ func IssueCertificate(certConf *CertRequestConfig) (*db.CertContent, error) {
 	}
 	csr, err := bcx509.X509CertCsrToChainMakerCertCsr(csrOriginal)
 	if err != nil {
-		return nil, fmt.Errorf("[issue cert] X509 cert to chainmaker error: %s", err.Error())
+		return nil, fmt.Errorf("issue cert failed: %s", err.Error())
 	}
 
 	if err := csr.CheckSignature(); err != nil {
-		return nil, fmt.Errorf("[issue cert] csr check signature error: %s", err.Error())
+		return nil, fmt.Errorf("issue cert failed: %s", err.Error())
 	}
 	genConf := &GenCertRequestConfig{
 		Country:            csr.Subject.Country,
@@ -164,19 +164,19 @@ func IssueCertificate(certConf *CertRequestConfig) (*db.CertContent, error) {
 	} else {
 		template.AuthorityKeyId, err = cert.ComputeSKI(certConf.HashType, issuerCert.PublicKey)
 		if err != nil {
-			return nil, fmt.Errorf("[Issue cert] issue cert compute issuer cert SKI failed: %s", err.Error())
+			return nil, fmt.Errorf("issue cert failed: %s", err.Error())
 		}
 	}
 
 	template.SubjectKeyId, err = cert.ComputeSKI(certConf.HashType, csr.PublicKey.ToStandardKey())
 	if err != nil {
-		return nil, fmt.Errorf("[Issue cert] issue cert compute csr SKI failed, %s", err.Error())
+		return nil, fmt.Errorf("issue cert failed: %s", err.Error())
 	}
 
 	x509certEncode, err := bcx509.CreateCertificate(rand.Reader, template, issuerCert,
 		csr.PublicKey.ToStandardKey(), certConf.IssuerPrivateKey.ToStandardKey())
 	if err != nil {
-		return nil, fmt.Errorf("[Issue cert] issue certificate failed, %s", err)
+		return nil, fmt.Errorf("issue cert failed: %s", err.Error())
 	}
 	certPemBytes := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: x509certEncode})
 	extKeyUsageStr, err := ExtKeyUsageToString(template.ExtKeyUsage)
@@ -224,12 +224,12 @@ func createCSR(csrConf *CSRRequestConfig) ([]byte, error) {
 	}
 	template, err := bcx509.X509CertCsrToChainMakerCertCsr(templateX509)
 	if err != nil {
-		return nil, fmt.Errorf("[Create csr] generate csr failed, %s", err.Error())
+		return nil, fmt.Errorf("create csr failed: %s", err.Error())
 	}
 
 	data, err := bcx509.CreateCertificateRequest(rand.Reader, template, csrConf.PrivateKey.ToStandardKey())
 	if err != nil {
-		return nil, fmt.Errorf("[Create csr] createCertificateRequest failed, %s", err.Error())
+		return nil, fmt.Errorf("create csr failed: %s", err.Error())
 	}
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: data}), nil
 }
@@ -307,7 +307,7 @@ func BuildCSRReqConf(csrReq *CSRRequest) *CSRRequestConfig {
 func generateCertTemplate(genConf *GenCertRequestConfig) (*x509.Certificate, error) {
 	sn, err := rand.Int(rand.Reader, big.NewInt(1<<62))
 	if err != nil {
-		return nil, fmt.Errorf("[issue cert] rand int error: %s", err.Error())
+		return nil, fmt.Errorf("generate cert template failed: %s", err.Error())
 	}
 	basicConstraintsValid := false
 	isCA := false

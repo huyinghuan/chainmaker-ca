@@ -67,7 +67,7 @@ func ParseCertificate(certBytes []byte) (*x509.Certificate, error) {
 		cert, err = bcx509.ParseCertificate(block.Bytes)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("[parse certificate] x509 parse cert error: %s", err.Error())
+		return nil, fmt.Errorf("parse x509 cert failed: %s", err.Error())
 	}
 	return bcx509.ChainMakerCertToX509Cert(cert)
 }
@@ -76,7 +76,7 @@ func ParsePrivateKey(privateKeyBytes []byte) (crypto.PrivateKey, error) {
 	block, _ := pem.Decode(privateKeyBytes)
 	privateKey, err := asym.PrivateKeyFromDER(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("[parse private key] asym parse private key from DER error: %s", err.Error())
+		return nil, fmt.Errorf("parse private key from DER failed: %s", err.Error())
 	}
 	return privateKey, nil
 }
@@ -99,7 +99,7 @@ func ParseCsr(csrBytes []byte) (*x509.CertificateRequest, error) {
 	block, _ := pem.Decode(csrBytes)
 	csrBC, err := bcx509.ParseCertificateRequest(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("[parse csr] parse certificate request error: %s", err.Error())
+		return nil, fmt.Errorf("parse certificate request failed: %s", err.Error())
 	}
 
 	return bcx509.ChainMakerCertCsrToX509CertCsr(csrBC)
@@ -118,10 +118,10 @@ func CreateDir(dirPath string) error {
 		if os.IsNotExist(err) {
 			err := os.MkdirAll(dirPath, os.ModePerm)
 			if err != nil {
-				return fmt.Errorf("[create dir] os mkdir all error: %s", err.Error())
+				return fmt.Errorf("create dir failed: %s", err.Error())
 			}
 		} else {
-			return fmt.Errorf("[create dir] os stat error: %s", err.Error())
+			return fmt.Errorf("create dir failed: %s", err.Error())
 		}
 	}
 	return nil
@@ -146,7 +146,7 @@ func checkKeyType(keyTypeStr string) (crypto.KeyType, error) {
 		ok      bool
 	)
 	if keyType, ok = crypto.Name2KeyTypeMap[keyTypeStr]; !ok {
-		return keyType, fmt.Errorf("[check] key type is unsupport!")
+		return keyType, fmt.Errorf("check key type failed: key type is unsupport!")
 	}
 	return keyType, nil
 }
@@ -157,7 +157,7 @@ func checkHashType(hashTypeStr string) (crypto.HashType, error) {
 		ok       bool
 	)
 	if hashType, ok = crypto.HashAlgoMap[hashTypeStr]; !ok {
-		return hashType, fmt.Errorf("[check] hash type is unsupport!")
+		return hashType, fmt.Errorf("check hash type failed: hash type is unsupport!")
 	}
 	return hashType, nil
 }
@@ -202,10 +202,10 @@ func checkIntermediateCaConf() []*utils.CaConfig {
 
 func checkParamsOfCertReq(orgID string, userType db.UserType, certUsage db.CertUsage) error {
 	if userType == db.ROOT_CA {
-		return fmt.Errorf("[check params] cannot apply for a CA of type root")
+		return fmt.Errorf("check params of req failed: cannot apply for a CA of type root")
 	}
 	if userType == db.INTERMRDIARY_CA && !canIssueCa() {
-		return fmt.Errorf("[check params] cannot continue to apply for a intermediate CA")
+		return fmt.Errorf("check params of req failed: cannot continue to apply for a intermediate CA")
 	}
 
 	caType, err := getCaType()
@@ -215,12 +215,12 @@ func checkParamsOfCertReq(orgID string, userType db.UserType, certUsage db.CertU
 
 	if certUsage == db.TLS || certUsage == db.TLS_ENC || certUsage == db.TLS_SIGN {
 		if caType == utils.SIGN {
-			return fmt.Errorf("[check params] sign CA cannot issue a tls certificate")
+			return fmt.Errorf("check params of req failed: sign CA cannot issue a tls certificate")
 		}
 	}
 	if certUsage == db.SIGN {
 		if caType == utils.TLS {
-			return fmt.Errorf("[check params] tls CA cannot issue a sign certificate")
+			return fmt.Errorf("check params of req failed: tls CA cannot issue a sign certificate")
 		}
 	}
 
@@ -230,7 +230,7 @@ func checkParamsOfCertReq(orgID string, userType db.UserType, certUsage db.CertU
 			return nil
 		}
 	}
-	return fmt.Errorf("[check params] the organization cannot be serviced")
+	return fmt.Errorf("check params of req failed: the organization cannot be serviced")
 }
 
 func checkParametersUserType(userTypeStr string) (db.UserType, error) {
@@ -239,7 +239,7 @@ func checkParametersUserType(userTypeStr string) (db.UserType, error) {
 		ok       bool
 	)
 	if userType, ok = db.Name2UserTypeMap[userTypeStr]; !ok {
-		err := fmt.Errorf("[check params] the user type does not meet the requirements")
+		err := fmt.Errorf("check user type failed: the user type does not meet the requirements")
 		return userType, err
 	}
 	return userType, nil
@@ -251,7 +251,7 @@ func checkParametersCertUsage(certUsageStr string) (db.CertUsage, error) {
 		ok        bool
 	)
 	if certUsage, ok = db.Name2CertUsageMap[certUsageStr]; !ok {
-		err := fmt.Errorf("[check params] the user type does not meet the requirements")
+		err := fmt.Errorf("check cert usage failed: the cert usage does not meet the requirements")
 		return certUsage, err
 	}
 	return certUsage, nil
@@ -263,7 +263,7 @@ func getCaType() (utils.CaType, error) {
 		ok     bool
 	)
 	if caType, ok = utils.Name2CaTypeMap[allConfig.GetCaType()]; !ok {
-		return caType, fmt.Errorf("[check] ca type is unsupport!Currently supported types: [tls],[sign],[solo] or [double]")
+		return caType, fmt.Errorf("check ca type failed: ca type is unsupport!Currently supported types: [tls],[sign],[solo] or [double]")
 	}
 	return caType, nil
 }

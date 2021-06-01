@@ -89,7 +89,7 @@ func GenerateCertByCsr(generateCertByCsrReq *models.GenerateCertByCsrReq) (strin
 	}
 	certInfo, err := CreateCertInfo(certContent, "", certConditions)
 	if err != nil {
-		logger.Error("generate cert by csr error", zap.Error(err))
+		logger.Error("generate cert by csr failed", zap.Error(err))
 		return empty, err
 	}
 	err = models.CreateCertAndInfoTransaction(certContent, certInfo)
@@ -463,7 +463,7 @@ func CreateCsr(createCsrReq *models.CreateCsrReq) ([]byte, error) {
 
 func CheckParameters(orgId, userId, userTypeStr, certUsageStr string) (userType db.UserType, certUsage db.CertUsage, err error) {
 	if len(orgId) == 0 || len(userId) == 0 {
-		err = fmt.Errorf("org id or user id can't be empty")
+		err = fmt.Errorf("check parameters failed: org id or user id can't be empty")
 		return
 	}
 
