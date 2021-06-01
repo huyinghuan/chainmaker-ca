@@ -200,8 +200,8 @@ func GenerateDoubleRootCa(rootCaConf *utils.CaConfig) error {
 	if doubleRootPathConf == nil {
 		return fmt.Errorf("[gen double] double root config cant't be empty")
 	}
-	keyTypeStr := hashTypeFromConfig()
-	hashTypeStr := keyTypeFromConfig()
+	keyTypeStr := keyTypeFromConfig()
+	hashTypeStr := hashTypeFromConfig()
 	err := genRootCa(rootCaConf, keyTypeStr, hashTypeStr, doubleRootPathConf.SignPrivateKeyPwd, db.SIGN, doubleRootPathConf.SignPrivateKeyPath, doubleRootPathConf.SignCertPath)
 	if err != nil {
 		return err

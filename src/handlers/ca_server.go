@@ -55,17 +55,13 @@ func GenCert() gin.HandlerFunc {
 			FailedJSONResp(msg, err.Error(), c)
 			return
 		}
-		certContent, privateKey, err := services.GenCert(&genCertReq)
+		certContentAndPrivateKey, err := services.GenCert(&genCertReq)
 		if err != nil {
 			msg := "generate cert failed"
 			FailedJSONResp(msg, err.Error(), c)
 			return
 		}
-		certAndPrivateKey := services.CertAndPrivateKey{
-			Cert:       certContent,
-			PrivateKey: privateKey,
-		}
-		SuccessfulJSONResp("", certAndPrivateKey, c)
+		SuccessfulJSONResp("", certContentAndPrivateKey, c)
 	}
 }
 
@@ -77,13 +73,13 @@ func QueryCert() gin.HandlerFunc {
 			FailedJSONResp(msg, err.Error(), c)
 			return
 		}
-		certContent, err := services.QueryCert(&queryCertReq)
+		queryCertResp, err := services.QueryCert(&queryCertReq)
 		if err != nil {
 			msg := "query certs failed"
 			FailedJSONResp(msg, err.Error(), c)
 			return
 		}
-		SuccessfulJSONResp("", certContent, c)
+		SuccessfulJSONResp("", queryCertResp, c)
 	}
 }
 
@@ -95,13 +91,13 @@ func QueryCertByStatus() gin.HandlerFunc {
 			FailedJSONResp(msg, err.Error(), c)
 			return
 		}
-		certContentList, err := services.QueryCertByStatus(&queryCertByStatusReq)
+		queryCertRespList, err := services.QueryCertByStatus(&queryCertByStatusReq)
 		if err != nil {
 			msg := "query certs by status failed"
 			FailedJSONResp(msg, err.Error(), c)
 			return
 		}
-		SuccessfulJSONResp("", certContentList, c)
+		SuccessfulJSONResp("", queryCertRespList, c)
 	}
 }
 

@@ -272,7 +272,11 @@ func getCaType() (utils.CaType, error) {
 //通过OrgID寻找签发人，返回签发人的私钥和证书，以及err
 func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []byte, error) {
 	//先转换certUsage
-	certUsage = covertCertUsage(certUsage)
+	caType, err := getCaType()
+	if err != nil {
+		return nil, nil, err
+	}
+	certUsage = covertCertUsage(certUsage, caType)
 	//先去找相同OrgID的中间ca
 	certInfo, err := models.FindActiveCertInfoByConditions("", orgID, certUsage, 0)
 	if err != nil || certInfo.UserType != db.INTERMRDIARY_CA { //去找rootca签

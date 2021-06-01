@@ -43,7 +43,7 @@ func TestGenerateCertByCsr(t *testing.T) {
 		fmt.Print("createCSR byte failed")
 	}
 	generateCertByCsrReq := &models.GenerateCertByCsrReq{
-		OrgID:     "org7",
+		OrgID:     "org",
 		UserID:    "default",
 		UserType:  "admin",
 		CertUsage: "sign",
@@ -69,12 +69,12 @@ func TestGenCert(t *testing.T) {
 		Locality:      "Haidian",
 		Province:      "Beijing",
 	}
-	cerContent, privateKey, err := GenCert(genCertReq)
+	cerContentAndprivateKey, err := GenCert(genCertReq)
 	if err != nil {
 		fmt.Print("Generate Cert failed", err.Error())
 	}
-	fmt.Println(cerContent)
-	fmt.Print(privateKey)
+	fmt.Println(cerContentAndprivateKey.Cert)
+	fmt.Print(cerContentAndprivateKey.PrivateKey)
 }
 
 func TestQueryCert(t *testing.T) {

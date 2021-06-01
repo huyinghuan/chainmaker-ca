@@ -1,11 +1,17 @@
 package services
 
 import (
+	"crypto/rand"
+	"crypto/x509/pkix"
+	"encoding/base64"
 	"fmt"
+	"math/big"
+	"time"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
-	"chainmaker.org/chainmaker-go/common/crypto"
+	"chainmaker.org/chainmaker-ca-backend/src/utils"
+	"chainmaker.org/chainmaker-go/common/crypto/x509"
 	"go.uber.org/zap"
 )
 
@@ -83,7 +89,7 @@ func GenerateCertByCsr(generateCertByCsrReq *models.GenerateCertByCsrReq) (strin
 	}
 	certInfo, err := CreateCertInfo(certContent, "", certConditions)
 	if err != nil {
-		logger.Error("Generate Cert By Csr error", zap.Error(err))
+		logger.Error("generate cert by csr error", zap.Error(err))
 		return empty, err
 	}
 	err = models.CreateCertAndInfoTransaction(certContent, certInfo)
@@ -96,7 +102,11 @@ func GenerateCertByCsr(generateCertByCsrReq *models.GenerateCertByCsrReq) (strin
 func GenCert(genCertReq *models.GenCertReq) (*CertAndPrivateKey, error) {
 	curUserType, curCertUsage, err := CheckParameters(genCertReq.OrgID, genCertReq.UserID, genCertReq.UserType, genCertReq.CertUsage)
 	if err != nil {
-		return
+		return nil, err
+	}
+	hashType, err := checkHashType(hashTypeFromConfig())
+	if err != nil {
+		return nil, err
 	}
 	//检查完参数看看证书是否存在
 	certContent, err := models.FindActiveCertContentByConditions(genCertReq.UserID, genCertReq.OrgID, curCertUsage, curUserType)
@@ -104,77 +114,313 @@ func GenCert(genCertReq *models.GenCertReq) (*CertAndPrivateKey, error) {
 		//证书存在
 		keyPair, err := models.FindActiveKeyPairByConditions(genCertReq.UserID, genCertReq.OrgID, curCertUsage, curUserType)
 		if err != nil {
-			return
+			return nil, err
 		}
-		return certContent.Content, keyPair.PrivateKey, nil
+		return &CertAndPrivateKey{
+			Cert:       certContent.Content,
+			PrivateKey: keyPair.PrivateKey,
+		}, nil
 	}
 	//先去生成csr流文件
-	var csrRequest CSRRequest
-	//先createkeypair
-	var privateKeyTypeStr string
-	var hashTypeStr string
-	var privateKeyPwd string
+	//要先createkeypair
 	//这些加密的方式和哈希的方式是从配置文件中读取的
-	privateKeyTypeStr = allConfig.GetKeyType()
-	hashTypeStr = allConfig.GetHashType()
-	privateKeyPwd = genCertReq.PrivateKeyPwd
+	privateKeyTypeStr := keyTypeFromConfig()
+	hashTypeStr := hashTypeFromConfig()
+	privateKeyPwd := genCertReq.PrivateKeyPwd
 	privateKey, keyPair, err := CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd)
 	if err != nil {
-		logger.Error("Create Key Pair failed", zap.Error(err))
-		return empty, empty, err
+		logger.Error("generate cert failed", zap.Error(err))
+		return nil, err
 	}
-	csrRequest.PrivateKey = privateKey
-	csrRequest.Country = genCertReq.Country
-	csrRequest.Locality = genCertReq.Locality
-	csrRequest.OrgId = genCertReq.OrgID
-	csrRequest.Province = genCertReq.Province
-	csrRequest.UserId = genCertReq.UserID
-	csrRequest.UserType = curUserType
-
+	csrRequest := &CSRRequest{
+		OrgId:      genCertReq.OrgID,
+		UserId:     genCertReq.UserID,
+		UserType:   curUserType,
+		Country:    genCertReq.Country,
+		Locality:   genCertReq.Locality,
+		Province:   genCertReq.Province,
+		PrivateKey: privateKey,
+	}
 	//用BuildCSRReqConf获得CSRRequestConfig
-	csrRequestConf := BuildCSRReqConf(&csrRequest)
+	csrRequestConf := BuildCSRReqConf(csrRequest)
 	//用createCSR获得csr流文件
 	csrByte, err := createCSR(csrRequestConf)
 	if err != nil {
-		logger.Error("Create Key Pair failed", zap.Error(err))
-		return empty, empty, err
+		logger.Error("generate cert failed", zap.Error(err))
+		return nil, err
 	}
 	//构建请求结构体
-	var certRequestConfig CertRequestConfig
-	//待完成
-	certRequestConfig.HashType = crypto.HashAlgoMap[hashTypeFromConfig()]
-	certRequestConfig.CsrBytes = csrByte
-	certRequestConfig.ExpireYear = int32(expireYearFromConfig())
-	certRequestConfig.CertUsage = curCertUsage
-	certRequestConfig.UserType = curUserType
-	//再调用
-	certRequestConfig.IssuerPrivateKey, certRequestConfig.IssuerCertBytes, err = searchIssuedCa(genCertReq.OrgID, curCertUsage)
+	issuerPrivateKey, issuerCertBytes, err := searchIssuedCa(genCertReq.OrgID, curCertUsage)
 	if err != nil {
-		logger.Error("issue certificate failed", zap.Error(err))
-		return empty, empty, err
+		logger.Error("generate cert failed", zap.Error(err))
+		return nil, err
 	}
-	certContent, err = IssueCertificate(&certRequestConfig)
-	if err != nil {
-		logger.Error("issue certificate failed", zap.Error(err))
-		return empty, empty, err
+	certRequestConfig := &CertRequestConfig{
+		HashType:         hashType,
+		CsrBytes:         csrByte,
+		ExpireYear:       int32(expireYearFromConfig()),
+		CertUsage:        curCertUsage,
+		UserType:         curUserType,
+		IssuerPrivateKey: issuerPrivateKey,
+		IssuerCertBytes:  issuerCertBytes,
 	}
-	var certConditions CertConditions
-	certConditions.UserType = curUserType
-	certConditions.CertUsage = curCertUsage
-	certConditions.UserId = genCertReq.UserID
-	certConditions.OrgId = genCertReq.OrgID
-	certConditions.CertStatus = db.ACTIVE
-	certInfo, err := CreateCertInfo(certContent, keyPair.Ski, &certConditions)
+	certContent, err = IssueCertificate(certRequestConfig)
 	if err != nil {
-		return empty, empty, err
+		logger.Error("generate cert failed", zap.Error(err))
+		return nil, err
+	}
+	certConditions := &CertConditions{
+		UserType:   curUserType,
+		CertUsage:  curCertUsage,
+		UserId:     genCertReq.UserID,
+		OrgId:      genCertReq.OrgID,
+		CertStatus: db.ACTIVE,
+	}
+	certInfo, err := CreateCertInfo(certContent, keyPair.Ski, certConditions)
+	if err != nil {
+		return nil, err
 	}
 	err = models.CreateCertTransaction(certContent, certInfo, keyPair)
 	if err != nil {
-		return empty, empty, err
+		return nil, err
 	}
-	return certContent.Content, keyPair.PrivateKey, nil
+	return &CertAndPrivateKey{
+		Cert:       certContent.Content,
+		PrivateKey: keyPair.PrivateKey,
+	}, nil
 }
 
+func QueryCert(queryCertReq *models.QueryCertReq) (*models.QueryCertResp, error) {
+	//入参的校验
+	curUserType, curCertUsage, err := CheckParameters(queryCertReq.OrgID, queryCertReq.UserID, queryCertReq.UserType, queryCertReq.CertUsage)
+	if err != nil {
+		logger.Error("query cert failed", zap.Error(err))
+		return nil, err
+	}
+	certInfo, err := models.FindActiveCertInfoByConditions(queryCertReq.UserID, queryCertReq.OrgID, curCertUsage, curUserType)
+	if err != nil { //找不到符合条件的证书
+		logger.Error("query cert failed", zap.Error(err))
+		return nil, err
+	}
+	certContent, err := models.FindCertContentBySn(certInfo.SerialNumber)
+	if err != nil { //找不到符合条件的证书
+		logger.Error("query cert failed", zap.Error(err))
+		return nil, err
+	}
+	return &models.QueryCertResp{
+		UserId:      certInfo.UserId,
+		OrgId:       certInfo.OrgId,
+		UserType:    db.UserType2NameMap[certInfo.UserType],
+		CertUsage:   db.CertUsage2NameMap[certInfo.CertUsage],
+		CertStatus:  db.CertStatus2NameMap[certInfo.CertStatus],
+		CertSn:      certInfo.SerialNumber,
+		CertContent: certContent.Content,
+		InvalidDate: certContent.InvalidDate,
+	}, nil
+}
+
+func QueryCertByStatus(queryCertByStatusReq *models.QueryCertByStatusReq) ([]*models.QueryCertResp, error) {
+	curUserType, curCertUsage, err := CheckParameters(queryCertByStatusReq.OrgID, queryCertByStatusReq.UserID, queryCertByStatusReq.UserType, queryCertByStatusReq.CertUsage)
+	if err != nil {
+		logger.Error("query cert by status failed", zap.Error(err))
+		return nil, err
+	}
+	curCertStatus, ok := db.Name2CertStatusMap[queryCertByStatusReq.CertStatus]
+	if !ok {
+		err := fmt.Errorf("the Cert Status does not meet the requirements")
+		logger.Error("query cert by status failed", zap.Error(err))
+		return nil, err
+	}
+	certInfoList, err := models.FindCertInfoByConditions(queryCertByStatusReq.UserID, queryCertByStatusReq.OrgID, curCertUsage, curUserType, curCertStatus)
+	if err != nil { //找不到符合条件的证书
+		logger.Error("query cert by status failed", zap.Error(err))
+		return nil, err
+	}
+	var res []*models.QueryCertResp
+	for _, certInfo := range certInfoList {
+		certContent, err := models.FindCertContentBySn(certInfo.SerialNumber)
+		if err != nil { //找不到符合条件的证书
+			logger.Error("query cert by status failed", zap.Error(err))
+			return nil, err
+		}
+		res = append(res, &models.QueryCertResp{
+			UserId:      certInfo.UserId,
+			OrgId:       certInfo.OrgId,
+			UserType:    db.UserType2NameMap[certInfo.UserType],
+			CertUsage:   db.CertUsage2NameMap[certInfo.CertUsage],
+			CertStatus:  db.CertStatus2NameMap[certInfo.CertStatus],
+			CertSn:      certInfo.SerialNumber,
+			CertContent: certContent.Content,
+			InvalidDate: certContent.InvalidDate,
+		})
+	}
+	return res, nil
+}
+
+//根据SN找到证书
+//保留证书，生成个新的证书，certinfo，
+func UpdateCert(updateCert *models.UpdateCertReq) (string, error) {
+	empty := ""
+	certInfo, err := models.FindCertInfoBySn(updateCert.CertSn)
+	if err != nil {
+		logger.Error("update cert failed", zap.Error(err))
+		return empty, err
+	}
+	if certInfo.CertStatus == db.EXPIRED {
+		err = fmt.Errorf("cert Has expired")
+		logger.Error("update cert failed", zap.Error(err))
+		return empty, err
+	}
+	certContent, err := models.FindCertContentBySn(updateCert.CertSn)
+	if err != nil {
+		logger.Error("update cert failed", zap.Error(err))
+		return empty, err
+	}
+	issuerPrivateKey, issuerCertBytes, err := searchIssuedCa(certInfo.OrgId, certInfo.CertUsage)
+	if err != nil {
+		logger.Error("update cert failed", zap.Error(err))
+		return empty, err
+	}
+	csrBytes, err := base64.StdEncoding.DecodeString(certContent.CsrContent)
+	if err != nil {
+		logger.Error("update cert failed", zap.Error(err))
+		return empty, err
+	}
+	certRequestConfig := &CertRequestConfig{
+		HashType:         utils.Name2HashTypeMap[allConfig.GetHashType()],
+		IssuerPrivateKey: issuerPrivateKey,
+		CsrBytes:         csrBytes,
+		IssuerCertBytes:  issuerCertBytes,
+		ExpireYear:       int32(allConfig.GetDefaultExpireTime()),
+		CertUsage:        certInfo.CertUsage,
+		UserType:         certInfo.UserType,
+	}
+	newcertContent, err := IssueCertificate(certRequestConfig)
+	if err != nil {
+		logger.Error("update cert failed", zap.Error(err))
+		return empty, err
+	}
+	certConditions := &CertConditions{
+		UserType:   certInfo.UserType,
+		CertUsage:  certInfo.CertUsage,
+		UserId:     certInfo.UserId,
+		OrgId:      certInfo.OrgId,
+		CertStatus: db.ACTIVE,
+	}
+	//入库证书和新certInfo 还有更新老的certInfo
+	newCertInfo, err := createCertInfo(newcertContent, certInfo.PrivateKeyId, certConditions)
+	if err != nil {
+		logger.Error("update cert failed", zap.Error(err))
+		return empty, err
+	}
+	err = models.CreateCertAndUpdateTransaction(newcertContent, certInfo, newCertInfo)
+	if err != nil {
+		logger.Error("update cert failed", zap.Error(err))
+		return empty, err
+	}
+	return newcertContent.Content, nil
+}
+
+func RevokedCert(revokedCertReq *models.RevokedCertReq) ([]byte, error) {
+	//先检查入参 撤销者和被撤销者是否合法
+	revokedCertInfo, err := models.FindCertInfoBySn(revokedCertReq.RevokedCertSn)
+	if err != nil {
+		logger.Error("revoked cert failed", zap.Error(err))
+		return nil, err
+	}
+	_, err = models.QueryRevokedCertByRevokedSn(revokedCertReq.RevokedCertSn)
+	if err == nil { //查找到了，已经被吊销了
+		err = fmt.Errorf("this cert had already been revoked")
+		logger.Error("revoked cert failed", zap.Error(err))
+		return nil, err
+	}
+	searchSn := revokedCertInfo.IssuerSn
+	var issueCertInfo *db.CertInfo
+	for searchSn != revokedCertReq.IssueCertSn {
+		if searchSn == 0 {
+			err = fmt.Errorf("you have no right to revoke the cert")
+			logger.Error("revoked cert failed", zap.Error(err))
+			return nil, err
+		}
+		issueCertInfo, err = models.FindCertInfoBySn(searchSn)
+		if err != nil {
+			logger.Error("revoked cert failed", zap.Error(err))
+			return nil, err
+		}
+		searchSn = issueCertInfo.IssuerSn
+	}
+	revokedCert := &db.RevokedCert{
+		OrgId:            revokedCertInfo.OrgId,
+		RevokedCertSN:    revokedCertReq.RevokedCertSn,
+		Reason:           revokedCertReq.Reason,
+		RevokedStartTime: revokedCertReq.RevokedStartTime,
+		RevokedEndTime:   revokedCertReq.RevokedEndTime,
+		RevokedBy:        revokedCertReq.IssueCertSn,
+	}
+	err = models.InsertRevokedCert(revokedCert)
+	if err != nil {
+		logger.Error("revoked cert failed", zap.Error(err))
+		return nil, err
+	}
+	//接下来生成crl
+	crlListReq := &models.CrlListReq{
+		IssueCertSn: revokedCertReq.IssueCertSn,
+	}
+	crlBytes, err := CrlList(crlListReq)
+	if err != nil {
+		logger.Error("revoked cert failed", zap.Error(err))
+		return nil, err
+	}
+	return crlBytes, nil
+}
+func CrlList(crlListReq *models.CrlListReq) ([]byte, error) {
+	issueCertUse, err := GetX509Certificate(crlListReq.IssueCertSn)
+	if err != nil {
+		logger.Error("crl list get failed", zap.Error(err))
+		return nil, err
+	}
+	issueCertInfo, err := models.FindCertInfoBySn(crlListReq.IssueCertSn)
+	if err != nil {
+		logger.Error("crl list get failed", zap.Error(err))
+		return nil, err
+	}
+	issueKeyPair, err := models.FindKeyPairBySki(issueCertInfo.PrivateKeyId)
+	if err != nil {
+		logger.Error("crl list get failed", zap.Error(err))
+		return nil, err
+	}
+	issuePrivateKeyByte, err := base64.StdEncoding.DecodeString(issueKeyPair.PrivateKey)
+	if err != nil {
+		logger.Error("crl list get failed", zap.Error(err))
+		return nil, err
+	}
+	issuePrivateKey, err := KeyBytesToPrivateKey(issuePrivateKeyByte, issueKeyPair.PrivateKeyPwd, issueKeyPair.HashType)
+	if err != nil {
+		logger.Error("crl list get failed", zap.Error(err))
+		return nil, err
+	}
+	revokedCertsList, err := models.QueryRevokedCertByIssueSn(crlListReq.IssueCertSn)
+	if err != nil {
+		logger.Error("crl list get failed", zap.Error(err))
+		return nil, err
+	}
+	var revokedCerts []pkix.RevokedCertificate
+	for _, value := range revokedCertsList {
+		revoked := pkix.RevokedCertificate{
+			SerialNumber:   big.NewInt(value.RevokedCertSN),
+			RevocationTime: time.Unix(value.RevokedEndTime, 0),
+		}
+		revokedCerts = append(revokedCerts, revoked)
+	}
+	now := time.Now()
+	next := now.Add(utils.DefaultCRLNextTime)
+	crlBytes, err := x509.CreateCRL(rand.Reader, issueCertUse, issuePrivateKey.ToStandardKey(), revokedCerts, now, next)
+	if err != nil {
+		logger.Error("crl list get failed", zap.Error(err))
+		return nil, err
+	}
+	return crlBytes, nil
+}
 func CheckParameters(orgId, userId, userTypeStr, certUsageStr string) (userType db.UserType, certUsage db.CertUsage, err error) {
 	if len(orgId) == 0 || len(userId) == 0 {
 		err = fmt.Errorf("org id or user id can't be empty")

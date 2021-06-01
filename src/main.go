@@ -34,5 +34,5 @@ func main() {
 	//loading route
 	routers.LoadCAServerRouter(g)
 	//routers.LoadChainMakerRouters(g)
-	g.Run(":8090")
+	g.Run(":8080")
 }

@@ -306,7 +306,7 @@ func BuildCSRReqConf(csrReq *CSRRequest) *CSRRequestConfig {
 }
 
 func generateCertTemplate(genConf *GenCertRequestConfig) (*x509.Certificate, error) {
-	sn, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	sn, err := rand.Int(rand.Reader, big.NewInt(1<<62))
 	if err != nil {
 		return nil, fmt.Errorf("[issue cert] rand int error: %s", err.Error())
 	}
