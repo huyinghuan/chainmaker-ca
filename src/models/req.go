@@ -49,3 +49,13 @@ type RevokedCertReq struct {
 type CrlListReq struct {
 	IssueCertSn int64 `json:"issueCertSn"`
 }
+
+type CreateCsrReq struct {
+	OrgID         string `json:"orgID"`
+	UserID        string `json:"userID"`
+	UserType      string `json:"userType"`
+	PrivateKeyPwd string `json:"privateKeyPwd"`
+	Country       string `json:"country"`
+	Locality      string `json:"locality"`
+	Province      string `json:"province"`
+}
