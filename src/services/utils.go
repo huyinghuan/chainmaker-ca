@@ -233,7 +233,7 @@ func checkParamsOfCertReq(orgID string, userType db.UserType, certUsage db.CertU
 	return fmt.Errorf("check params of req failed: the organization cannot be serviced")
 }
 
-func checkParametersUserType(userTypeStr string) (db.UserType, error) {
+func CheckParametersUserType(userTypeStr string) (db.UserType, error) {
 	var (
 		userType db.UserType
 		ok       bool
