@@ -43,7 +43,7 @@ rootpath_double:
     tls_privatekey_path: ../crypto-config/RootCA/tls/root-tls.key
     tls_privatekey_pwd: 123
     sign_cert_path: ../crypto-config/RootCA/sign/root-sign.crt
-    sign_privatekey_path: ../crypto-config/RootCA/sign/root-sign.crt   
+    sign_privatekey_path: ../crypto-config/RootCA/sign/root-sign.key   
     sign_privatekey_pwd: 123     
 
 # Intermediate config
