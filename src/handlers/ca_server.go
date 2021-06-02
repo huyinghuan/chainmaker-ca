@@ -210,10 +210,6 @@ func RevokedCert() gin.HandlerFunc {
 			InputErrorJSONResp(err.Error(), c)
 			return
 		}
-		if err := services.CheckParametersEmpty(revokedCertReq.Reason); err != nil {
-			InputMissingJSONResp(err.Error(), c)
-			return
-		}
 		crlList, err := services.RevokedCert(&services.RevokedCertReq{
 			RevokedCertSn:    revokedCertReq.RevokedCertSn,
 			IssueCertSn:      revokedCertReq.IssueCertSn,
