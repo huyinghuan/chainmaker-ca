@@ -1,3 +1,9 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package services
 
 import (
@@ -11,7 +17,7 @@ import (
 var logger *zap.Logger
 var allConfig *utils.AllConfig
 
-//InitServer 初始化CA
+//Init server
 func InitServer() {
 	logger = loggers.GetLogger()
 	allConfig = utils.GetAllConfig()

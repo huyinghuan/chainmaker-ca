@@ -1,3 +1,9 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package services
 
 import (
@@ -17,6 +23,7 @@ type CertConditions struct {
 	CertStatus db.CertStatus
 }
 
+//Create certinfo
 func CreateCertInfo(certContent *db.CertContent, privateKeyId string, conditions *CertConditions) (*db.CertInfo, error) {
 	_, err := models.FindActiveCertInfoByConditions(conditions.UserId, conditions.OrgId, conditions.CertUsage, conditions.UserType)
 	if err == nil {
@@ -63,6 +70,7 @@ func createCertInfo(certContent *db.CertContent, privateKeyId string, conditions
 	return certInfo, nil
 }
 
+//Get p2p net node id
 func GetP2pNetNodeId(userType db.UserType, certUsage db.CertUsage, nodeTlsCrtBytes []byte) (string, error) {
 	var (
 		p2pNodeId string

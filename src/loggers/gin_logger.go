@@ -1,3 +1,9 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package loggers
 
 import (
@@ -13,7 +19,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// GinLogger 接收gin框架默认的日志
+// Receive the GIN framework's default log
 func GinLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()

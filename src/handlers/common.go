@@ -1,3 +1,9 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package handlers
 
 import (
@@ -8,7 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//FailedJSONResp
+//Service error response
 func ServerErrorJSONResp(err string, c *gin.Context) {
 	resp := &models.StandardResp{
 		Code: models.SERVER_ERROR_RESP_CODE,
@@ -18,6 +24,7 @@ func ServerErrorJSONResp(err string, c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+//Input error response
 func InputErrorJSONResp(err string, c *gin.Context) {
 	resp := &models.StandardResp{
 		Code: models.INPUT_ERROR_RESP_CODE,
@@ -27,6 +34,7 @@ func InputErrorJSONResp(err string, c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+//Input empty response
 func InputMissingJSONResp(err string, c *gin.Context) {
 	resp := &models.StandardResp{
 		Code: models.INPUT_MISSING_PESP_CODE,
@@ -36,7 +44,7 @@ func InputMissingJSONResp(err string, c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-//SuccessfulJSONResp
+//Successful response
 func SuccessfulJSONResp(msg string, data interface{}, c *gin.Context) {
 	resp := models.StandardResp{
 		Code: models.SUCCESS_PESP_CODE,

@@ -1,3 +1,9 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package services
 
 import (
@@ -65,6 +71,7 @@ type RootCertRequestConfig struct {
 	HashType           string
 }
 
+//Issue cert by self
 func IssueCertBySelf(rootCertConf *RootCertRequestConfig) (*db.CertContent, error) {
 	genCertConf := &GenCertRequestConfig{
 		Country:            []string{rootCertConf.Country},
@@ -122,6 +129,7 @@ func IssueCertBySelf(rootCertConf *RootCertRequestConfig) (*db.CertContent, erro
 	return certContent, nil
 }
 
+//Issue certificate
 func IssueCertificate(certConf *CertRequestConfig) (*db.CertContent, error) {
 	issuerCert, err := ParseCertificate(certConf.IssuerCertBytes)
 	if err != nil {
@@ -279,6 +287,7 @@ type CSRRequest struct {
 	PrivateKey crypto.PrivateKey
 }
 
+//Build csrreqconf
 func BuildCSRReqConf(csrReq *CSRRequest) *CSRRequestConfig {
 	OU := db.UserType2NameMap[csrReq.UserType]
 	O := csrReq.OrgId
@@ -361,6 +370,7 @@ func getSignatureAlgorithm(privKey crypto.PrivateKey) x509.SignatureAlgorithm {
 	return signatureAlgorithm
 }
 
+//Converts certbyte to certcontent and X509 certificates
 func TransfToCertContent(certBytes []byte) (cert *x509.Certificate, certContent *db.CertContent, err error) {
 	cert, err = ParseCertificate(certBytes)
 	if err != nil {

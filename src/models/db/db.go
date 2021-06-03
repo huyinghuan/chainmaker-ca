@@ -1,3 +1,9 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package db
 
 import (
@@ -16,9 +22,10 @@ import (
 
 var zapLog *zap.Logger
 
-//DB 数据库db
+//DB database
 var DB *gorm.DB
 
+//DB init
 func DBInit() {
 	zapLog = loggers.GetLogger()
 	var err error
@@ -33,11 +40,11 @@ func DBInit() {
 	)
 	DB, err = gorm.Open(mysql.New(mysql.Config{
 		DSN:                       utils.GetDBConfig(),
-		DefaultStringSize:         256,   // string 类型字段的默认长度
-		DisableDatetimePrecision:  true,  // 禁用 datetime 精度，MySQL 5.6 之前的数据库不支持
-		DontSupportRenameIndex:    true,  // 重命名索引时采用删除并新建的方式，MySQL 5.7 之前的数据库和 MariaDB 不支持重命名索引
-		DontSupportRenameColumn:   true,  // 用 `change` 重命名列，MySQL 8 之前的数据库和 MariaDB 不支持重命名列
-		SkipInitializeWithVersion: false, // 根据当前 MySQL 版本自动配置
+		DefaultStringSize:         256,   // The default length of a field of type string
+		DisableDatetimePrecision:  true,  // Disable datetime accuracy, which is not supported by databases prior to MySQL 5.6
+		DontSupportRenameIndex:    true,  // When renaming an index, drop and create a new one. Databases prior to MySQL 5.7 and MariaDB do not support renaming indexes
+		DontSupportRenameColumn:   true,  // Use 'change' to rename columns. Prior to MySQL 8, databases and MariaDB do not support renaming columns
+		SkipInitializeWithVersion: false, // Automatically configured according to the current MySQL version
 	}), &gorm.Config{
 		Logger: newLogger,
 		NamingStrategy: schema.NamingStrategy{

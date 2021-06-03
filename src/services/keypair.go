@@ -1,3 +1,9 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package services
 
 import (
@@ -74,7 +80,7 @@ func decryptPrivKey(privKeyRaw []byte, hexHashPwd string, hashType crypto.HashTy
 	return issuerPrivKey, nil
 }
 
-//CreateKeyPair create key pair and storage into db
+//CreateKeyPair create key pair
 func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd string) (privateKey crypto.PrivateKey, keyPair *db.KeyPair, err error) {
 	privateKey, err = createPrivKey(privateKeyTypeStr)
 	if err != nil {
@@ -99,7 +105,6 @@ func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd s
 		err = fmt.Errorf("create key pair failed: %s", err.Error())
 		return
 	}
-	//key pair into db
 	keyPair = &db.KeyPair{
 		Ski:           hex.EncodeToString(ski),
 		PrivateKey:    base64.StdEncoding.EncodeToString(privKeyPemBytes),
@@ -111,6 +116,7 @@ func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd s
 	return
 }
 
+//Converts the password and privatekey bytes to keypair and privatekey
 func TransfToKeyPair(privateKeyPwd string, privateKeyBytes []byte) (keyPair *db.KeyPair, privateKey crypto.PrivateKey, err error) {
 	var (
 		hashType crypto.HashType

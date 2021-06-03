@@ -1,7 +1,14 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package models
 
 import "chainmaker.org/chainmaker-ca-backend/src/models/db"
 
+//Find certcontent which certstatus is active by conditions
 func FindActiveCertContentByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType) (*db.CertContent, error) {
 	certInfo, err := FindActiveCertInfoByConditions(userId, orgId, usage, userType)
 	if err != nil {
@@ -15,6 +22,7 @@ func FindActiveCertContentByConditions(userId, orgId string, usage db.CertUsage,
 	return certContent, nil
 }
 
+//Find certcontent which certstatus is active by conditions
 func FindActiveKeyPairByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType) (*db.KeyPair, error) {
 	certInfo, err := FindActiveCertInfoByConditions(userId, orgId, usage, userType)
 	if err != nil {
@@ -28,6 +36,7 @@ func FindActiveKeyPairByConditions(userId, orgId string, usage db.CertUsage, use
 	return keyPair, nil
 }
 
+//Find certcontent by conditions
 func FindCertContentByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType, certStatus db.CertStatus) ([]*db.CertContent, error) {
 	certInfoList, err := FindCertInfoByConditions(userId, orgId, usage, userType, certStatus)
 	if err != nil {

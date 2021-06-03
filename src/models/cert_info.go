@@ -1,3 +1,9 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package models
 
 import (
@@ -6,6 +12,7 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 )
 
+//Inserts certinfo into the database
 func InsertCertInfo(certInfo *db.CertInfo) error {
 	if err := db.DB.Debug().Create(certInfo).Error; err != nil {
 		return fmt.Errorf("[DB] create cert info to db failed: %s, sn: %d", err.Error(), certInfo.SerialNumber)
@@ -13,6 +20,7 @@ func InsertCertInfo(certInfo *db.CertInfo) error {
 	return nil
 }
 
+//Find certinfo by sn
 func FindCertInfoBySn(sn int64) (*db.CertInfo, error) {
 	var certInfo db.CertInfo
 	if err := db.DB.Debug().Where("serial_number=?", sn).First(&certInfo).Error; err != nil {
@@ -21,6 +29,7 @@ func FindCertInfoBySn(sn int64) (*db.CertInfo, error) {
 	return &certInfo, nil
 }
 
+//Check to see if certinfo exists
 func IsCertInfoExist(sn int64) *db.CertInfo {
 	var certInfo db.CertInfo
 	if err := db.DB.Debug().Where("serial_number=?", sn).First(&certInfo).Error; err != nil {
@@ -29,6 +38,7 @@ func IsCertInfoExist(sn int64) *db.CertInfo {
 	return &certInfo
 }
 
+//Find certinfo by privateKeyid
 func FindCertInfoByPrivateKey(privateKeyId string) (*db.CertInfo, error) {
 	var certInfo db.CertInfo
 	if err := db.DB.Debug().Where("private_key_id=?", privateKeyId).First(&certInfo).Error; err != nil {
@@ -37,6 +47,7 @@ func FindCertInfoByPrivateKey(privateKeyId string) (*db.CertInfo, error) {
 	return &certInfo, nil
 }
 
+//Findcertinfo by issuersn
 func FindCertInfoByIssuerSn(issuerSn int64) (*db.CertInfo, error) {
 	var certInfo db.CertInfo
 	if err := db.DB.Debug().Where("issure_sn=?", issuerSn).First(&certInfo).Error; err != nil {
@@ -44,6 +55,8 @@ func FindCertInfoByIssuerSn(issuerSn int64) (*db.CertInfo, error) {
 	}
 	return &certInfo, nil
 }
+
+//Find  certinfo which certstatus is active by conditions
 func FindActiveCertInfoByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType) (*db.CertInfo, error) {
 	var certInfo db.CertInfo
 	tx := db.DB.Debug().Where("cert_status = ?", db.ACTIVE)
@@ -66,6 +79,7 @@ func FindActiveCertInfoByConditions(userId, orgId string, usage db.CertUsage, us
 	return &certInfo, nil
 }
 
+//Update certinfo by sn
 func UpdateCertInfoBySn(certInfo *db.CertInfo, sn int64) error {
 	if err := db.DB.Debug().Model(&db.CertInfo{}).
 		Where("SerialNumber=?", certInfo.SerialNumber).Update("SerialNumber", sn).Error; err != nil {
@@ -75,6 +89,7 @@ func UpdateCertInfoBySn(certInfo *db.CertInfo, sn int64) error {
 	return nil
 }
 
+//Find certinfo by conditions
 func FindCertInfoByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType, certStatus db.CertStatus) ([]*db.CertInfo, error) {
 	var certInfos []*db.CertInfo
 	tx := db.DB.Debug()

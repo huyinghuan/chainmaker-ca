@@ -1,3 +1,9 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package utils
 
 import (
@@ -133,6 +139,7 @@ func GetDBConfig() string {
 	return mysqlURL
 }
 
+//Get all conf
 func GetAllConf() (*AllConfig, error) {
 	var allConf AllConfig
 	err := viper.Unmarshal(&allConf)

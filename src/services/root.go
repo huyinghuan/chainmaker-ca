@@ -1,3 +1,9 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package services
 
 import (
@@ -10,6 +16,7 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
 )
 
+//Generate the root CA
 func CreateRootCa() error {
 	rootConfig := getRootCaConf()
 	if rootConfig.CertConf == nil {
@@ -29,6 +36,7 @@ func CreateRootCa() error {
 	return nil
 }
 
+//Load root CA from the path in the configuration file
 func LoadRootCaFromConfig(rootConfig *utils.CaConfig) error {
 	caType, err := getCaType()
 	if err != nil {
@@ -59,6 +67,7 @@ func LoadRootCaFromConfig(rootConfig *utils.CaConfig) error {
 	return nil
 }
 
+//Load double root CA from the path in the configuration file
 func LoadDoubleRootCa() error {
 	doubleRootPathConf := getDoubleRootPathConf()
 	if doubleRootPathConf == nil {
@@ -129,6 +138,7 @@ func LoadDoubleRootCa() error {
 	return nil
 }
 
+//Load single root CA from the path in the configuration file
 func LoadSingleRootCa(rootConfig *utils.CaConfig, certUsage db.CertUsage) error {
 	keyBytes, err := ioutil.ReadFile(rootConfig.CertConf.PrivateKeyPath)
 	if err != nil {
@@ -165,6 +175,7 @@ func LoadSingleRootCa(rootConfig *utils.CaConfig, certUsage db.CertUsage) error 
 	return nil
 }
 
+//Generate root CA
 func GenerateRootCa(rootCaConf *utils.CaConfig) error {
 	caType, err := getCaType()
 	if err != nil {
@@ -195,6 +206,7 @@ func GenerateRootCa(rootCaConf *utils.CaConfig) error {
 	return nil
 }
 
+//Generate double root CA
 func GenerateDoubleRootCa(rootCaConf *utils.CaConfig) error {
 	doubleRootPathConf := getDoubleRootPathConf()
 	if doubleRootPathConf == nil {
@@ -213,6 +225,7 @@ func GenerateDoubleRootCa(rootCaConf *utils.CaConfig) error {
 	return nil
 }
 
+//Generate single root CA
 func GenerateSingleRootCa(rootCaConf *utils.CaConfig, certUsage db.CertUsage) error {
 	privateKeyPwd := rootCaConf.CertConf.PrivateKeyPwd
 	keyTypeStr := hashTypeFromConfig()

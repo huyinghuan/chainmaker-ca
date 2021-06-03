@@ -15,29 +15,15 @@ import (
 	"go.uber.org/zap"
 )
 
-//init_server里面提供了log
-
-//在实行服务之前，需要做三件事情
-//1.看能否提供服务
-//2.入参是否合法
-//3.查询是否已经存在证书
-
-//最后再申请完了ByCsr的要入库证书和证书信息两项
-//直接一步申请的要入库证书 证书信息 和密钥对三项
 type CertAndPrivateKey struct {
 	Cert       string `json:"cert"`
 	PrivateKey string `json:"privateKey"`
 }
 
+//Generate cert by csr
 func GenerateCertByCsr(generateCertByCsrReq *GenerateCertByCsrReq) (string, error) {
-	//utils里面写了一个否提供服务的函数WhetherOrNotProvideService，参数OrgID
 	var empty string
-	//检查入参合法性
-	if _, err := ParseCsr(generateCertByCsrReq.CsrBytes); err != nil {
-		logger.Error("generate cert by csr failed", zap.Error(err))
-		return empty, err
-	}
-	//看看证书是否存在
+	//Check to see if the certificate exists
 	certContent, err := models.FindActiveCertContentByConditions(generateCertByCsrReq.UserID, generateCertByCsrReq.OrgID, generateCertByCsrReq.CertUsage, generateCertByCsrReq.UserType)
 	if err == nil {
 		return certContent.Content, err
@@ -47,13 +33,6 @@ func GenerateCertByCsr(generateCertByCsrReq *GenerateCertByCsrReq) (string, erro
 	if err != nil {
 		return empty, err
 	}
-
-	//下面两项没有完成
-	//去数据库里面找可以签CA的私钥和证书
-	//先去找相同OrgID的中间CA，找到的话就可以了
-	//若没有 就直接找rootCA签就可以了，OrgID就可以了
-	//需要完成一个函数，找到可签发人的私钥和证书
-
 	issuerPrivateKey, issuerCertBytes, err := searchIssuedCa(generateCertByCsrReq.OrgID, generateCertByCsrReq.CertUsage)
 	if err != nil {
 		return empty, err
@@ -71,7 +50,7 @@ func GenerateCertByCsr(generateCertByCsrReq *GenerateCertByCsrReq) (string, erro
 	if err != nil {
 		return empty, err
 	}
-	//创建certInfo
+	//create certInfo
 	certConditions := &CertConditions{
 		UserType:   generateCertByCsrReq.UserType,
 		CertUsage:  generateCertByCsrReq.CertUsage,
@@ -91,11 +70,10 @@ func GenerateCertByCsr(generateCertByCsrReq *GenerateCertByCsrReq) (string, erro
 	return certContent.Content, nil
 }
 
+//Generate cert
 func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
-	//检查完参数看看证书是否存在
 	certContent, err := models.FindActiveCertContentByConditions(genCertReq.UserID, genCertReq.OrgID, genCertReq.CertUsage, genCertReq.UserType)
 	if err == nil {
-		//证书存在
 		keyPair, err := models.FindActiveKeyPairByConditions(genCertReq.UserID, genCertReq.OrgID, genCertReq.CertUsage, genCertReq.UserType)
 		if err != nil {
 			return nil, err
@@ -105,9 +83,8 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 			PrivateKey: keyPair.PrivateKey,
 		}, nil
 	}
-	//先去生成csr流文件
-	//要先createkeypair
-	//这些加密的方式和哈希的方式是从配置文件中读取的
+	//create csr
+	//first create keypair
 	privateKeyTypeStr := keyTypeFromConfig()
 	hashTypeStr := hashTypeFromConfig()
 	privateKeyPwd := genCertReq.PrivateKeyPwd
@@ -125,15 +102,12 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 		Province:   genCertReq.Province,
 		PrivateKey: privateKey,
 	}
-	//用BuildCSRReqConf获得CSRRequestConfig
 	csrRequestConf := BuildCSRReqConf(csrRequest)
-	//用createCSR获得csr流文件
 	csrByte, err := createCSR(csrRequestConf)
 	if err != nil {
 		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
 	}
-	//构建请求结构体
 	issuerPrivateKey, issuerCertBytes, err := searchIssuedCa(genCertReq.OrgID, genCertReq.CertUsage)
 	if err != nil {
 		logger.Error("generate cert failed", zap.Error(err))
@@ -178,14 +152,15 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 	}, nil
 }
 
+//Query cert which certstatus is active
 func QueryCert(queryCertReq *QueryCertReq) (*models.QueryCertResp, error) {
 	certInfo, err := models.FindActiveCertInfoByConditions(queryCertReq.UserID, queryCertReq.OrgID, queryCertReq.CertUsage, queryCertReq.UserType)
-	if err != nil { //找不到符合条件的证书
+	if err != nil { //can not find the cert meeting the requirement
 		logger.Error("query cert failed", zap.Error(err))
 		return nil, err
 	}
 	certContent, err := models.FindCertContentBySn(certInfo.SerialNumber)
-	if err != nil { //找不到符合条件的证书
+	if err != nil { //can not find the cert meeting the requirement
 		logger.Error("query cert failed", zap.Error(err))
 		return nil, err
 	}
@@ -201,16 +176,17 @@ func QueryCert(queryCertReq *QueryCertReq) (*models.QueryCertResp, error) {
 	}, nil
 }
 
+//Query cert by certstatus
 func QueryCertByStatus(queryCertByStatusReq *QueryCertByStatusReq) ([]*models.QueryCertResp, error) {
 	certInfoList, err := models.FindCertInfoByConditions(queryCertByStatusReq.UserID, queryCertByStatusReq.OrgID, queryCertByStatusReq.CertUsage, queryCertByStatusReq.UserType, queryCertByStatusReq.CertStatus)
-	if err != nil { //找不到符合条件的证书
+	if err != nil {
 		logger.Error("query cert by status failed", zap.Error(err))
 		return nil, err
 	}
 	var res []*models.QueryCertResp
 	for _, certInfo := range certInfoList {
 		certContent, err := models.FindCertContentBySn(certInfo.SerialNumber)
-		if err != nil { //找不到符合条件的证书
+		if err != nil {
 			logger.Error("query cert by status failed", zap.Error(err))
 			return nil, err
 		}
@@ -228,8 +204,8 @@ func QueryCertByStatus(queryCertByStatusReq *QueryCertByStatusReq) ([]*models.Qu
 	return res, nil
 }
 
-//根据SN找到证书
-//保留证书，生成个新的证书，certinfo，
+//delay the cert invail time
+//in fact a new certificate is issued
 func UpdateCert(updateCert *UpdateCertReq) (string, error) {
 	empty := ""
 	certInfo, err := models.FindCertInfoBySn(updateCert.CertSn)
@@ -278,7 +254,6 @@ func UpdateCert(updateCert *UpdateCertReq) (string, error) {
 		OrgId:      certInfo.OrgId,
 		CertStatus: db.ACTIVE,
 	}
-	//入库证书和新certInfo 还有更新老的certInfo
 	newCertInfo, err := createCertInfo(newcertContent, certInfo.PrivateKeyId, certConditions)
 	if err != nil {
 		logger.Error("update cert failed", zap.Error(err))
@@ -292,15 +267,15 @@ func UpdateCert(updateCert *UpdateCertReq) (string, error) {
 	return newcertContent.Content, nil
 }
 
+//Revoke  certificate
 func RevokedCert(revokedCertReq *RevokedCertReq) ([]byte, error) {
-	//先检查入参 撤销者和被撤销者是否合法
 	revokedCertInfo, err := models.FindCertInfoBySn(revokedCertReq.RevokedCertSn)
 	if err != nil {
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
 	}
 	_, err = models.QueryRevokedCertByRevokedSn(revokedCertReq.RevokedCertSn)
-	if err == nil { //查找到了，已经被吊销了
+	if err == nil { //find it and is already revoked
 		err = fmt.Errorf("this cert had already been revoked")
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
@@ -333,7 +308,7 @@ func RevokedCert(revokedCertReq *RevokedCertReq) ([]byte, error) {
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
 	}
-	//接下来生成crl
+	//create crl
 	crlListReq := &CrlListReq{
 		IssueCertSn: revokedCertReq.IssueCertSn,
 	}
@@ -344,6 +319,8 @@ func RevokedCert(revokedCertReq *RevokedCertReq) ([]byte, error) {
 	}
 	return crlBytes, nil
 }
+
+//Get the latest crllist
 func CrlList(crlListReq *CrlListReq) ([]byte, error) {
 	issueCertUse, err := GetX509Certificate(crlListReq.IssueCertSn)
 	if err != nil {
@@ -392,10 +369,9 @@ func CrlList(crlListReq *CrlListReq) ([]byte, error) {
 	}
 	return crlBytes, nil
 }
+
+//Create csr
 func CreateCsr(createCsrReq *CreateCsrReq) ([]byte, error) {
-	//先去生成csr流文件
-	//要先createkeypair
-	//这些加密的方式和哈希的方式是从配置文件中读取的
 	privateKeyTypeStr := keyTypeFromConfig()
 	hashTypeStr := hashTypeFromConfig()
 	privateKeyPwd := createCsrReq.PrivateKeyPwd
@@ -413,9 +389,7 @@ func CreateCsr(createCsrReq *CreateCsrReq) ([]byte, error) {
 		Province:   createCsrReq.Province,
 		PrivateKey: privateKey,
 	}
-	//用BuildCSRReqConf获得CSRRequestConfig
 	csrRequestConf := BuildCSRReqConf(csrRequest)
-	//用createCSR获得csr流文件
 	csrByte, err := createCSR(csrRequestConf)
 	if err != nil {
 		logger.Error("generate cert failed", zap.Error(err))
@@ -424,6 +398,7 @@ func CreateCsr(createCsrReq *CreateCsrReq) ([]byte, error) {
 	return csrByte, nil
 }
 
+//check orgid userid usertype certusage and determine whether to provide certificate service
 func CheckParameters(orgId, userId, userTypeStr, certUsageStr string) (userType db.UserType, certUsage db.CertUsage, err error) {
 	userType, err = CheckParametersUserType(userTypeStr)
 	if err != nil {
@@ -440,6 +415,7 @@ func CheckParameters(orgId, userId, userTypeStr, certUsageStr string) (userType 
 	return
 }
 
+//check the string parametes if empty
 func CheckParametersEmpty(parameters ...string) error {
 	for _, parameter := range parameters {
 		if len(parameter) == 0 {

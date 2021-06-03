@@ -1,3 +1,9 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package services
 
 import (
@@ -9,6 +15,7 @@ import (
 	"chainmaker.org/chainmaker-go/common/crypto"
 )
 
+//create intermediateCA which is written in the configuration file
 func CreateIntermediateCA() error {
 	if checkIntermediateCaConf() == nil {
 		return nil
@@ -24,6 +31,8 @@ func CreateIntermediateCA() error {
 	}
 	return nil
 }
+
+//Check if intermediateCA already exists
 func exsitIntermediateCA(caConfig *utils.CaConfig) bool {
 	_, err := models.FindActiveCertInfoByConditions(caConfig.CsrConf.CN, caConfig.CsrConf.O, 0, db.INTERMRDIARY_CA)
 	return err == nil
@@ -49,6 +58,7 @@ func createIntermediateCA(caConfig *utils.CaConfig) error {
 	return nil
 }
 
+//Generate single root intermediateCA
 func GenSingleIntermediateCA(caConfig *utils.CaConfig, caType utils.CaType) error {
 	if caType == utils.TLS {
 		err := genIntermediateCA(caConfig, db.TLS)
@@ -62,6 +72,8 @@ func GenSingleIntermediateCA(caConfig *utils.CaConfig, caType utils.CaType) erro
 	}
 	return nil
 }
+
+//Generate double root intermediateCA
 func GenDoubleIntermediateCA(caConfig *utils.CaConfig) error {
 	err := genIntermediateCA(caConfig, db.SIGN)
 	if err != nil {

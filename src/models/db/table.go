@@ -1,3 +1,9 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package db
 
 import (
@@ -76,6 +82,7 @@ type RevokedCert struct {
 	RevokedBy        int64
 }
 
+//Table name function
 func (*CertContent) TableName() string {
 	return CERT_CONTENT_NAME
 }

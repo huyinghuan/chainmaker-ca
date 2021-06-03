@@ -1,3 +1,9 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package services
 
 import (
@@ -72,6 +78,7 @@ func ParseCertificate(certBytes []byte) (*x509.Certificate, error) {
 	return bcx509.ChainMakerCertToX509Cert(cert)
 }
 
+//Convert privatekey byte to privatekey
 func ParsePrivateKey(privateKeyBytes []byte) (crypto.PrivateKey, error) {
 	block, _ := pem.Decode(privateKeyBytes)
 	privateKey, err := asym.PrivateKeyFromDER(block.Bytes)
@@ -80,6 +87,8 @@ func ParsePrivateKey(privateKeyBytes []byte) (crypto.PrivateKey, error) {
 	}
 	return privateKey, nil
 }
+
+//Convert privatekey byte to privatekey
 func KeyBytesToPrivateKey(privateKeyBytes []byte, hexHashPwd string, hashType crypto.HashType) (privateKey crypto.PrivateKey, err error) {
 	if len(hexHashPwd) == 0 {
 		privateKey, err = ParsePrivateKey(privateKeyBytes)
@@ -127,6 +136,7 @@ func CreateDir(dirPath string) error {
 	return nil
 }
 
+//Convert extkeyusage to string
 func ExtKeyUsageToString(extKeyUsage []x509.ExtKeyUsage) (string, error) {
 	var extKeyUsageStr []string
 	for _, v := range extKeyUsage {
@@ -233,6 +243,7 @@ func checkParamsOfCertReq(orgID string, userType db.UserType, certUsage db.CertU
 	return fmt.Errorf("check params of req failed: the organization cannot be serviced")
 }
 
+//Check and transform usertype(string) ot db.UserType
 func CheckParametersUserType(userTypeStr string) (db.UserType, error) {
 	var (
 		userType db.UserType
@@ -268,15 +279,14 @@ func getCaType() (utils.CaType, error) {
 	return caType, nil
 }
 
-//通过OrgID寻找签发人，返回签发人的私钥和证书，以及err
+//Find the issuer through the orgid
 func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []byte, error) {
-	//先转换certUsage
 	caType, err := getCaType()
 	if err != nil {
 		return nil, nil, err
 	}
 	certUsage = covertCertUsage(certUsage, caType)
-	//先去找相同OrgID的中间ca
+	//Looking for an intermediate CA with the same orgid
 	certInfo, err := models.FindActiveCertInfoByConditions("", orgID, certUsage, 0)
 	if err != nil || certInfo.UserType != db.INTERMRDIARY_CA { //去找rootca签
 		certInfo, err = models.FindActiveCertInfoByConditions("", "", certUsage, db.ROOT_CA)
@@ -308,8 +318,7 @@ func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []
 	return privateKey, reCertContent, nil
 }
 
-//根据启动模式和用户提供certusage的来确定寻找的CA的certusage字段
-//这里已经判断完可以提供了服务了才能使用
+//Determine the CertUsage field of the CA you are looking for based on the startup mode and the one the user provided
 func covertCertUsage(certUsage db.CertUsage, caType utils.CaType) db.CertUsage {
 	if caType == utils.DOUBLE_ROOT {
 		if certUsage == db.SIGN {
@@ -324,6 +333,7 @@ func covertCertUsage(certUsage db.CertUsage, caType utils.CaType) db.CertUsage {
 	return db.TLS
 }
 
+//Read file
 func ReadWithFile(file multipart.File) ([]byte, error) {
 	var result []byte
 	var tmp = make([]byte, 128)
@@ -340,6 +350,7 @@ func ReadWithFile(file multipart.File) ([]byte, error) {
 	return result, nil
 }
 
+//Get X509 certificate by sn
 func GetX509Certificate(Sn int64) (*x509.Certificate, error) {
 	certContent, err := models.FindCertContentBySn(Sn)
 	if err != nil {
