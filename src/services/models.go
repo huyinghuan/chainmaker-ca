@@ -49,11 +49,9 @@ type UpdateCertReq struct {
 }
 
 type RevokedCertReq struct {
-	RevokedCertSn    int64
-	IssueCertSn      int64
-	Reason           string
-	RevokedStartTime int64
-	RevokedEndTime   int64
+	RevokedCertSn int64
+	IssueCertSn   int64
+	Reason        string
 }
 
 type CrlListReq struct {

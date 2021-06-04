@@ -8,6 +8,7 @@ package services
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
@@ -156,7 +157,11 @@ func createIMCACertReqConf(caConfig *utils.CaConfig, csrByte []byte, certUsage d
 	if err != nil {
 		return nil, err
 	}
-	issueprivateKey, err := KeyBytesToPrivateKey(dePrivatKey, issueKeyPair.PrivateKeyPwd, issueKeyPair.HashType)
+	hashPwd, err := hex.DecodeString(issueKeyPair.PrivateKeyPwd)
+	if err != nil {
+		return nil, err
+	}
+	issueprivateKey, err := KeyBytesToPrivateKey(dePrivatKey, string(hashPwd))
 	if err != nil {
 		return nil, err
 	}

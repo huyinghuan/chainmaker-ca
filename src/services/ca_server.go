@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"time"
@@ -269,38 +270,37 @@ func UpdateCert(updateCert *UpdateCertReq) (string, error) {
 
 //Revoke  certificate
 func RevokedCert(revokedCertReq *RevokedCertReq) ([]byte, error) {
-	revokedCertInfo, err := models.FindCertInfoBySn(revokedCertReq.RevokedCertSn)
-	if err != nil {
-		logger.Error("revoked cert failed", zap.Error(err))
-		return nil, err
-	}
-	_, err = models.QueryRevokedCertByRevokedSn(revokedCertReq.RevokedCertSn)
+	_, err := models.QueryRevokedCertByRevokedSn(revokedCertReq.RevokedCertSn)
 	if err == nil { //find it and is already revoked
 		err = fmt.Errorf("this cert had already been revoked")
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
 	}
-	searchSn := revokedCertInfo.IssuerSn
-	var issueCertInfo *db.CertInfo
-	for searchSn != revokedCertReq.IssueCertSn {
-		if searchSn == 0 {
-			err = fmt.Errorf("you have no right to revoke the cert")
-			logger.Error("revoked cert failed", zap.Error(err))
-			return nil, err
-		}
-		issueCertInfo, err = models.FindCertInfoBySn(searchSn)
-		if err != nil {
-			logger.Error("revoked cert failed", zap.Error(err))
-			return nil, err
-		}
-		searchSn = issueCertInfo.IssuerSn
+	ok, err := searchCertChain(revokedCertReq.RevokedCertSn, revokedCertReq.IssueCertSn)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		err := fmt.Errorf("issue cert is not in revoked cert chain")
+		logger.Error("revoked cert failed", zap.Error(err))
+		return nil, err
+	}
+	issueCertInfo, err := models.FindCertInfoBySn(revokedCertReq.IssueCertSn)
+	if err != nil {
+		logger.Error("revoked cert failed", zap.Error(err))
+		return nil, err
+	}
+	revokedCertContent, err := models.FindCertContentBySn(revokedCertReq.RevokedCertSn)
+	if err != nil {
+		logger.Error("revoked cert failed", zap.Error(err))
+		return nil, err
 	}
 	revokedCert := &db.RevokedCert{
-		OrgId:            revokedCertInfo.OrgId,
+		OrgId:            issueCertInfo.OrgId,
 		RevokedCertSN:    revokedCertReq.RevokedCertSn,
 		Reason:           revokedCertReq.Reason,
-		RevokedStartTime: revokedCertReq.RevokedStartTime,
-		RevokedEndTime:   revokedCertReq.RevokedEndTime,
+		RevokedStartTime: time.Now().Unix(),
+		RevokedEndTime:   revokedCertContent.InvalidDate,
 		RevokedBy:        revokedCertReq.IssueCertSn,
 	}
 	err = models.InsertRevokedCert(revokedCert)
@@ -342,11 +342,18 @@ func CrlList(crlListReq *CrlListReq) ([]byte, error) {
 		logger.Error("crl list get failed", zap.Error(err))
 		return nil, err
 	}
-	issuePrivateKey, err := KeyBytesToPrivateKey(issuePrivateKeyByte, issueKeyPair.PrivateKeyPwd, issueKeyPair.HashType)
+
+	hashPwd, err := hex.DecodeString(issueKeyPair.PrivateKeyPwd)
+	if err != nil {
+		return nil, err
+	}
+
+	issuePrivateKey, err := KeyBytesToPrivateKey(issuePrivateKeyByte, string(hashPwd))
 	if err != nil {
 		logger.Error("crl list get failed", zap.Error(err))
 		return nil, err
 	}
+
 	revokedCertsList, err := models.QueryRevokedCertByIssueSn(crlListReq.IssueCertSn)
 	if err != nil {
 		logger.Error("crl list get failed", zap.Error(err))

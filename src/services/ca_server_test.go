@@ -137,11 +137,9 @@ func TestRevokedCert(t *testing.T) {
 	InitDB()
 	InitServer()
 	revokedCertReq := &RevokedCertReq{
-		RevokedCertSn:    480460,
-		IssueCertSn:      0,
-		Reason:           "",
-		RevokedStartTime: 1622624317,
-		RevokedEndTime:   1622627917,
+		RevokedCertSn: 480460,
+		IssueCertSn:   0,
+		Reason:        "",
 	}
 	crl, err := RevokedCert(revokedCertReq)
 	if err != nil {

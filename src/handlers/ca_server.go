@@ -212,17 +212,15 @@ func RevokedCert() gin.HandlerFunc {
 			InputErrorJSONResp(err.Error(), c)
 			return
 		}
-		if revokedCertReq.IssueCertSn == 0 || revokedCertReq.RevokedCertSn == 0 || revokedCertReq.RevokedEndTime == 0 || revokedCertReq.RevokedEndTime == 0 {
-			err := fmt.Errorf("input SN or Time is illegal")
+		if revokedCertReq.IssueCertSn == 0 || revokedCertReq.RevokedCertSn == 0 {
+			err := fmt.Errorf("input issue sn or revoked sn is illegal")
 			InputErrorJSONResp(err.Error(), c)
 			return
 		}
 		crlList, err := services.RevokedCert(&services.RevokedCertReq{
-			RevokedCertSn:    revokedCertReq.RevokedCertSn,
-			IssueCertSn:      revokedCertReq.IssueCertSn,
-			Reason:           revokedCertReq.Reason,
-			RevokedStartTime: revokedCertReq.RevokedStartTime,
-			RevokedEndTime:   revokedCertReq.RevokedEndTime,
+			RevokedCertSn: revokedCertReq.RevokedCertSn,
+			IssueCertSn:   revokedCertReq.IssueCertSn,
+			Reason:        revokedCertReq.Reason,
 		})
 		if err != nil {
 			ServerErrorJSONResp(err.Error(), c)

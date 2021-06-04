@@ -238,8 +238,6 @@ func GenerateSingleRootCa(rootCaConf *utils.CaConfig, certUsage db.CertUsage) er
 }
 
 func genRootCa(rootCaConf *utils.CaConfig, keyTypeStr, hashTypeStr, privateKeyPwd string, certUsage db.CertUsage, keyPath, certPath string) error {
-	var keyPair *db.KeyPair
-	var certContent *db.CertContent
 	certInfo, err := models.FindActiveCertInfoByConditions(rootCaConf.CsrConf.CN, rootCaConf.CsrConf.O, certUsage, db.ROOT_CA)
 	if err != nil {
 		privateKey, keyPair, err := CreateKeyPair(keyTypeStr, hashTypeStr, privateKeyPwd)
@@ -278,33 +276,22 @@ func genRootCa(rootCaConf *utils.CaConfig, keyTypeStr, hashTypeStr, privateKeyPw
 		if err != nil {
 			return err
 		}
-		return nil
-	} else {
-		keyPair, err = models.FindKeyPairBySki(certInfo.PrivateKeyId)
+		keyBytes, err := base64.StdEncoding.DecodeString(keyPair.PrivateKey)
 		if err != nil {
-			return err
+			return fmt.Errorf("generate root ca failed:: %s", err.Error())
 		}
-		certContent, err = models.FindCertContentBySn(certInfo.SerialNumber)
+		err = WirteFile(keyPath, keyBytes)
 		if err != nil {
-			return err
+			return fmt.Errorf("generate root ca failed:: %s", err.Error())
 		}
-		logger.Info("root cert is exist,nothing to do")
-	}
-	keyBytes, err := base64.StdEncoding.DecodeString(keyPair.PrivateKey)
-	if err != nil {
-		return fmt.Errorf("generate root ca failed:: %s", err.Error())
-	}
-	err = WirteFile(keyPath, keyBytes)
-	if err != nil {
-		return fmt.Errorf("generate root ca failed:: %s", err.Error())
-	}
-	certBytes, err := base64.StdEncoding.DecodeString(certContent.Content)
-	if err != nil {
-		return fmt.Errorf("generate root ca failed:: %s", err.Error())
-	}
-	err = WirteFile(certPath, certBytes)
-	if err != nil {
-		return fmt.Errorf("generate root ca failed: %s", err.Error())
+		certBytes, err := base64.StdEncoding.DecodeString(certContent.Content)
+		if err != nil {
+			return fmt.Errorf("generate root ca failed:: %s", err.Error())
+		}
+		err = WirteFile(certPath, certBytes)
+		if err != nil {
+			return fmt.Errorf("generate root ca failed: %s", err.Error())
+		}
 	}
 	return nil
 }

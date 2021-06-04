@@ -21,11 +21,6 @@ var allConfig *utils.AllConfig
 func InitServer() {
 	logger = loggers.GetLogger()
 	allConfig = utils.GetAllConfig()
-	if hashTypeFromConfig() == "SM3" && keyTypeFromConfig() != "SM2" || hashTypeFromConfig() != "SM3" && keyTypeFromConfig() == "SM2" {
-		err := fmt.Errorf("the sm3 should be used with the sm2")
-		logger.Error("init server failed", zap.Error(err))
-
-	}
 	err := CreateRootCa()
 	if err != nil {
 		logger.Error("init server failed", zap.Error(err))
@@ -35,5 +30,24 @@ func InitServer() {
 	if err != nil {
 		logger.Error("init server failed", zap.Error(err))
 		return
+	}
+}
+
+func checkBaseConf() {
+	if hashTypeFromConfig() == "SM3" && keyTypeFromConfig() != "SM2" || hashTypeFromConfig() != "SM3" && keyTypeFromConfig() == "SM2" {
+		err := fmt.Errorf("the sm3 should be used with the sm2")
+		panic(err)
+	}
+	if expireYearFromConfig() <= 0 {
+		err := fmt.Errorf("the expire year in config format error")
+		panic(err)
+	}
+	_, err := getCaType()
+	if err != nil {
+		panic(err)
+	}
+	if len(provideServiceFor()) == 0 {
+		err := fmt.Errorf("the provide service for in config format error")
+		panic(err)
 	}
 }

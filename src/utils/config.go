@@ -33,6 +33,7 @@ type BaseConf struct {
 	KeyType           string   `mapstructure:"key_type"`
 	CanIssueca        bool     `mapstructure:"can_issue_ca"`
 	ProvideServiceFor []string `mapstructure:"provide_service_for"`
+	IsKeyEncrypt      bool     `mapstructure:"key_encrypt"`
 }
 
 type CaConfig struct {
@@ -177,6 +178,10 @@ func (ac *AllConfig) GetCanIssueCa() bool {
 
 func (ac *AllConfig) GetProvideServiceFor() []string {
 	return ac.BaseConf.ProvideServiceFor
+}
+
+func (ac *AllConfig) IsKeyEncrypt() bool {
+	return ac.BaseConf.IsKeyEncrypt
 }
 
 func (ac *AllConfig) GetCaType() string {

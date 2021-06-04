@@ -9,6 +9,7 @@ package services
 import (
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -89,14 +90,14 @@ func ParsePrivateKey(privateKeyBytes []byte) (crypto.PrivateKey, error) {
 }
 
 //Convert privatekey byte to privatekey
-func KeyBytesToPrivateKey(privateKeyBytes []byte, hexHashPwd string, hashType crypto.HashType) (privateKey crypto.PrivateKey, err error) {
-	if len(hexHashPwd) == 0 {
+func KeyBytesToPrivateKey(privateKeyBytes []byte, hashPwd string) (privateKey crypto.PrivateKey, err error) {
+	if !isKeyEncryptFromConfig() {
 		privateKey, err = ParsePrivateKey(privateKeyBytes)
 		if err != nil {
 			return
 		}
 	}
-	privateKey, err = decryptPrivKey(privateKeyBytes, hexHashPwd, hashType)
+	privateKey, err = decryptPrivKey(privateKeyBytes, hashPwd)
 	if err != nil {
 		return
 	}
@@ -201,6 +202,10 @@ func keyTypeFromConfig() string {
 
 func expireYearFromConfig() int {
 	return allConfig.GetDefaultExpireTime()
+}
+
+func isKeyEncryptFromConfig() bool {
+	return allConfig.IsKeyEncrypt()
 }
 
 func checkIntermediateCaConf() []*utils.CaConfig {
@@ -311,7 +316,11 @@ func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []
 	if err != nil {
 		return nil, nil, err
 	}
-	privateKey, err := KeyBytesToPrivateKey(dePrivatKey, keyPair.PrivateKeyPwd, keyPair.HashType)
+	hashPwd, err := hex.DecodeString(keyPair.PrivateKeyPwd)
+	if err != nil {
+		return nil, nil, err
+	}
+	privateKey, err := KeyBytesToPrivateKey(dePrivatKey, string(hashPwd))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -365,4 +374,22 @@ func GetX509Certificate(Sn int64) (*x509.Certificate, error) {
 		return nil, err
 	}
 	return certContentByteUse, nil
+}
+
+func searchCertChain(certSn, issueSn int64) (bool, error) {
+	if issueSn == 0 {
+		return false, fmt.Errorf("can't search root cert chain")
+	}
+	certInfo, err := models.FindCertInfoBySn(certSn)
+	if err != nil {
+		return false, err
+	}
+	if certInfo.IssuerSn == issueSn {
+		return true, nil
+	}
+	certSn = certInfo.IssuerSn
+	if certSn == 0 {
+		return false, nil
+	}
+	return searchCertChain(certSn, issueSn)
 }
