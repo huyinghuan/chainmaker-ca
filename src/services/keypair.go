@@ -13,9 +13,6 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
@@ -51,19 +48,6 @@ func encryptPrivKey(privKey crypto.PrivateKey, hashPwd string) ([]byte, error) {
 		return nil, fmt.Errorf("encrypt private key failed: %s", err.Error())
 	}
 	return pem.EncodeToMemory(privKeyPem), nil
-}
-
-//WritePrivKeyFile write private key to file
-func WritePrivKeyFile(privKeyFilePath string, data []byte) error {
-	dir, _ := path.Split(privKeyFilePath)
-	err := CreateDir(dir)
-	if err != nil {
-		return err
-	}
-	if err := ioutil.WriteFile(privKeyFilePath, data, os.ModePerm); err != nil {
-		return fmt.Errorf("write private key file failed: %s", err.Error())
-	}
-	return nil
 }
 
 //DecryptPrivKey decrypt private key
@@ -125,8 +109,8 @@ func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd s
 	return
 }
 
-//Converts the password and privatekey bytes to keypair and privatekey
-func TransfToKeyPair(privateKeyPwd string, privateKeyBytes []byte) (keyPair *db.KeyPair, privateKey crypto.PrivateKey, err error) {
+//Convert the password and privatekey bytes to keypair and privatekey
+func ConvertToKeyPair(privateKeyPwd string, privateKeyBytes []byte) (keyPair *db.KeyPair, privateKey crypto.PrivateKey, err error) {
 	var (
 		hashType   crypto.HashType
 		keyType    crypto.KeyType

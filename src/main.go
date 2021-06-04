@@ -24,6 +24,7 @@ func init() {
 	db.DBInit()
 	services.InitServer()
 }
+
 func main() {
 	g := gin.New()
 	//loading middleware

@@ -22,10 +22,10 @@ type CertAndPrivateKey struct {
 }
 
 //Generate cert by csr
-func GenerateCertByCsr(generateCertByCsrReq *GenerateCertByCsrReq) (string, error) {
+func GenCertByCsr(genCertByCsrReq *GenCertByCsrReq) (string, error) {
 	var empty string
 	//Check to see if the certificate exists
-	certContent, err := models.FindActiveCertContentByConditions(generateCertByCsrReq.UserID, generateCertByCsrReq.OrgID, generateCertByCsrReq.CertUsage, generateCertByCsrReq.UserType)
+	certContent, err := models.FindActiveCertContentByConditions(genCertByCsrReq.UserId, genCertByCsrReq.OrgId, genCertByCsrReq.CertUsage, genCertByCsrReq.UserType)
 	if err == nil {
 		return certContent.Content, err
 	}
@@ -34,18 +34,18 @@ func GenerateCertByCsr(generateCertByCsrReq *GenerateCertByCsrReq) (string, erro
 	if err != nil {
 		return empty, err
 	}
-	issuerPrivateKey, issuerCertBytes, err := searchIssuedCa(generateCertByCsrReq.OrgID, generateCertByCsrReq.CertUsage)
+	issuerPrivateKey, issuerCertBytes, err := searchIssuedCa(genCertByCsrReq.OrgId, genCertByCsrReq.CertUsage)
 	if err != nil {
 		return empty, err
 	}
 	certRequestConfig := &CertRequestConfig{
 		HashType:         hashType,
 		IssuerPrivateKey: issuerPrivateKey,
-		CsrBytes:         generateCertByCsrReq.CsrBytes,
+		CsrBytes:         genCertByCsrReq.CsrBytes,
 		IssuerCertBytes:  issuerCertBytes,
 		ExpireYear:       int32(expireYearFromConfig()),
-		CertUsage:        generateCertByCsrReq.CertUsage,
-		UserType:         generateCertByCsrReq.UserType,
+		CertUsage:        genCertByCsrReq.CertUsage,
+		UserType:         genCertByCsrReq.UserType,
 	}
 	certContent, err = IssueCertificate(certRequestConfig)
 	if err != nil {
@@ -53,10 +53,10 @@ func GenerateCertByCsr(generateCertByCsrReq *GenerateCertByCsrReq) (string, erro
 	}
 	//create certInfo
 	certConditions := &CertConditions{
-		UserType:   generateCertByCsrReq.UserType,
-		CertUsage:  generateCertByCsrReq.CertUsage,
-		UserId:     generateCertByCsrReq.UserID,
-		OrgId:      generateCertByCsrReq.OrgID,
+		UserType:   genCertByCsrReq.UserType,
+		CertUsage:  genCertByCsrReq.CertUsage,
+		UserId:     genCertByCsrReq.UserId,
+		OrgId:      genCertByCsrReq.OrgId,
 		CertStatus: db.ACTIVE,
 	}
 	certInfo, err := CreateCertInfo(certContent, "", certConditions)
@@ -73,9 +73,9 @@ func GenerateCertByCsr(generateCertByCsrReq *GenerateCertByCsrReq) (string, erro
 
 //Generate cert
 func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
-	certContent, err := models.FindActiveCertContentByConditions(genCertReq.UserID, genCertReq.OrgID, genCertReq.CertUsage, genCertReq.UserType)
+	certContent, err := models.FindActiveCertContentByConditions(genCertReq.UserId, genCertReq.OrgId, genCertReq.CertUsage, genCertReq.UserType)
 	if err == nil {
-		keyPair, err := models.FindActiveKeyPairByConditions(genCertReq.UserID, genCertReq.OrgID, genCertReq.CertUsage, genCertReq.UserType)
+		keyPair, err := models.FindActiveKeyPairByConditions(genCertReq.UserId, genCertReq.OrgId, genCertReq.CertUsage, genCertReq.UserType)
 		if err != nil {
 			return nil, err
 		}
@@ -95,8 +95,8 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 		return nil, err
 	}
 	csrRequest := &CSRRequest{
-		OrgId:      genCertReq.OrgID,
-		UserId:     genCertReq.UserID,
+		OrgId:      genCertReq.OrgId,
+		UserId:     genCertReq.UserId,
 		UserType:   genCertReq.UserType,
 		Country:    genCertReq.Country,
 		Locality:   genCertReq.Locality,
@@ -109,7 +109,7 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
 	}
-	issuerPrivateKey, issuerCertBytes, err := searchIssuedCa(genCertReq.OrgID, genCertReq.CertUsage)
+	issuerPrivateKey, issuerCertBytes, err := searchIssuedCa(genCertReq.OrgId, genCertReq.CertUsage)
 	if err != nil {
 		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
@@ -135,8 +135,8 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 	certConditions := &CertConditions{
 		UserType:   genCertReq.UserType,
 		CertUsage:  genCertReq.CertUsage,
-		UserId:     genCertReq.UserID,
-		OrgId:      genCertReq.OrgID,
+		UserId:     genCertReq.UserId,
+		OrgId:      genCertReq.OrgId,
 		CertStatus: db.ACTIVE,
 	}
 	certInfo, err := CreateCertInfo(certContent, keyPair.Ski, certConditions)
@@ -155,7 +155,7 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 
 //Query cert which certstatus is active
 func QueryCert(queryCertReq *QueryCertReq) (*models.QueryCertResp, error) {
-	certInfo, err := models.FindActiveCertInfoByConditions(queryCertReq.UserID, queryCertReq.OrgID, queryCertReq.CertUsage, queryCertReq.UserType)
+	certInfo, err := models.FindActiveCertInfoByConditions(queryCertReq.UserId, queryCertReq.OrgId, queryCertReq.CertUsage, queryCertReq.UserType)
 	if err != nil { //can not find the cert meeting the requirement
 		logger.Error("query cert failed", zap.Error(err))
 		return nil, err
@@ -179,7 +179,7 @@ func QueryCert(queryCertReq *QueryCertReq) (*models.QueryCertResp, error) {
 
 //Query cert by certstatus
 func QueryCertByStatus(queryCertByStatusReq *QueryCertByStatusReq) ([]*models.QueryCertResp, error) {
-	certInfoList, err := models.FindCertInfoByConditions(queryCertByStatusReq.UserID, queryCertByStatusReq.OrgID, queryCertByStatusReq.CertUsage, queryCertByStatusReq.UserType, queryCertByStatusReq.CertStatus)
+	certInfoList, err := models.FindCertInfoByConditions(queryCertByStatusReq.UserId, queryCertByStatusReq.OrgId, queryCertByStatusReq.CertUsage, queryCertByStatusReq.UserType, queryCertByStatusReq.CertStatus)
 	if err != nil {
 		logger.Error("query cert by status failed", zap.Error(err))
 		return nil, err
@@ -205,11 +205,11 @@ func QueryCertByStatus(queryCertByStatusReq *QueryCertByStatusReq) ([]*models.Qu
 	return res, nil
 }
 
-//delay the cert invail time
+//renew the cert invail time
 //in fact a new certificate is issued
-func UpdateCert(updateCert *UpdateCertReq) (string, error) {
-	empty := ""
-	certInfo, err := models.FindCertInfoBySn(updateCert.CertSn)
+func RenewCert(renewCertReq *RenewCertReq) (string, error) {
+	var empty string
+	certInfo, err := models.FindCertInfoBySn(renewCertReq.CertSn)
 	if err != nil {
 		logger.Error("update cert failed", zap.Error(err))
 		return empty, err
@@ -219,7 +219,7 @@ func UpdateCert(updateCert *UpdateCertReq) (string, error) {
 		logger.Error("update cert failed", zap.Error(err))
 		return empty, err
 	}
-	certContent, err := models.FindCertContentBySn(updateCert.CertSn)
+	certContent, err := models.FindCertContentBySn(renewCertReq.CertSn)
 	if err != nil {
 		logger.Error("update cert failed", zap.Error(err))
 		return empty, err
@@ -269,14 +269,14 @@ func UpdateCert(updateCert *UpdateCertReq) (string, error) {
 }
 
 //Revoke  certificate
-func RevokedCert(revokedCertReq *RevokedCertReq) ([]byte, error) {
-	_, err := models.QueryRevokedCertByRevokedSn(revokedCertReq.RevokedCertSn)
+func RevokeCert(revokeCertReq *RevokeCertReq) ([]byte, error) {
+	_, err := models.QueryRevokedCertByRevokedSn(revokeCertReq.RevokedCertSn)
 	if err == nil { //find it and is already revoked
 		err = fmt.Errorf("this cert had already been revoked")
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
 	}
-	ok, err := searchCertChain(revokedCertReq.RevokedCertSn, revokedCertReq.IssueCertSn)
+	ok, err := searchCertChain(revokeCertReq.RevokedCertSn, revokeCertReq.IssueCertSn)
 	if err != nil {
 		return nil, err
 	}
@@ -285,23 +285,23 @@ func RevokedCert(revokedCertReq *RevokedCertReq) ([]byte, error) {
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
 	}
-	issueCertInfo, err := models.FindCertInfoBySn(revokedCertReq.IssueCertSn)
+	issueCertInfo, err := models.FindCertInfoBySn(revokeCertReq.IssueCertSn)
 	if err != nil {
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
 	}
-	revokedCertContent, err := models.FindCertContentBySn(revokedCertReq.RevokedCertSn)
+	revokedCertContent, err := models.FindCertContentBySn(revokeCertReq.RevokedCertSn)
 	if err != nil {
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
 	}
 	revokedCert := &db.RevokedCert{
 		OrgId:            issueCertInfo.OrgId,
-		RevokedCertSN:    revokedCertReq.RevokedCertSn,
-		Reason:           revokedCertReq.Reason,
+		RevokedCertSN:    revokeCertReq.RevokedCertSn,
+		Reason:           revokeCertReq.Reason,
 		RevokedStartTime: time.Now().Unix(),
 		RevokedEndTime:   revokedCertContent.InvalidDate,
-		RevokedBy:        revokedCertReq.IssueCertSn,
+		RevokedBy:        revokeCertReq.IssueCertSn,
 	}
 	err = models.InsertRevokedCert(revokedCert)
 	if err != nil {
@@ -309,10 +309,10 @@ func RevokedCert(revokedCertReq *RevokedCertReq) ([]byte, error) {
 		return nil, err
 	}
 	//create crl
-	crlListReq := &CrlListReq{
-		IssueCertSn: revokedCertReq.IssueCertSn,
+	genCrlReq := &GenCrlReq{
+		IssueCertSn: revokeCertReq.IssueCertSn,
 	}
-	crlBytes, err := CrlList(crlListReq)
+	crlBytes, err := GenCrl(genCrlReq)
 	if err != nil {
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
@@ -321,13 +321,13 @@ func RevokedCert(revokedCertReq *RevokedCertReq) ([]byte, error) {
 }
 
 //Get the latest crllist
-func CrlList(crlListReq *CrlListReq) ([]byte, error) {
-	issueCertUse, err := GetX509Certificate(crlListReq.IssueCertSn)
+func GenCrl(genCrlReq *GenCrlReq) ([]byte, error) {
+	issueCertUse, err := GetX509Certificate(genCrlReq.IssueCertSn)
 	if err != nil {
 		logger.Error("crl list get failed", zap.Error(err))
 		return nil, err
 	}
-	issueCertInfo, err := models.FindCertInfoBySn(crlListReq.IssueCertSn)
+	issueCertInfo, err := models.FindCertInfoBySn(genCrlReq.IssueCertSn)
 	if err != nil {
 		logger.Error("crl list get failed", zap.Error(err))
 		return nil, err
@@ -354,7 +354,7 @@ func CrlList(crlListReq *CrlListReq) ([]byte, error) {
 		return nil, err
 	}
 
-	revokedCertsList, err := models.QueryRevokedCertByIssueSn(crlListReq.IssueCertSn)
+	revokedCertsList, err := models.QueryRevokedCertByIssueSn(genCrlReq.IssueCertSn)
 	if err != nil {
 		logger.Error("crl list get failed", zap.Error(err))
 		return nil, err
@@ -377,23 +377,23 @@ func CrlList(crlListReq *CrlListReq) ([]byte, error) {
 	return crlBytes, nil
 }
 
-//Create csr
-func CreateCsr(createCsrReq *CreateCsrReq) ([]byte, error) {
+//Generate csr
+func GenCsr(genCsrReq *GenCsrReq) ([]byte, error) {
 	privateKeyTypeStr := keyTypeFromConfig()
 	hashTypeStr := hashTypeFromConfig()
-	privateKeyPwd := createCsrReq.PrivateKeyPwd
+	privateKeyPwd := genCsrReq.PrivateKeyPwd
 	privateKey, _, err := CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd)
 	if err != nil {
 		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
 	}
 	csrRequest := &CSRRequest{
-		OrgId:      createCsrReq.OrgID,
-		UserId:     createCsrReq.UserID,
-		UserType:   createCsrReq.UserType,
-		Country:    createCsrReq.Country,
-		Locality:   createCsrReq.Locality,
-		Province:   createCsrReq.Province,
+		OrgId:      genCsrReq.OrgId,
+		UserId:     genCsrReq.UserId,
+		UserType:   genCsrReq.UserType,
+		Country:    genCsrReq.Country,
+		Locality:   genCsrReq.Locality,
+		Province:   genCsrReq.Province,
 		PrivateKey: privateKey,
 	}
 	csrRequestConf := BuildCSRReqConf(csrRequest)
@@ -405,7 +405,7 @@ func CreateCsr(createCsrReq *CreateCsrReq) ([]byte, error) {
 	return csrByte, nil
 }
 
-//check orgid userid usertype certusage and determine whether to provide certificate service
+//check orgId userId usertype certusage and determine whether to provIde certificate service
 func CheckParameters(orgId, userId, userTypeStr, certUsageStr string) (userType db.UserType, certUsage db.CertUsage, err error) {
 	userType, err = CheckParametersUserType(userTypeStr)
 	if err != nil {
@@ -426,7 +426,7 @@ func CheckParameters(orgId, userId, userTypeStr, certUsageStr string) (userType 
 func CheckParametersEmpty(parameters ...string) error {
 	for _, parameter := range parameters {
 		if len(parameter) == 0 {
-			err := fmt.Errorf("check parameters failed: org id or user id can't be empty")
+			err := fmt.Errorf("check parameters failed: required parameters cannot be blank")
 			return err
 		}
 	}

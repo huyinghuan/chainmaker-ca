@@ -47,14 +47,14 @@ func TestGenerateCertByCsr(t *testing.T) {
 	if err != nil {
 		fmt.Print("createCSR byte failed")
 	}
-	generateCertByCsrReq := &GenerateCertByCsrReq{
-		OrgID:     "org",
-		UserID:    "default",
+	generateCertByCsrReq := &GenCertByCsrReq{
+		OrgId:     "org",
+		UserId:    "default",
 		UserType:  db.USER_ADMIN,
 		CertUsage: db.SIGN,
 		CsrBytes:  csrByte,
 	}
-	cerContent, err := GenerateCertByCsr(generateCertByCsrReq)
+	cerContent, err := GenCertByCsr(generateCertByCsrReq)
 	if err != nil {
 		fmt.Print("Generate Cert By Csr failed ", err.Error())
 	}
@@ -65,13 +65,13 @@ func TestGenCert(t *testing.T) {
 	InitDB()
 	InitServer()
 	genCertReq := &GenCertReq{
-		OrgID:         "org2",
-		UserID:        "default",
+		OrgId:         "org2",
+		UserId:        "default",
 		UserType:      db.USER_ADMIN,
 		CertUsage:     db.TLS_ENC,
 		PrivateKeyPwd: "123456",
 		Country:       "China",
-		Locality:      "Haidian",
+		Locality:      "HaIdian",
 		Province:      "Beijing",
 	}
 	cerContentAndprivateKey, err := GenCert(genCertReq)
@@ -86,8 +86,8 @@ func TestQueryCert(t *testing.T) {
 	InitDB()
 	InitServer()
 	queryCertReq := &QueryCertReq{
-		OrgID:     "org7",
-		UserID:    "ca.org7",
+		OrgId:     "org7",
+		UserId:    "ca.org7",
 		UserType:  db.USER_CLIENT,
 		CertUsage: db.SIGN,
 	}
@@ -103,8 +103,8 @@ func TestQueryCertByStatus(t *testing.T) {
 	InitDB()
 	InitServer()
 	queryCertByStatusReq := &QueryCertByStatusReq{
-		OrgID:      "org2",
-		UserID:     "org2_2",
+		OrgId:      "org2",
+		UserId:     "org2_2",
 		UserType:   db.USER_ADMIN,
 		CertUsage:  db.SIGN,
 		CertStatus: db.EXPIRED,
@@ -123,10 +123,10 @@ func TestQueryCertByStatus(t *testing.T) {
 func TestUpdateCert(t *testing.T) {
 	InitDB()
 	InitServer()
-	updateCertReq := &UpdateCertReq{
+	updateCertReq := &RenewCertReq{
 		CertSn: 806294,
 	}
-	cetContent, err := UpdateCert(updateCertReq)
+	cetContent, err := RenewCert(updateCertReq)
 	if err != nil {
 		fmt.Print("update failed ", err.Error())
 	}
@@ -136,12 +136,12 @@ func TestUpdateCert(t *testing.T) {
 func TestRevokedCert(t *testing.T) {
 	InitDB()
 	InitServer()
-	revokedCertReq := &RevokedCertReq{
+	revokedCertReq := &RevokeCertReq{
 		RevokedCertSn: 480460,
 		IssueCertSn:   0,
 		Reason:        "",
 	}
-	crl, err := RevokedCert(revokedCertReq)
+	crl, err := RevokeCert(revokedCertReq)
 	if err != nil {
 		fmt.Print("Revoked Cert failed ", err.Error())
 	}

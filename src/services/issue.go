@@ -370,8 +370,8 @@ func getSignatureAlgorithm(privKey crypto.PrivateKey) x509.SignatureAlgorithm {
 	return signatureAlgorithm
 }
 
-//Converts certbyte to certcontent and X509 certificates
-func TransfToCertContent(certBytes []byte) (cert *x509.Certificate, certContent *db.CertContent, err error) {
+//Convert certbyte to certcontent and X509 certificates
+func ConvertToCertContent(certBytes []byte) (cert *x509.Certificate, certContent *db.CertContent, err error) {
 	cert, err = ParseCertificate(certBytes)
 	if err != nil {
 		return

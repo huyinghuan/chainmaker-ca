@@ -89,19 +89,19 @@ func LoadDoubleRootCa() error {
 	if err != nil {
 		return fmt.Errorf("load double root ca faile: %s", err.Error())
 	}
-	signKeyPair, _, err := TransfToKeyPair(doubleRootPathConf.SignPrivateKeyPwd, signKeyBytes)
+	signKeyPair, _, err := ConvertToKeyPair(doubleRootPathConf.SignPrivateKeyPwd, signKeyBytes)
 	if err != nil {
 		return err
 	}
-	tlsKeyPair, _, err := TransfToKeyPair(doubleRootPathConf.TlsPrivateKeyPwd, tlsKeyBytes)
+	tlsKeyPair, _, err := ConvertToKeyPair(doubleRootPathConf.TlsPrivateKeyPwd, tlsKeyBytes)
 	if err != nil {
 		return err
 	}
-	signCert, signCertContent, err := TransfToCertContent(signCertBytes)
+	signCert, signCertContent, err := ConvertToCertContent(signCertBytes)
 	if err != nil {
 		return err
 	}
-	tlsCert, tlsCertContent, err := TransfToCertContent(tlsCertBytes)
+	tlsCert, tlsCertContent, err := ConvertToCertContent(tlsCertBytes)
 	if err != nil {
 		return err
 	}
@@ -148,11 +148,11 @@ func LoadSingleRootCa(rootConfig *utils.CaConfig, certUsage db.CertUsage) error 
 	if err != nil {
 		return fmt.Errorf("load single root ca failed: %s", err.Error())
 	}
-	keyPair, _, err := TransfToKeyPair(rootConfig.CertConf.PrivateKeyPwd, keyBytes)
+	keyPair, _, err := ConvertToKeyPair(rootConfig.CertConf.PrivateKeyPwd, keyBytes)
 	if err != nil {
 		return err
 	}
-	cert, certContent, err := TransfToCertContent(certBytes)
+	cert, certContent, err := ConvertToCertContent(certBytes)
 	if err != nil {
 		return err
 	}

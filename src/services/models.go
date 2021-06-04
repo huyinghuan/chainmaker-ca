@@ -10,17 +10,17 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 )
 
-type GenerateCertByCsrReq struct {
-	OrgID     string
-	UserID    string
+type GenCertByCsrReq struct {
+	OrgId     string
+	UserId    string
 	UserType  db.UserType
 	CertUsage db.CertUsage
 	CsrBytes  []byte
 }
 
 type GenCertReq struct {
-	OrgID         string
-	UserID        string
+	OrgId         string
+	UserId        string
 	UserType      db.UserType
 	CertUsage     db.CertUsage
 	PrivateKeyPwd string
@@ -30,37 +30,37 @@ type GenCertReq struct {
 }
 
 type QueryCertReq struct {
-	OrgID     string
-	UserID    string
+	OrgId     string
+	UserId    string
 	UserType  db.UserType
 	CertUsage db.CertUsage
 }
 
 type QueryCertByStatusReq struct {
-	OrgID      string
-	UserID     string
+	OrgId      string
+	UserId     string
 	UserType   db.UserType
 	CertUsage  db.CertUsage
 	CertStatus db.CertStatus
 }
 
-type UpdateCertReq struct {
+type RenewCertReq struct {
 	CertSn int64
 }
 
-type RevokedCertReq struct {
+type RevokeCertReq struct {
 	RevokedCertSn int64
 	IssueCertSn   int64
 	Reason        string
 }
 
-type CrlListReq struct {
+type GenCrlReq struct {
 	IssueCertSn int64
 }
 
-type CreateCsrReq struct {
-	OrgID         string
-	UserID        string
+type GenCsrReq struct {
+	OrgId         string
+	UserId        string
 	UserType      db.UserType
 	PrivateKeyPwd string
 	Country       string
