@@ -3,3 +3,4 @@ log/
 .idea/
 conf/
 !src/conf/
+!deploy/chainmaker-ca/conf
