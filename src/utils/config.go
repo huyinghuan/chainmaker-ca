@@ -22,7 +22,7 @@ type AllConfig struct {
 	DBConf             *DBConfig          `mapstructure:"db_config"`
 	BaseConf           *BaseConf          `mapstructure:"base_config"`
 	RootCaConf         *CaConfig          `mapstructure:"root_config"`
-	IntermediateCaConf []*ImCaConfig      `mapstructure:"Intermediate_config"`
+	IntermediateCaConf []*ImCaConfig      `mapstructure:"intermediate_config"`
 }
 
 type BaseConf struct {

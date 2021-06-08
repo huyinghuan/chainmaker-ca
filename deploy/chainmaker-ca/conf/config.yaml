@@ -51,8 +51,8 @@ root_config:
     locality: Beijing                 # The Locality field for X509
     province: Beijing                 # The province field for X509  
 
-# Intermediate config
-Intermediate_config:                 # Optional, fill in the intermediate CA that will generate the configuration when the service is started. Multiple intermediate CA configurations can be filled
+# intermediate config
+intermediate_config:                 # Optional, fill in the intermediate CA that will generate the configuration when the service is started. Multiple intermediate CA configurations can be filled
   -
     csr:
       CN: ca.org8
