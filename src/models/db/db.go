@@ -7,27 +7,23 @@ SPDX-License-Identifier: Apache-2.0
 package db
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
 
-	"chainmaker.org/chainmaker-ca-backend/src/loggers"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
-	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 )
 
-var zapLog *zap.Logger
-
 //DB database
 var DB *gorm.DB
 
 //DB init
 func DBInit() {
-	zapLog = loggers.GetLogger()
 	var err error
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
@@ -52,16 +48,17 @@ func DBInit() {
 		},
 	})
 	if err != nil {
-		zapLog.Error("failed to connect [DB]")
+		err = fmt.Errorf("[DB] gorm open mysql failed: %s", err.Error())
 		panic(err)
 	}
 	sqlDB, err := DB.DB()
 	if err != nil {
-		zapLog.Error("[DB] connection pool error", zap.Error(err))
+		err = fmt.Errorf("[DB] gorm connect the pool failed: %s", err.Error())
+		panic(err)
 	}
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
-	sqlDB.SetConnMaxLifetime(time.Minute)
+	sqlDB.SetConnMaxLifetime(time.Hour)
 	// Set table options
 	DB.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:table_options", "ENGINE=InnoDB")
 	err = DB.Set("gorm:table_options", "CHARSET=utf8").Set("gorm:table_options", "COLLATE=utf8_general_ci").AutoMigrate(
@@ -71,6 +68,7 @@ func DBInit() {
 		&RevokedCert{},
 	)
 	if err != nil {
-		zapLog.Error("[DB] create table failed", zap.Error(err))
+		err = fmt.Errorf("[DB] create table failed: %s", err.Error())
+		panic(err)
 	}
 }

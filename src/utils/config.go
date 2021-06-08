@@ -18,12 +18,11 @@ import (
 var allConf *AllConfig
 
 type AllConfig struct {
-	LogConf            *loggers.LogConifg  `mapstructure:"log_config"`
-	DBConf             *DBConfig           `mapstructure:"db_config"`
-	BaseConf           *BaseConf           `mapstructure:"base_config"`
-	RootCaConf         *CaConfig           `mapstructure:"root_config"`
-	IntermediateCaConf []*CaConfig         `mapstructure:"Intermediate_config"`
-	DoubleRootPathConf *DoubleRootPathConf `mapstructure:"rootpath_double"`
+	LogConf            *loggers.LogConifg `mapstructure:"log_config"`
+	DBConf             *DBConfig          `mapstructure:"db_config"`
+	BaseConf           *BaseConf          `mapstructure:"base_config"`
+	RootCaConf         *CaConfig          `mapstructure:"root_config"`
+	IntermediateCaConf []*ImCaConfig      `mapstructure:"Intermediate_config"`
 }
 
 type BaseConf struct {
@@ -37,8 +36,13 @@ type BaseConf struct {
 }
 
 type CaConfig struct {
-	CsrConf  *CsrConf  `mapstructure:"csr"`
-	CertConf *CertConf `mapstructure:"cert"`
+	CsrConf  *CsrConf    `mapstructure:"csr"`
+	CertConf []*CertConf `mapstructure:"cert"`
+}
+
+type ImCaConfig struct {
+	CsrConf       *CsrConf `mapstructure:"csr"`
+	PrivateKeyPwd string   `mapstructure:"private_key_pwd"`
 }
 
 type CsrConf struct {
@@ -51,18 +55,10 @@ type CsrConf struct {
 }
 
 type CertConf struct {
+	CertType       string `mapstructure:"cert_type"`
 	CertPath       string `mapstructure:"cert_path"`
 	PrivateKeyPath string `mapstructure:"private_key_path"`
 	PrivateKeyPwd  string `mapstructure:"private_key_pwd"`
-}
-
-type DoubleRootPathConf struct {
-	TlsCertPath        string `mapstructure:"tls_cert_path"`
-	TlsPrivateKeyPath  string `mapstructure:"tls_privatekey_path"`
-	TlsPrivateKeyPwd   string `mapstructure:"tls_privatekey_pwd"`
-	SignCertPath       string `mapstructure:"sign_cert_path"`
-	SignPrivateKeyPath string `mapstructure:"sign_privatekey_path"`
-	SignPrivateKeyPwd  string `mapstructure:"sign_privatekey_pwd"`
 }
 
 // GetConfigEnv --Specify the path and name of the configuration file (Env)
@@ -188,32 +184,24 @@ func (ac *AllConfig) GetCaType() string {
 	return ac.BaseConf.CaType
 }
 
-func (ac *AllConfig) GetRootCertPath() string {
-	return ac.RootCaConf.CertConf.CertPath
-}
-
-func (ac *AllConfig) GetRootKeyPath() string {
-	return ac.RootCaConf.CertConf.PrivateKeyPath
-}
-
-func (ac *AllConfig) GetRootKeyPwd() string {
-	return ac.RootCaConf.CertConf.PrivateKeyPwd
-}
-
 func (ac *AllConfig) GetRootConf() *CaConfig {
 	return ac.RootCaConf
+}
+
+func (ac *AllConfig) GetRootCsrConf() *CsrConf {
+	return ac.RootCaConf.CsrConf
+}
+
+func (ac *AllConfig) GetRootCertConf() []*CertConf {
+	return ac.RootCaConf.CertConf
 }
 
 func (ac *AllConfig) GetBaseConf() *BaseConf {
 	return ac.BaseConf
 }
 
-func (ac *AllConfig) GetIntermediateConf() []*CaConfig {
+func (ac *AllConfig) GetIntermediateConf() []*ImCaConfig {
 	return ac.IntermediateCaConf
-}
-
-func (ac *AllConfig) GetDoubleRootPathConf() *DoubleRootPathConf {
-	return ac.DoubleRootPathConf
 }
 
 func (ac *AllConfig) GetLogConf() *loggers.LogConifg {

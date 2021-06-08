@@ -23,8 +23,7 @@ func InitServer() {
 	allConfig = utils.GetAllConfig()
 	err := CreateRootCa()
 	if err != nil {
-		logger.Error("init server failed", zap.Error(err))
-		return
+		panic(err)
 	}
 	err = CreateIntermediateCA()
 	if err != nil {

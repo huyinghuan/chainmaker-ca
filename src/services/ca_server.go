@@ -215,7 +215,7 @@ func RenewCert(renewCertReq *RenewCertReq) (string, error) {
 		return empty, err
 	}
 	if certInfo.CertStatus == db.EXPIRED {
-		err = fmt.Errorf("cert Has expired")
+		err = fmt.Errorf("cert has expired")
 		logger.Error("update cert failed", zap.Error(err))
 		return empty, err
 	}

@@ -26,56 +26,56 @@ base_config:
 
 # Root CA config
 root_config:
-  cert: 
-    cert_path: ../crypto-config/RootCA/root.crt             # Access path of root certificate
-    private_key_path: ../crypto-config/RootCA/root.key      # Access path of root private key
-    private_key_pwd: wx123
+  cert:
+  #   -
+  #     cert_type: sign
+  #     cert_path: ../crypto-config/rootCA/root.crt             # Access path of root certificate
+  #     private_key_path: ../crypto-config/rootCA/root.key      # Access path of root private key
+  #     private_key_pwd: wx123
+    -
+      cert_type: tls
+      cert_path: ../crypto-config/rootCA/tls/root-tls.crt            
+      private_key_path: ../crypto-config/rootCA/tls/root-tls.key      
+      private_key_pwd: wx123
+    -
+      cert_type: sign
+      cert_path: ../crypto-config/rootCA/sign/root-sign.crt               
+      private_key_path: ../crypto-config/rootCA/sign/root-sign.key       
+      private_key_pwd: wx123
+
   csr:
     CN: root.org-wx                   # The CommonName field of X509 is equivalent to the user ID
     O: org-wx                         # The Orgnization field of X509 is equivalent to an organization ID
     OU: root                          # The OrgnizationUnit field of X509 is equivalent to the user type
     country: CN                       # The Country field for X509
     locality: Beijing                 # The Locality field for X509
-    province: Beijing                 # The province field for X509
-
-#Root double CA path
-rootpath_double:                      # Access path to the private key of the certificate using the start mode TLS of double_root and sign
-    tls_cert_path: ../crypto-config/RootCA/tls/root-tls.crt
-    tls_privatekey_path: ../crypto-config/RootCA/tls/root-tls.key
-    tls_privatekey_pwd: 123
-    sign_cert_path: ../crypto-config/RootCA/sign/root-sign.crt
-    sign_privatekey_path: ../crypto-config/RootCA/sign/root-sign.key   
-    sign_privatekey_pwd: 123     
+    province: Beijing                 # The province field for X509  
 
 # Intermediate config
 Intermediate_config:                 # Optional, fill in the intermediate CA that will generate the configuration when the service is started. Multiple intermediate CA configurations can be filled
   -
     csr:
       CN: ca.org8
-      O: org8
-      OU: ca111
+      O: org1
+      OU: ca
       country: CN
       locality: Beijing
       province: Beijing
-    cert:
-      private_key_pwd: wx123
   -
     csr:
       CN: ca.org9
-      O: org9
-      OU: ca99
+      O: org2
+      OU: ca
       country: CN
       locality: Beijing
       province: Beijing
-    cert:
-      private_key_pwd: wx123
+    private_key_pwd: wx123
   -
     csr:
       CN: ca.org7
       O: org7
-      OU: ca777
+      OU: ca
       country: CN
       locality: Beijing
       province: Beijing
-    cert:
-      private_key_pwd: wx123
+    private_key_pwd: wx123

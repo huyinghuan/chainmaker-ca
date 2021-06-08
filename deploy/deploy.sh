@@ -15,10 +15,13 @@ docker logs --tail=10 ca-mysql
 
 echo "start ca services..."
 docker run -d \
---privileged=true \
 -p 8090:8090 \
 -w /chainmaker-ca \
 -v $path/chainmaker-ca:/chainmaker-ca \
+-v $path/log:/log \
+-v $path/crypto-config:/crypto-config \
+-u root \
+--privileged=true \
 --name chainmaker-ca \
 --restart always \
 ubuntu:18.04 \

@@ -14,6 +14,7 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"chainmaker.org/chainmaker-go/common/crypto"
+	"go.uber.org/zap"
 )
 
 //create intermediateCA which is written in the configuration file
@@ -21,11 +22,17 @@ func CreateIntermediateCA() error {
 	if checkIntermediateCaConf() == nil {
 		return nil
 	}
-	for i := 0; i < len(checkIntermediateCaConf()); i++ {
-		if exsitIntermediateCA(getIMCaConf()[i]) {
+	imCaConfs := imCaConfFromConfig()
+	for i := 0; i < len(imCaConfs); i++ {
+		err := checkCsrConf(imCaConfs[i].CsrConf)
+		if err != nil {
+			logger.Error("create intermediate ca failed", zap.Error(err))
 			continue
 		}
-		err := createIntermediateCA(getIMCaConf()[i])
+		if exsitIntermediateCA(imCaConfs[i].CsrConf) {
+			continue
+		}
+		err = createIntermediateCA(imCaConfs[i])
 		if err != nil {
 			return err
 		}
@@ -34,12 +41,12 @@ func CreateIntermediateCA() error {
 }
 
 //Check if intermediateCA already exists
-func exsitIntermediateCA(caConfig *utils.CaConfig) bool {
-	_, err := models.FindActiveCertInfoByConditions(caConfig.CsrConf.CN, caConfig.CsrConf.O, 0, db.INTERMRDIARY_CA)
+func exsitIntermediateCA(csrConf *utils.CsrConf) bool {
+	_, err := models.FindActiveCertInfoByConditions(csrConf.CN, csrConf.O, 0, db.INTERMRDIARY_CA)
 	return err == nil
 }
 
-func createIntermediateCA(caConfig *utils.CaConfig) error {
+func createIntermediateCA(caConfig *utils.ImCaConfig) error {
 	caType, err := getCaType()
 	if err != nil {
 		return err
@@ -60,7 +67,7 @@ func createIntermediateCA(caConfig *utils.CaConfig) error {
 }
 
 //Generate single root intermediateCA
-func GenSingleIntermediateCA(caConfig *utils.CaConfig, caType utils.CaType) error {
+func GenSingleIntermediateCA(caConfig *utils.ImCaConfig, caType utils.CaType) error {
 	if caType == utils.TLS {
 		err := genIntermediateCA(caConfig, db.TLS)
 		if err != nil {
@@ -75,7 +82,7 @@ func GenSingleIntermediateCA(caConfig *utils.CaConfig, caType utils.CaType) erro
 }
 
 //Generate double root intermediateCA
-func GenDoubleIntermediateCA(caConfig *utils.CaConfig) error {
+func GenDoubleIntermediateCA(caConfig *utils.ImCaConfig) error {
 	err := genIntermediateCA(caConfig, db.SIGN)
 	if err != nil {
 		return err
@@ -86,19 +93,20 @@ func GenDoubleIntermediateCA(caConfig *utils.CaConfig) error {
 	}
 	return nil
 }
-func genIntermediateCA(caConfig *utils.CaConfig, certUsage db.CertUsage) error {
+
+func genIntermediateCA(caConfig *utils.ImCaConfig, certUsage db.CertUsage) error {
 	keyTypeStr := keyTypeFromConfig()
 	hashTypeStr := hashTypeFromConfig()
-	generatePrivateKey, generateKeyPair, err := CreateKeyPair(keyTypeStr, hashTypeStr, caConfig.CertConf.PrivateKeyPwd)
+	generatePrivateKey, generateKeyPair, err := CreateKeyPair(keyTypeStr, hashTypeStr, caConfig.PrivateKeyPwd)
 	if err != nil {
 		return err
 	}
-	csrRequestConf := createCsrReqConf(caConfig, generatePrivateKey)
+	csrRequestConf := createCsrReqConf(caConfig.CsrConf, generatePrivateKey)
 	csrByte, err := createCSR(csrRequestConf)
 	if err != nil {
 		return err
 	}
-	certRequestConfig, err := createIMCACertReqConf(caConfig, csrByte, certUsage)
+	certRequestConfig, err := createIMCACertReqConf(csrByte, certUsage)
 	if err != nil {
 		return err
 	}
@@ -124,19 +132,19 @@ func genIntermediateCA(caConfig *utils.CaConfig, certUsage db.CertUsage) error {
 	return nil
 }
 
-func createCsrReqConf(caConfig *utils.CaConfig, privateKey crypto.PrivateKey) *CSRRequestConfig {
+func createCsrReqConf(csrConfig *utils.CsrConf, privateKey crypto.PrivateKey) *CSRRequestConfig {
 	return &CSRRequestConfig{
 		PrivateKey:         privateKey,
-		Country:            caConfig.CsrConf.Country,
-		Locality:           caConfig.CsrConf.Locality,
-		Province:           caConfig.CsrConf.Province,
-		OrganizationalUnit: caConfig.CsrConf.OU,
-		Organization:       caConfig.CsrConf.O,
-		CommonName:         caConfig.CsrConf.CN,
+		Country:            csrConfig.Country,
+		Locality:           csrConfig.Locality,
+		Province:           csrConfig.Province,
+		OrganizationalUnit: csrConfig.OU,
+		Organization:       csrConfig.O,
+		CommonName:         csrConfig.CN,
 	}
 }
 
-func createIMCACertReqConf(caConfig *utils.CaConfig, csrByte []byte, certUsage db.CertUsage) (*CertRequestConfig, error) {
+func createIMCACertReqConf(csrByte []byte, certUsage db.CertUsage) (*CertRequestConfig, error) {
 	certInfo, err := models.FindActiveCertInfoByConditions("", "", certUsage, db.ROOT_CA)
 	if err != nil {
 		return nil, err

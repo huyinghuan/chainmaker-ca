@@ -16,7 +16,6 @@ import (
 	"io"
 	"io/ioutil"
 	"mime/multipart"
-	"net"
 	"os"
 	"path"
 	"strconv"
@@ -27,25 +26,7 @@ import (
 	"chainmaker.org/chainmaker-go/common/crypto"
 	"chainmaker.org/chainmaker-go/common/crypto/asym"
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
-	uuid "github.com/satori/go.uuid"
 )
-
-func dealSANS(sans []string) ([]string, []net.IP) {
-
-	var dnsName []string
-	var ipAddrs []net.IP
-
-	for _, san := range sans {
-		ip := net.ParseIP(san)
-		if ip != nil {
-			ipAddrs = append(ipAddrs, ip)
-		} else {
-			dnsName = append(dnsName, san)
-		}
-	}
-
-	return dnsName, ipAddrs
-}
 
 //WirteCertToFile
 func WirteFile(filePath string, fileBytes []byte) error {
@@ -115,12 +96,6 @@ func ParseCsr(csrBytes []byte) (*x509.CertificateRequest, error) {
 	return bcx509.ChainMakerCertCsrToX509CertCsr(csrBC)
 }
 
-//Getuuid get uuid
-func Getuuid() string {
-	uuid := uuid.NewV4()
-	return uuid.String()
-}
-
 //CreateDir create dir
 func CreateDir(dirPath string) error {
 	_, err := os.Stat(dirPath)
@@ -173,49 +148,14 @@ func checkHashType(hashTypeStr string) (crypto.HashType, error) {
 	return hashType, nil
 }
 
-func getRootCaConf() *utils.CaConfig {
-	return allConfig.GetRootConf()
-}
-
-func getIMCaConf() []*utils.CaConfig {
-	return allConfig.GetIntermediateConf()
-}
-
-func getDoubleRootPathConf() *utils.DoubleRootPathConf {
-	return allConfig.GetDoubleRootPathConf()
-}
-
-func canIssueCa() bool {
-	return allConfig.GetCanIssueCa()
-}
-
-func provideServiceFor() []string {
-	return allConfig.GetProvideServiceFor()
-}
-func hashTypeFromConfig() string {
-	return allConfig.GetHashType()
-}
-
-func keyTypeFromConfig() string {
-	return allConfig.GetKeyType()
-}
-
-func expireYearFromConfig() int {
-	return allConfig.GetDefaultExpireTime()
-}
-
-func isKeyEncryptFromConfig() bool {
-	return allConfig.IsKeyEncrypt()
-}
-
-func checkIntermediateCaConf() []*utils.CaConfig {
-	if len(allConfig.GetIntermediateConf()) == 0 {
+func checkIntermediateCaConf() []*utils.ImCaConfig {
+	if len(imCaConfFromConfig()) == 0 {
 		return nil
 	}
-	return allConfig.GetIntermediateConf()
+	return imCaConfFromConfig()
 }
 
-func checkParamsOfCertReq(orgID string, userType db.UserType, certUsage db.CertUsage) error {
+func checkParamsOfCertReq(orgId string, userType db.UserType, certUsage db.CertUsage) error {
 	if userType == db.ROOT_CA {
 		return fmt.Errorf("check params of req failed: cannot apply for a CA of type root")
 	}
@@ -241,7 +181,7 @@ func checkParamsOfCertReq(orgID string, userType db.UserType, certUsage db.CertU
 
 	orgGroup := provideServiceFor()
 	for i := 0; i < len(orgGroup); i++ {
-		if orgID == orgGroup[i] {
+		if orgId == orgGroup[i] {
 			return nil
 		}
 	}
@@ -285,14 +225,14 @@ func getCaType() (utils.CaType, error) {
 }
 
 //Find the issuer through the orgid
-func searchIssuedCa(orgID string, certUsage db.CertUsage) (crypto.PrivateKey, []byte, error) {
+func searchIssuedCa(orgId string, certUsage db.CertUsage) (crypto.PrivateKey, []byte, error) {
 	caType, err := getCaType()
 	if err != nil {
 		return nil, nil, err
 	}
 	certUsage = covertCertUsage(certUsage, caType)
 	//Looking for an intermediate CA with the same orgid
-	certInfo, err := models.FindActiveCertInfoByConditions("", orgID, certUsage, 0)
+	certInfo, err := models.FindActiveCertInfoByConditions("", orgId, certUsage, 0)
 	if err != nil || certInfo.UserType != db.INTERMRDIARY_CA { //去找rootca签
 		certInfo, err = models.FindActiveCertInfoByConditions("", "", certUsage, db.ROOT_CA)
 		if err != nil {
@@ -392,4 +332,57 @@ func searchCertChain(certSn, issueSn int64) (bool, error) {
 		return false, nil
 	}
 	return searchCertChain(certSn, issueSn)
+}
+
+func checkCsrConf(csrConf *utils.CsrConf) error {
+	if len(csrConf.Country) == 0 {
+		csrConf.Country = DEFAULT_CSR_COUNTRIY
+	}
+	if len(csrConf.Locality) == 0 {
+		csrConf.Locality = DEFAULT_CSR_LOCALITY
+	}
+	if len(csrConf.Province) == 0 {
+		csrConf.Province = DEFAULT_CSR_PROVINCE
+	}
+	if _, ok := db.Name2UserTypeMap[csrConf.OU]; !ok {
+		return fmt.Errorf("check the csr config failed: OU config is unsupported type")
+	}
+	if len(csrConf.O) == 0 {
+		return fmt.Errorf("check the csr config failed: O can't be empty")
+	}
+	if len(csrConf.CN) == 0 {
+		return fmt.Errorf("check the csr config failed: CN can't be empty")
+	}
+	return nil
+}
+
+func checkRootSignConf() *utils.CertConf {
+	certConf := rootCertConfFromConfig()
+	for _, v := range certConf {
+		if v.CertType == "sign" {
+			return v
+		}
+	}
+	defaultCertConf := &utils.CertConf{
+		CertType:       "sign",
+		CertPath:       DEFAULT_SIGN_CERT_PATH,
+		PrivateKeyPath: DEFAULT_SIGN_KEY_PATH,
+		PrivateKeyPwd:  "",
+	}
+	return defaultCertConf
+}
+
+func checkRootTlsConf() *utils.CertConf {
+	certConf := rootCertConfFromConfig()
+	for _, v := range certConf {
+		if v.CertType == "tls" {
+			return v
+		}
+	}
+	defaultCertConf := &utils.CertConf{
+		CertType:       "tls",
+		CertPath:       DEFAULT_TLS_CERT_PATH,
+		PrivateKeyPath: DEFAULT_TLS_KEY_PATH,
+	}
+	return defaultCertConf
 }

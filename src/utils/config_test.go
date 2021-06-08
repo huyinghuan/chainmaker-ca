@@ -24,7 +24,6 @@ func TestGetAllConf(t *testing.T) {
 	for _, v := range allConf.GetIntermediateConf() {
 		fmt.Printf("Intermediate ca config: %v\n", v)
 	}
-	fmt.Printf("double root config: %v\n", allConf.GetDoubleRootPathConf())
 }
 
 func TestGetSomeConf(t *testing.T) {

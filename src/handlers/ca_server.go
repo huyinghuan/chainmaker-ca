@@ -35,7 +35,7 @@ func GenCertByCsr() gin.HandlerFunc {
 			return
 		}
 		//Read the uploaded file separately and read the CSR stream file
-		uploadFile, err := c.FormFile("csrFile")
+		uploadFile, err := c.FormFile("csr")
 		if err != nil {
 			InputErrorJSONResp(err.Error(), c)
 			return
