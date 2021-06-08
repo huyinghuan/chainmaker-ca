@@ -11,7 +11,6 @@ import (
 
 	"chainmaker.org/chainmaker-ca-backend/src/handlers"
 	"chainmaker.org/chainmaker-ca-backend/src/loggers"
-	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/routers"
 	"chainmaker.org/chainmaker-ca-backend/src/services"
@@ -32,7 +31,7 @@ func main() {
 	g.Use(handlers.Cors())
 	g.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"msg":  models.SUCCESS_MSG,
+			"msg":  handlers.SUCCESS_MSG,
 			"data": "Hello,World!",
 		})
 	})

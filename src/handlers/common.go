@@ -10,15 +10,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"github.com/gin-gonic/gin"
 )
 
 //Service error response
 func ServerErrorJSONResp(err string, c *gin.Context) {
-	resp := &models.StandardResp{
-		Code: models.SERVER_ERROR_RESP_CODE,
-		Msg:  models.SERVER_ERROR_MSG,
+	resp := &StandardResp{
+		Code: SERVER_ERROR_RESP_CODE,
+		Msg:  SERVER_ERROR_MSG,
 		Data: err,
 	}
 	c.JSON(http.StatusOK, resp)
@@ -26,9 +25,9 @@ func ServerErrorJSONResp(err string, c *gin.Context) {
 
 //Input error response
 func InputErrorJSONResp(err string, c *gin.Context) {
-	resp := &models.StandardResp{
-		Code: models.INPUT_ERROR_RESP_CODE,
-		Msg:  models.INPUT_ERROR_MSG,
+	resp := &StandardResp{
+		Code: INPUT_ERROR_RESP_CODE,
+		Msg:  INPUT_ERROR_MSG,
 		Data: err,
 	}
 	c.JSON(http.StatusOK, resp)
@@ -36,9 +35,9 @@ func InputErrorJSONResp(err string, c *gin.Context) {
 
 //Input empty response
 func InputMissingJSONResp(err string, c *gin.Context) {
-	resp := &models.StandardResp{
-		Code: models.INPUT_MISSING_PESP_CODE,
-		Msg:  models.INPUT_MISSING_MSG,
+	resp := &StandardResp{
+		Code: INPUT_MISSING_PESP_CODE,
+		Msg:  INPUT_MISSING_MSG,
 		Data: err,
 	}
 	c.JSON(http.StatusOK, resp)
@@ -46,9 +45,9 @@ func InputMissingJSONResp(err string, c *gin.Context) {
 
 //Successful response
 func SuccessfulJSONResp(msg string, data interface{}, c *gin.Context) {
-	resp := models.StandardResp{
-		Code: models.SUCCESS_PESP_CODE,
-		Msg:  models.SUCCESS_MSG,
+	resp := StandardResp{
+		Code: SUCCESS_PESP_CODE,
+		Msg:  SUCCESS_MSG,
 		Data: data,
 	}
 	c.JSON(http.StatusOK, resp)

@@ -11,7 +11,6 @@ import (
 	"encoding/pem"
 	"fmt"
 
-	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/services"
 	"github.com/gin-gonic/gin"
@@ -74,7 +73,7 @@ func GenCertByCsr() gin.HandlerFunc {
 //Generate certificate
 func GenCert() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var genCertReq models.GenCertReq
+		var genCertReq GenCertReq
 		if err := c.ShouldBind(&genCertReq); err != nil {
 			InputErrorJSONResp(err.Error(), c)
 			return
@@ -112,7 +111,7 @@ func GenCert() gin.HandlerFunc {
 //Query certificate
 func QueryCert() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var queryCertReq models.QueryCertReq
+		var queryCertReq QueryCertReq
 		if err := c.ShouldBind(&queryCertReq); err != nil {
 			InputErrorJSONResp(err.Error(), c)
 			return
@@ -127,7 +126,7 @@ func QueryCert() gin.HandlerFunc {
 			InputErrorJSONResp(err.Error(), c)
 			return
 		}
-		queryCertResp, err := services.QueryCert(&services.QueryCertReq{
+		certInfos, err := services.QueryCert(&services.QueryCertReq{
 			OrgId:     queryCertReq.OrgId,
 			UserId:    queryCertReq.UserId,
 			UserType:  curUserType,
@@ -137,14 +136,14 @@ func QueryCert() gin.HandlerFunc {
 			ServerErrorJSONResp(err.Error(), c)
 			return
 		}
-		SuccessfulJSONResp("", queryCertResp, c)
+		SuccessfulJSONResp("", certInfos, c)
 	}
 }
 
 //Query certificate by status
 func QueryCertByStatus() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var queryCertByStatusReq models.QueryCertByStatusReq
+		var queryCertByStatusReq QueryCertByStatusReq
 		if err := c.ShouldBind(&queryCertByStatusReq); err != nil {
 			InputErrorJSONResp(err.Error(), c)
 			return
@@ -165,7 +164,7 @@ func QueryCertByStatus() gin.HandlerFunc {
 			InputErrorJSONResp(err.Error(), c)
 			return
 		}
-		queryCertRespList, err := services.QueryCertByStatus(&services.QueryCertByStatusReq{
+		certInfosList, err := services.QueryCertByStatus(&services.QueryCertByStatusReq{
 			OrgId:      queryCertByStatusReq.OrgId,
 			UserId:     queryCertByStatusReq.UserId,
 			UserType:   curUserType,
@@ -176,25 +175,25 @@ func QueryCertByStatus() gin.HandlerFunc {
 			ServerErrorJSONResp(err.Error(), c)
 			return
 		}
-		SuccessfulJSONResp("", queryCertRespList, c)
+		SuccessfulJSONResp("", certInfosList, c)
 	}
 }
 
 //renew certificate
 func RenewCert() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var updatecertReq models.RenewCertReq
-		if err := c.ShouldBind(&updatecertReq); err != nil {
+		var renewCertReq RenewCertReq
+		if err := c.ShouldBind(&renewCertReq); err != nil {
 			InputErrorJSONResp(err.Error(), c)
 			return
 		}
-		if updatecertReq.CertSn == 0 {
+		if renewCertReq.CertSn == 0 {
 			err := fmt.Errorf("input SN is illegal")
 			InputErrorJSONResp(err.Error(), c)
 			return
 		}
 		certContent, err := services.RenewCert(&services.RenewCertReq{
-			CertSn: updatecertReq.CertSn,
+			CertSn: renewCertReq.CertSn,
 		})
 		if err != nil {
 			ServerErrorJSONResp(err.Error(), c)
@@ -207,20 +206,20 @@ func RenewCert() gin.HandlerFunc {
 //Revoke certificate
 func RevokeCert() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var revokedCertReq models.RevokeCertReq
-		if err := c.ShouldBind(&revokedCertReq); err != nil {
+		var revokeCertReq RevokeCertReq
+		if err := c.ShouldBind(&revokeCertReq); err != nil {
 			InputErrorJSONResp(err.Error(), c)
 			return
 		}
-		if revokedCertReq.IssueCertSn == 0 || revokedCertReq.RevokedCertSn == 0 {
+		if revokeCertReq.IssueCertSn == 0 || revokeCertReq.RevokedCertSn == 0 {
 			err := fmt.Errorf("input issue sn or revoked sn is illegal")
 			InputErrorJSONResp(err.Error(), c)
 			return
 		}
 		crlBytes, err := services.RevokeCert(&services.RevokeCertReq{
-			RevokedCertSn: revokedCertReq.RevokedCertSn,
-			IssueCertSn:   revokedCertReq.IssueCertSn,
-			Reason:        revokedCertReq.Reason,
+			RevokedCertSn: revokeCertReq.RevokedCertSn,
+			IssueCertSn:   revokeCertReq.IssueCertSn,
+			Reason:        revokeCertReq.Reason,
 		})
 		if err != nil {
 			ServerErrorJSONResp(err.Error(), c)
@@ -236,7 +235,7 @@ func RevokeCert() gin.HandlerFunc {
 //Generate crl
 func GenCrl() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var genCrlReq models.GenCrlReq
+		var genCrlReq GenCrlReq
 		if err := c.ShouldBind(&genCrlReq); err != nil {
 			InputErrorJSONResp(err.Error(), c)
 			return
@@ -262,7 +261,7 @@ func GenCrl() gin.HandlerFunc {
 //generate csr
 func GenCsr() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var genCsrReq models.GenCsrReq
+		var genCsrReq GenCsrReq
 		if err := c.ShouldBind(&genCsrReq); err != nil {
 			InputErrorJSONResp(err.Error(), c)
 			return

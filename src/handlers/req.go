@@ -4,7 +4,7 @@ Copyright (C) BABEC. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package models
+package handlers
 
 type GenCertByCsrReq struct {
 	OrgId     string `json:"orgId"`

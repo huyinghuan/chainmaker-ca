@@ -16,11 +16,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type CertAndPrivateKey struct {
-	Cert       string `json:"cert"`
-	PrivateKey string `json:"privateKey"`
-}
-
 //Generate cert by csr
 func GenCertByCsr(genCertByCsrReq *GenCertByCsrReq) (string, error) {
 	var empty string
@@ -154,7 +149,7 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 }
 
 //Query cert which certstatus is active
-func QueryCert(queryCertReq *QueryCertReq) (*models.QueryCertResp, error) {
+func QueryCert(queryCertReq *QueryCertReq) (*CertInfos, error) {
 	certInfo, err := models.FindActiveCertInfoByConditions(queryCertReq.UserId, queryCertReq.OrgId, queryCertReq.CertUsage, queryCertReq.UserType)
 	if err != nil { //can not find the cert meeting the requirement
 		logger.Error("query cert failed", zap.Error(err))
@@ -165,7 +160,7 @@ func QueryCert(queryCertReq *QueryCertReq) (*models.QueryCertResp, error) {
 		logger.Error("query cert failed", zap.Error(err))
 		return nil, err
 	}
-	return &models.QueryCertResp{
+	return &CertInfos{
 		UserId:      certInfo.UserId,
 		OrgId:       certInfo.OrgId,
 		UserType:    db.UserType2NameMap[certInfo.UserType],
@@ -178,20 +173,20 @@ func QueryCert(queryCertReq *QueryCertReq) (*models.QueryCertResp, error) {
 }
 
 //Query cert by certstatus
-func QueryCertByStatus(queryCertByStatusReq *QueryCertByStatusReq) ([]*models.QueryCertResp, error) {
+func QueryCertByStatus(queryCertByStatusReq *QueryCertByStatusReq) ([]*CertInfos, error) {
 	certInfoList, err := models.FindCertInfoByConditions(queryCertByStatusReq.UserId, queryCertByStatusReq.OrgId, queryCertByStatusReq.CertUsage, queryCertByStatusReq.UserType, queryCertByStatusReq.CertStatus)
 	if err != nil {
 		logger.Error("query cert by status failed", zap.Error(err))
 		return nil, err
 	}
-	var res []*models.QueryCertResp
+	var res []*CertInfos
 	for _, certInfo := range certInfoList {
 		certContent, err := models.FindCertContentBySn(certInfo.SerialNumber)
 		if err != nil {
 			logger.Error("query cert by status failed", zap.Error(err))
 			return nil, err
 		}
-		res = append(res, &models.QueryCertResp{
+		res = append(res, &CertInfos{
 			UserId:      certInfo.UserId,
 			OrgId:       certInfo.OrgId,
 			UserType:    db.UserType2NameMap[certInfo.UserType],
