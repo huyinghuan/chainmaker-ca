@@ -27,7 +27,7 @@ type CertConditions struct {
 func CreateCertInfo(certContent *db.CertContent, privateKeyId string, conditions *CertConditions) (*db.CertInfo, error) {
 	_, err := models.FindActiveCertInfoByConditions(conditions.UserId, conditions.OrgId, conditions.CertUsage, conditions.UserType)
 	if err == nil {
-		return nil, fmt.Errorf("create cert info faield: cert info is exist")
+		return nil, fmt.Errorf("create cert info failed: cert info is exist")
 	}
 	cerInfo, err := createCertInfo(certContent, privateKeyId, conditions)
 	if err != nil {
@@ -77,7 +77,7 @@ func GetP2pNetNodeId(userType db.UserType, certUsage db.CertUsage, nodeTlsCrtByt
 		err       error
 	)
 	if (userType == db.NODE_COMMON || userType == db.NODE_CONSENSUS) &&
-		(certUsage == db.TLS_ENC || certUsage == db.TLS_SIGN) {
+		(certUsage == db.TLS_ENC || certUsage == db.TLS_SIGN || certUsage == db.TLS) {
 		p2pNodeId, err = helper.GetLibp2pPeerIdFromCert(nodeTlsCrtBytes)
 		if err != nil {
 			return p2pNodeId, fmt.Errorf("get libp2p peer id from cert failed :%s", err.Error())

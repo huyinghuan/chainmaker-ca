@@ -9,7 +9,6 @@ package services
 import (
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -155,14 +154,16 @@ func checkIntermediateCaConf() []*utils.ImCaConfig {
 	return imCaConfFromConfig()
 }
 
-func checkParamsOfCertReq(orgId string, userType db.UserType, certUsage db.CertUsage) error {
+func checkParamsOfCertReq(orgId, userId string, userType db.UserType, certUsage db.CertUsage) error {
+	if userType != db.INTERMRDIARY_CA && len(userId) == 0 {
+		return fmt.Errorf("check params of req failed: userId cannot be empty")
+	}
 	if userType == db.ROOT_CA {
 		return fmt.Errorf("check params of req failed: cannot apply for a CA of type root")
 	}
 	if userType == db.INTERMRDIARY_CA && !canIssueCa() {
 		return fmt.Errorf("check params of req failed: cannot continue to apply for a intermediate CA")
 	}
-
 	caType, err := getCaType()
 	if err != nil {
 		return err
@@ -225,46 +226,94 @@ func getCaType() (utils.CaType, error) {
 }
 
 //Find the issuer through the orgid
-func searchIssuedCa(orgId string, certUsage db.CertUsage) (crypto.PrivateKey, []byte, error) {
+func searchIssuerCa(orgId string, userType db.UserType, certUsage db.CertUsage) (issuerPrivateKey crypto.PrivateKey, issuerCertBytes []byte, err error) {
 	caType, err := getCaType()
 	if err != nil {
-		return nil, nil, err
+		return
 	}
-	certUsage = covertCertUsage(certUsage, caType)
+	issuerCertUsage := covertCertUsage(certUsage, caType)
 	//Looking for an intermediate CA with the same orgid
-	certInfo, err := models.FindActiveCertInfoByConditions("", orgId, certUsage, 0)
-	if err != nil || certInfo.UserType != db.INTERMRDIARY_CA { //去找rootca签
-		certInfo, err = models.FindActiveCertInfoByConditions("", "", certUsage, db.ROOT_CA)
-		if err != nil {
-			return nil, nil, err
+	if userType == db.INTERMRDIARY_CA {
+		return searchRootCa(issuerCertUsage)
+	}
+	var issuerCertInfo *db.CertInfo
+	issuerCertInfo, err = models.FindActiveCertInfoByConditions("", orgId, issuerCertUsage, db.INTERMRDIARY_CA)
+	if err != nil {
+		if checkIntermediateCaConf() != nil {
+			issuerCertInfo, err = models.FindActiveCertInfoByConditions("", "", issuerCertUsage, db.INTERMRDIARY_CA)
+			if err != nil {
+				return searchRootCa(issuerCertUsage)
+			}
+		} else {
+			return searchRootCa(issuerCertUsage)
 		}
 	}
-	certContent, err := models.FindCertContentBySn(certInfo.SerialNumber)
+	var issuerCertContent *db.CertContent
+	issuerCertContent, err = models.FindCertContentBySn(issuerCertInfo.SerialNumber)
 	if err != nil {
-		return nil, nil, err
+		return
 	}
-	keyPair, err := models.FindKeyPairBySki(certInfo.PrivateKeyId)
+	issuerCertBytes, err = base64.StdEncoding.DecodeString(issuerCertContent.Content)
 	if err != nil {
-		return nil, nil, err
+		return
 	}
-	reCertContent, err := base64.StdEncoding.DecodeString(certContent.Content)
+	var issuerKeyPair *db.KeyPair
+	issuerKeyPair, err = models.FindKeyPairBySki(issuerCertInfo.PrivateKeyId)
 	if err != nil {
-		return nil, nil, err
+		return
 	}
+	var deIssuerPK []byte
+	deIssuerPK, err = base64.StdEncoding.DecodeString(issuerKeyPair.PrivateKey)
+	if err != nil {
+		return
+	}
+	if isKeyEncryptFromConfig() {
+		issuerPrivateKey, err = decryptPrivKey(deIssuerPK, issuerKeyPair.PrivateKeyPwd)
+		if err != nil {
+			return
+		}
+		return
+	}
+	issuerPrivateKey, err = ParsePrivateKey(deIssuerPK)
+	if err != nil {
+		return
+	}
+	return
+}
 
-	dePrivatKey, err := base64.StdEncoding.DecodeString(keyPair.PrivateKey)
+func searchRootCa(certUsage db.CertUsage) (rootKey crypto.PrivateKey, rootCertBytes []byte, err error) {
+	var rootCertContent *db.CertContent
+	rootCertContent, err = models.FindActiveCertContentByConditions("", "", certUsage, db.ROOT_CA)
 	if err != nil {
-		return nil, nil, err
+		return
 	}
-	hashPwd, err := hex.DecodeString(keyPair.PrivateKeyPwd)
+	rootCertBytes, err = base64.StdEncoding.DecodeString(rootCertContent.Content)
 	if err != nil {
-		return nil, nil, err
+		return
 	}
-	privateKey, err := KeyBytesToPrivateKey(dePrivatKey, string(hashPwd))
+	var rootConf *utils.CertConf
+	if certUsage == db.SIGN {
+		rootConf, err = checkRootSignConf()
+		if err != nil {
+			return
+		}
+	}
+	if certUsage == db.TLS {
+		rootConf, err = checkRootTlsConf()
+		if err != nil {
+			return
+		}
+	}
+	var issuerPrivateKeyBytes []byte
+	issuerPrivateKeyBytes, err = ioutil.ReadFile(rootConf.PrivateKeyPath)
 	if err != nil {
-		return nil, nil, err
+		return
 	}
-	return privateKey, reCertContent, nil
+	rootKey, err = ParsePrivateKey(issuerPrivateKeyBytes)
+	if err != nil {
+		return
+	}
+	return
 }
 
 //Determine the CertUsage field of the CA you are looking for based on the startup mode and the one the user provided

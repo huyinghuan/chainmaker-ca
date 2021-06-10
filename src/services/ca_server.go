@@ -19,17 +19,15 @@ import (
 //Generate cert by csr
 func GenCertByCsr(genCertByCsrReq *GenCertByCsrReq) (string, error) {
 	var empty string
-	//Check to see if the certificate exists
-	certContent, err := models.FindActiveCertContentByConditions(genCertByCsrReq.UserId, genCertByCsrReq.OrgId, genCertByCsrReq.CertUsage, genCertByCsrReq.UserType)
-	if err == nil {
-		return certContent.Content, err
+	err := CheckCert(genCertByCsrReq.OrgId, genCertByCsrReq.UserId, genCertByCsrReq.UserType, genCertByCsrReq.CertUsage)
+	if err != nil {
+		return empty, err
 	}
-
 	hashType, err := checkHashType(hashTypeFromConfig())
 	if err != nil {
 		return empty, err
 	}
-	issuerPrivateKey, issuerCertBytes, err := searchIssuedCa(genCertByCsrReq.OrgId, genCertByCsrReq.CertUsage)
+	issuerPrivateKey, issuerCertBytes, err := searchIssuerCa(genCertByCsrReq.OrgId, genCertByCsrReq.UserType, genCertByCsrReq.CertUsage)
 	if err != nil {
 		return empty, err
 	}
@@ -42,7 +40,7 @@ func GenCertByCsr(genCertByCsrReq *GenCertByCsrReq) (string, error) {
 		CertUsage:        genCertByCsrReq.CertUsage,
 		UserType:         genCertByCsrReq.UserType,
 	}
-	certContent, err = IssueCertificate(certRequestConfig)
+	certContent, err := IssueCertificate(certRequestConfig)
 	if err != nil {
 		return empty, err
 	}
@@ -68,16 +66,9 @@ func GenCertByCsr(genCertByCsrReq *GenCertByCsrReq) (string, error) {
 
 //Generate cert
 func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
-	certContent, err := models.FindActiveCertContentByConditions(genCertReq.UserId, genCertReq.OrgId, genCertReq.CertUsage, genCertReq.UserType)
-	if err == nil {
-		keyPair, err := models.FindActiveKeyPairByConditions(genCertReq.UserId, genCertReq.OrgId, genCertReq.CertUsage, genCertReq.UserType)
-		if err != nil {
-			return nil, err
-		}
-		return &CertAndPrivateKey{
-			Cert:       certContent.Content,
-			PrivateKey: keyPair.PrivateKey,
-		}, nil
+	err := CheckCert(genCertReq.OrgId, genCertReq.UserId, genCertReq.UserType, genCertReq.CertUsage)
+	if err != nil {
+		return nil, err
 	}
 	//create csr
 	//first create keypair
@@ -104,7 +95,7 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
 	}
-	issuerPrivateKey, issuerCertBytes, err := searchIssuedCa(genCertReq.OrgId, genCertReq.CertUsage)
+	issuerPrivateKey, issuerCertBytes, err := searchIssuerCa(genCertReq.OrgId, genCertReq.UserType, genCertReq.CertUsage)
 	if err != nil {
 		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
@@ -122,7 +113,7 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 		IssuerPrivateKey: issuerPrivateKey,
 		IssuerCertBytes:  issuerCertBytes,
 	}
-	certContent, err = IssueCertificate(certRequestConfig)
+	certContent, err := IssueCertificate(certRequestConfig)
 	if err != nil {
 		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
@@ -219,7 +210,7 @@ func RenewCert(renewCertReq *RenewCertReq) (string, error) {
 		logger.Error("update cert failed", zap.Error(err))
 		return empty, err
 	}
-	issuerPrivateKey, issuerCertBytes, err := searchIssuedCa(certInfo.OrgId, certInfo.CertUsage)
+	issuerPrivateKey, issuerCertBytes, err := searchIssuerCa(certInfo.OrgId, certInfo.UserType, certInfo.CertUsage)
 	if err != nil {
 		logger.Error("update cert failed", zap.Error(err))
 		return empty, err
@@ -411,7 +402,7 @@ func CheckParameters(orgId, userId, userTypeStr, certUsageStr string) (userType 
 		return
 	}
 
-	if err = checkParamsOfCertReq(orgId, userType, certUsage); err != nil {
+	if err = checkParamsOfCertReq(orgId, userId, userType, certUsage); err != nil {
 		return
 	}
 	return
@@ -421,9 +412,24 @@ func CheckParameters(orgId, userId, userTypeStr, certUsageStr string) (userType 
 func CheckParametersEmpty(parameters ...string) error {
 	for _, parameter := range parameters {
 		if len(parameter) == 0 {
-			err := fmt.Errorf("check parameters failed: required parameters cannot be blank")
+			err := fmt.Errorf("check parameters failed: required parameters cannot be empty")
 			return err
 		}
+	}
+	return nil
+}
+
+func CheckCert(orgId string, userId string, userType db.UserType, certUsage db.CertUsage) error {
+	if userType == db.INTERMRDIARY_CA {
+		_, err := models.FindActiveCertInfoByConditions("", orgId, certUsage, db.INTERMRDIARY_CA)
+		if err == nil {
+			return fmt.Errorf("the ca cert has already existed")
+		}
+		return nil
+	}
+	_, err := models.FindActiveCertInfoByConditions(userId, orgId, certUsage, userType)
+	if err == nil {
+		return fmt.Errorf("the cert has already existed")
 	}
 	return nil
 }
