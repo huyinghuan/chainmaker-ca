@@ -109,33 +109,52 @@ func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd s
 	return
 }
 
+//CreateKeyPairNoEnc create key pair no encryption
+func CreateKeyPairNoEnc(privateKeyTypeStr string, hashTypeStr string) (privateKey crypto.PrivateKey, keyPair *db.KeyPair, err error) {
+	privateKey, err = createPrivKey(privateKeyTypeStr)
+	if err != nil {
+		return
+	}
+	hashType, err := checkHashType(hashTypeStr)
+	if err != nil {
+		return
+	}
+	privateKeyPem, _ := privateKey.String()
+	privKeyPemBytes := []byte(privateKeyPem)
+	publicKeyPEM, _ := privateKey.PublicKey().String()
+	ski, err := cert.ComputeSKI(hashType, privateKey.PublicKey().ToStandardKey())
+	if err != nil {
+		err = fmt.Errorf("create key pair failed: %s", err.Error())
+		return
+	}
+	keyPair = &db.KeyPair{
+		Ski:           hex.EncodeToString(ski),
+		PrivateKey:    base64.StdEncoding.EncodeToString(privKeyPemBytes),
+		PublicKey:     base64.StdEncoding.EncodeToString([]byte(publicKeyPEM)),
+		PrivateKeyPwd: "",
+		HashType:      utils.Name2HashTypeMap[hashTypeStr],
+		KeyType:       crypto.Name2KeyTypeMap[privateKeyTypeStr],
+	}
+	return
+}
+
 //Convert the password and privatekey bytes to keypair and privatekey
-func ConvertToKeyPair(privateKeyPwd string, privateKeyBytes []byte) (keyPair *db.KeyPair, privateKey crypto.PrivateKey, err error) {
+func ConvertToKeyPair(privateKeyBytes []byte) (keyPair *db.KeyPair, privateKey crypto.PrivateKey, err error) {
 	var (
-		hashType   crypto.HashType
-		keyType    crypto.KeyType
-		hexHashPwd string
+		hashType crypto.HashType
+		keyType  crypto.KeyType
 	)
 	hashTypeStr := hashTypeFromConfig()
 	hashType, err = checkHashType(hashTypeStr)
 	if err != nil {
 		return
 	}
-	hashPwd, err := hash.Get(hashType, []byte(privateKeyPwd))
-	if err != nil {
-		err = fmt.Errorf("transfer private key to key pair failed: %s", err.Error())
-		return
-	}
-	if isKeyEncryptFromConfig() {
-		hexHashPwd = hex.EncodeToString(hashPwd)
-	}
-
 	keyTypeStr := keyTypeFromConfig()
 	keyType, err = checkKeyType(keyTypeStr)
 	if err != nil {
 		return
 	}
-	privateKey, err = KeyBytesToPrivateKey(privateKeyBytes, string(hashPwd))
+	privateKey, err = ParsePrivateKey(privateKeyBytes)
 	if err != nil {
 		return
 	}
@@ -148,7 +167,7 @@ func ConvertToKeyPair(privateKeyPwd string, privateKeyBytes []byte) (keyPair *db
 		Ski:           hex.EncodeToString(ski),
 		PrivateKey:    base64.StdEncoding.EncodeToString(privateKeyBytes),
 		PublicKey:     base64.StdEncoding.EncodeToString([]byte(publicKeyPEM)),
-		PrivateKeyPwd: hexHashPwd,
+		PrivateKeyPwd: "",
 		HashType:      hashType,
 		KeyType:       keyType,
 	}

@@ -8,7 +8,8 @@ package services
 
 import (
 	"encoding/base64"
-	"encoding/hex"
+	"fmt"
+	"io/ioutil"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
@@ -69,12 +70,20 @@ func createIntermediateCA(caConfig *utils.ImCaConfig) error {
 //Generate single root intermediateCA
 func GenSingleIntermediateCA(caConfig *utils.ImCaConfig, caType utils.CaType) error {
 	if caType == utils.TLS {
-		err := genIntermediateCA(caConfig, db.TLS)
+		tlsCertConf, err := checkRootTlsConf()
+		if err != nil {
+			return err
+		}
+		err = genIntermediateCA(caConfig, db.TLS, tlsCertConf.PrivateKeyPath)
 		if err != nil {
 			return err
 		}
 	}
-	err := genIntermediateCA(caConfig, db.SIGN)
+	signCertConf, err := checkRootSignConf()
+	if err != nil {
+		return err
+	}
+	err = genIntermediateCA(caConfig, db.SIGN, signCertConf.PrivateKeyPath)
 	if err != nil {
 		return err
 	}
@@ -83,18 +92,26 @@ func GenSingleIntermediateCA(caConfig *utils.ImCaConfig, caType utils.CaType) er
 
 //Generate double root intermediateCA
 func GenDoubleIntermediateCA(caConfig *utils.ImCaConfig) error {
-	err := genIntermediateCA(caConfig, db.SIGN)
+	signCertConf, err := checkRootSignConf()
 	if err != nil {
 		return err
 	}
-	err = genIntermediateCA(caConfig, db.TLS)
+	err = genIntermediateCA(caConfig, db.SIGN, signCertConf.PrivateKeyPath)
+	if err != nil {
+		return err
+	}
+	tlsCertConf, err := checkRootTlsConf()
+	if err != nil {
+		return err
+	}
+	err = genIntermediateCA(caConfig, db.TLS, tlsCertConf.PrivateKeyPath)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func genIntermediateCA(caConfig *utils.ImCaConfig, certUsage db.CertUsage) error {
+func genIntermediateCA(caConfig *utils.ImCaConfig, certUsage db.CertUsage, rootKeyPath string) error {
 	keyTypeStr := keyTypeFromConfig()
 	hashTypeStr := hashTypeFromConfig()
 	generatePrivateKey, generateKeyPair, err := CreateKeyPair(keyTypeStr, hashTypeStr, caConfig.PrivateKeyPwd)
@@ -106,7 +123,7 @@ func genIntermediateCA(caConfig *utils.ImCaConfig, certUsage db.CertUsage) error
 	if err != nil {
 		return err
 	}
-	certRequestConfig, err := createIMCACertReqConf(csrByte, certUsage)
+	certRequestConfig, err := createIMCACertReqConf(csrByte, certUsage, rootKeyPath)
 	if err != nil {
 		return err
 	}
@@ -144,7 +161,7 @@ func createCsrReqConf(csrConfig *utils.CsrConf, privateKey crypto.PrivateKey) *C
 	}
 }
 
-func createIMCACertReqConf(csrByte []byte, certUsage db.CertUsage) (*CertRequestConfig, error) {
+func createIMCACertReqConf(csrByte []byte, certUsage db.CertUsage, rootKeyPath string) (*CertRequestConfig, error) {
 	certInfo, err := models.FindActiveCertInfoByConditions("", "", certUsage, db.ROOT_CA)
 	if err != nil {
 		return nil, err
@@ -153,23 +170,15 @@ func createIMCACertReqConf(csrByte []byte, certUsage db.CertUsage) (*CertRequest
 	if err != nil {
 		return nil, err
 	}
-	issueKeyPair, err := models.FindKeyPairBySki(certInfo.PrivateKeyId)
+	issuerPrivateKeyBytes, err := ioutil.ReadFile(rootKeyPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create intermediate ca cert req config failed: %s", err.Error())
 	}
 	deCertContent, err := base64.StdEncoding.DecodeString(certContent.Content)
 	if err != nil {
 		return nil, err
 	}
-	dePrivatKey, err := base64.StdEncoding.DecodeString(issueKeyPair.PrivateKey)
-	if err != nil {
-		return nil, err
-	}
-	hashPwd, err := hex.DecodeString(issueKeyPair.PrivateKeyPwd)
-	if err != nil {
-		return nil, err
-	}
-	issueprivateKey, err := KeyBytesToPrivateKey(dePrivatKey, string(hashPwd))
+	issueprivateKey, err := ParsePrivateKey(issuerPrivateKeyBytes)
 	if err != nil {
 		return nil, err
 	}

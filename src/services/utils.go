@@ -356,33 +356,22 @@ func checkCsrConf(csrConf *utils.CsrConf) error {
 	return nil
 }
 
-func checkRootSignConf() *utils.CertConf {
+func checkRootSignConf() (*utils.CertConf, error) {
 	certConf := rootCertConfFromConfig()
 	for _, v := range certConf {
 		if v.CertType == "sign" {
-			return v
+			return v, nil
 		}
 	}
-	defaultCertConf := &utils.CertConf{
-		CertType:       "sign",
-		CertPath:       DEFAULT_SIGN_CERT_PATH,
-		PrivateKeyPath: DEFAULT_SIGN_KEY_PATH,
-		PrivateKeyPwd:  "",
-	}
-	return defaultCertConf
+	return nil, fmt.Errorf("the correct path to sign the cert was not found")
 }
 
-func checkRootTlsConf() *utils.CertConf {
+func checkRootTlsConf() (*utils.CertConf, error) {
 	certConf := rootCertConfFromConfig()
 	for _, v := range certConf {
 		if v.CertType == "tls" {
-			return v
+			return v, nil
 		}
 	}
-	defaultCertConf := &utils.CertConf{
-		CertType:       "tls",
-		CertPath:       DEFAULT_TLS_CERT_PATH,
-		PrivateKeyPath: DEFAULT_TLS_KEY_PATH,
-	}
-	return defaultCertConf
+	return nil, fmt.Errorf("the correct path to tls the cert was not found")
 }

@@ -9,13 +9,9 @@ package services
 import "chainmaker.org/chainmaker-ca-backend/src/utils"
 
 const (
-	DEFAULT_CSR_COUNTRIY   = "China"
-	DEFAULT_CSR_LOCALITY   = "Beijing"
-	DEFAULT_CSR_PROVINCE   = "Beijing"
-	DEFAULT_SIGN_CERT_PATH = "./crypto-config/rootCA/sign/root.crt"
-	DEFAULT_SIGN_KEY_PATH  = "./crypto-config/rootCA/sign/root.key"
-	DEFAULT_TLS_CERT_PATH  = "./crypto-config/rootCA/tls/root.crt"
-	DEFAULT_TLS_KEY_PATH   = "./crypto-config/rootCA/tls/root.key"
+	DEFAULT_CSR_COUNTRIY = "China"
+	DEFAULT_CSR_LOCALITY = "Beijing"
+	DEFAULT_CSR_PROVINCE = "Beijing"
 )
 
 func rootCaConfFromConfig() *utils.CaConfig {

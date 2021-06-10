@@ -58,7 +58,6 @@ type CertConf struct {
 	CertType       string `mapstructure:"cert_type"`
 	CertPath       string `mapstructure:"cert_path"`
 	PrivateKeyPath string `mapstructure:"private_key_path"`
-	PrivateKeyPwd  string `mapstructure:"private_key_pwd"`
 }
 
 // GetConfigEnv --Specify the path and name of the configuration file (Env)

@@ -46,20 +46,32 @@ func LoadRootCaFromConfig() error {
 			return err
 		}
 	case utils.SINGLE_ROOT:
-		signCertConf := checkRootSignConf()
-		err := LoadSingleRootCa(signCertConf, db.SIGN)
+		signCertConf, err := checkRootSignConf()
+		if err != nil {
+			return err
+		}
+		err = LoadSingleRootCa(signCertConf, db.SIGN)
 		if err != nil {
 			return err
 		}
 	case utils.SIGN:
-		signCertConf := checkRootSignConf()
-		err := LoadSingleRootCa(signCertConf, db.SIGN)
+		signCertConf, err := checkRootSignConf()
+		if signCertConf == nil {
+			return fmt.Errorf("load root ca from config failed: the correct path to sign the cert was not found")
+		}
+		err = LoadSingleRootCa(signCertConf, db.SIGN)
 		if err != nil {
 			return err
 		}
 	case utils.TLS:
-		tlsCertConf := checkRootSignConf()
-		err := LoadSingleRootCa(tlsCertConf, db.TLS)
+		tlsCertConf, err := checkRootSignConf()
+		if tlsCertConf == nil {
+			return fmt.Errorf("load root ca from config failed: the correct path to sign the cert was not found")
+		}
+		if tlsCertConf == nil {
+			return fmt.Errorf("load root ca from config failed: the correct path to tls the cert was not found")
+		}
+		err = LoadSingleRootCa(tlsCertConf, db.TLS)
 		if err != nil {
 			return err
 		}
@@ -70,13 +82,13 @@ func LoadRootCaFromConfig() error {
 func loadRootCaFromConfig(certConf *utils.CertConf, certUsage db.CertUsage) error {
 	keyBytes, err := ioutil.ReadFile(certConf.PrivateKeyPath)
 	if err != nil {
-		return fmt.Errorf("load single root ca failed: %s", err.Error())
+		return fmt.Errorf("load root ca failed: %s", err.Error())
 	}
 	certBytes, err := ioutil.ReadFile(certConf.CertPath)
 	if err != nil {
-		return fmt.Errorf("load single root ca failed: %s", err.Error())
+		return fmt.Errorf("load root ca failed: %s", err.Error())
 	}
-	keyPair, _, err := ConvertToKeyPair(certConf.PrivateKeyPwd, keyBytes)
+	keyPair, _, err := ConvertToKeyPair(keyBytes)
 	if err != nil {
 		return err
 	}
@@ -92,14 +104,14 @@ func loadRootCaFromConfig(certConf *utils.CertConf, certUsage db.CertUsage) erro
 		OrgId:      cert.Subject.Organization[0],
 		CertStatus: db.ACTIVE,
 	}
-	if exsitRootCA(conditions.UserId, conditions.OrgId) {
+	if exsitRootCA(conditions.UserId, conditions.OrgId, certUsage) {
 		return nil
 	}
 	certInfo, err := CreateCertInfo(certContent, keyPair.Ski, conditions)
 	if err != nil {
 		return err
 	}
-	err = models.CreateCertTransaction(certContent, certInfo, keyPair)
+	err = models.CreateCertAndInfoTransaction(certContent, certInfo)
 	if err != nil {
 		return err
 	}
@@ -108,9 +120,15 @@ func loadRootCaFromConfig(certConf *utils.CertConf, certUsage db.CertUsage) erro
 
 //Load double root CA from the path in the configuration file
 func LoadDoubleRootCa() error {
-	signCertConf := checkRootSignConf()
-	tlsCertConf := checkRootTlsConf()
-	err := loadRootCaFromConfig(signCertConf, db.SIGN)
+	signCertConf, err := checkRootSignConf()
+	if err != nil {
+		return err
+	}
+	tlsCertConf, err := checkRootTlsConf()
+	if err != nil {
+		return err
+	}
+	err = loadRootCaFromConfig(signCertConf, db.SIGN)
 	if err != nil {
 		return err
 	}
@@ -139,20 +157,26 @@ func GenerateRootCa(rootCaConf *utils.CaConfig) error {
 			return err
 		}
 	case utils.SINGLE_ROOT:
-		signCertConf := checkRootSignConf()
-		err := GenerateSingleRootCa(rootCaConf.CsrConf, signCertConf, db.SIGN)
+		signCertConf, err := checkRootSignConf()
+		if err != nil {
+			return err
+		}
+		err = GenerateSingleRootCa(rootCaConf.CsrConf, signCertConf, db.SIGN)
 		if err != nil {
 			return err
 		}
 	case utils.SIGN:
-		signCertConf := checkRootSignConf()
-		err := GenerateSingleRootCa(rootCaConf.CsrConf, signCertConf, db.SIGN)
+		signCertConf, err := checkRootSignConf()
+		if err != nil {
+			return err
+		}
+		err = GenerateSingleRootCa(rootCaConf.CsrConf, signCertConf, db.SIGN)
 		if err != nil {
 			return err
 		}
 	case utils.TLS:
-		tlsCertConf := checkRootSignConf()
-		err := GenerateSingleRootCa(rootCaConf.CsrConf, tlsCertConf, db.TLS)
+		tlsCertConf, err := checkRootSignConf()
+		err = GenerateSingleRootCa(rootCaConf.CsrConf, tlsCertConf, db.TLS)
 		if err != nil {
 			return err
 		}
@@ -162,15 +186,21 @@ func GenerateRootCa(rootCaConf *utils.CaConfig) error {
 
 //Generate double root CA
 func GenerateDoubleRootCa(rootCsrConf *utils.CsrConf) error {
-	signCertConf := checkRootSignConf()
-	tlsCertConf := checkRootTlsConf()
-	keyTypeStr := keyTypeFromConfig()
-	hashTypeStr := hashTypeFromConfig()
-	err := genRootCa(rootCsrConf, keyTypeStr, hashTypeStr, signCertConf.PrivateKeyPwd, db.SIGN, signCertConf.PrivateKeyPath, signCertConf.CertPath)
+	signCertConf, err := checkRootSignConf()
 	if err != nil {
 		return err
 	}
-	err = genRootCa(rootCsrConf, keyTypeStr, hashTypeStr, tlsCertConf.PrivateKeyPwd, db.TLS, tlsCertConf.PrivateKeyPath, tlsCertConf.CertPath)
+	tlsCertConf, err := checkRootTlsConf()
+	if err != nil {
+		return err
+	}
+	keyTypeStr := keyTypeFromConfig()
+	hashTypeStr := hashTypeFromConfig()
+	err = genRootCa(rootCsrConf, keyTypeStr, hashTypeStr, db.SIGN, signCertConf.PrivateKeyPath, signCertConf.CertPath)
+	if err != nil {
+		return err
+	}
+	err = genRootCa(rootCsrConf, keyTypeStr, hashTypeStr, db.TLS, tlsCertConf.PrivateKeyPath, tlsCertConf.CertPath)
 	if err != nil {
 		return err
 	}
@@ -181,21 +211,21 @@ func GenerateDoubleRootCa(rootCsrConf *utils.CsrConf) error {
 func GenerateSingleRootCa(rootCsrConf *utils.CsrConf, rootCertConf *utils.CertConf, certUsage db.CertUsage) error {
 	keyTypeStr := hashTypeFromConfig()
 	hashTypeStr := keyTypeFromConfig()
-	err := genRootCa(rootCsrConf, keyTypeStr, hashTypeStr, rootCertConf.PrivateKeyPwd, certUsage, rootCertConf.PrivateKeyPath, rootCertConf.CertPath)
+	err := genRootCa(rootCsrConf, keyTypeStr, hashTypeStr, certUsage, rootCertConf.PrivateKeyPath, rootCertConf.CertPath)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr, privateKeyPwd string, certUsage db.CertUsage, keyPath, certPath string) error {
+func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr string, certUsage db.CertUsage, keyPath, certPath string) error {
 	err := checkCsrConf(rootCsrConf)
 	if err != nil {
 		return err
 	}
 	certInfo, err := models.FindActiveCertInfoByConditions(rootCsrConf.CN, rootCsrConf.O, certUsage, db.ROOT_CA)
 	if err != nil {
-		privateKey, keyPair, err := CreateKeyPair(keyTypeStr, hashTypeStr, privateKeyPwd)
+		privateKey, keyPair, err := CreateKeyPairNoEnc(keyTypeStr, hashTypeStr)
 		if err != nil {
 			return err
 		}
@@ -227,7 +257,7 @@ func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr, privateKeyPw
 		if err != nil {
 			return err
 		}
-		err = models.CreateCertTransaction(certContent, certInfo, keyPair)
+		err = models.CreateCertAndInfoTransaction(certContent, certInfo)
 		if err != nil {
 			return err
 		}
@@ -252,7 +282,7 @@ func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr, privateKeyPw
 }
 
 //Check if rootCA already exists
-func exsitRootCA(cn, o string) bool {
-	_, err := models.FindActiveCertInfoByConditions(cn, o, 0, db.ROOT_CA)
+func exsitRootCA(cn, o string, certUsage db.CertUsage) bool {
+	_, err := models.FindActiveCertInfoByConditions(cn, o, certUsage, db.ROOT_CA)
 	return err == nil
 }
