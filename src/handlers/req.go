@@ -11,7 +11,7 @@ type GenCertByCsrReq struct {
 	UserId    string `json:"userId"`
 	UserType  string `json:"userType"`
 	CertUsage string `json:"certUsage"`
-	CsrBytes  []byte `json:"csrBytes"`
+	Csr       string `json:"csr"`
 }
 
 type GenCertReq struct {
@@ -46,12 +46,12 @@ type RenewCertReq struct {
 
 type RevokeCertReq struct {
 	RevokedCertSn int64  `json:"revokedCertSn"`
-	IssueCertSn   int64  `json:"issueCertSn"`
+	IssuerCertSn  int64  `json:"issuerCertSn"`
 	Reason        string `json:"reason"`
 }
 
 type GenCrlReq struct {
-	IssueCertSn int64 `json:"issueCertSn"`
+	IssuerCertSn int64 `json:"issuerCertSn"`
 }
 
 type GenCsrReq struct {

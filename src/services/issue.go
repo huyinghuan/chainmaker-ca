@@ -293,13 +293,8 @@ func BuildCSRReqConf(csrReq *CSRRequest) *CSRRequestConfig {
 	O := csrReq.OrgId
 	var CN string
 	if csrReq.UserType == db.INTERMRDIARY_CA || csrReq.UserType == db.ROOT_CA {
-		CN = db.UserType2NameMap[csrReq.UserType] + "." + csrReq.OrgId
-	}
-	if csrReq.UserType == db.USER_ADMIN || csrReq.UserType == db.USER_CLIENT {
-		CN = csrReq.UserId + "." + csrReq.OrgId
-	}
-	if csrReq.UserType == db.NODE_COMMON || csrReq.UserType == db.NODE_CONSENSUS {
-		//node dns name
+		CN = db.UserType2NameMap[csrReq.UserType]
+	} else {
 		CN = csrReq.UserId
 	}
 	return &CSRRequestConfig{

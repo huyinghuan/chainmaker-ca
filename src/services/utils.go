@@ -12,9 +12,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"mime/multipart"
 	"os"
 	"path"
 	"strconv"
@@ -329,23 +327,6 @@ func covertCertUsage(certUsage db.CertUsage, caType utils.CaType) db.CertUsage {
 		return db.SIGN
 	}
 	return db.TLS
-}
-
-//Read file
-func ReadWithFile(file multipart.File) ([]byte, error) {
-	var result []byte
-	var tmp = make([]byte, 128)
-	for {
-		n, err := file.Read(tmp)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, tmp[:n]...)
-	}
-	return result, nil
 }
 
 //Get X509 certificate by sn
