@@ -81,34 +81,16 @@ func TestGenCert(t *testing.T) {
 	fmt.Println(cerContentAndprivateKey.Cert)
 	fmt.Print(cerContentAndprivateKey.PrivateKey)
 }
-
-func TestQueryCert(t *testing.T) {
-	InitDB()
-	InitServer()
-	queryCertReq := &QueryCertReq{
-		OrgId:     "org7",
-		UserId:    "ca.org7",
-		UserType:  db.USER_CLIENT,
-		CertUsage: db.SIGN,
-	}
-	certContent, err := QueryCert(queryCertReq)
-	if err != nil {
-		fmt.Print("no cert you want ", zap.Error(err))
-	}
-	fmt.Println("find the cert")
-	fmt.Print(certContent)
-}
-
 func TestQueryCertByStatus(t *testing.T) {
 	InitDB()
 	InitServer()
-	queryCertByStatusReq := &QueryCertByStatusReq{
+	queryCertByStatusReq := &QueryCertsReq{
 		OrgId:     "org2",
 		UserId:    "org2_2",
-		UserType:  db.USER_ADMIN,
-		CertUsage: db.SIGN,
+		UserType:  "admin",
+		CertUsage: "sign",
 	}
-	certContentList, err := QueryCertByStatus(queryCertByStatusReq)
+	certContentList, err := QueryCerts(queryCertByStatusReq)
 	if err != nil {
 		fmt.Print("no cert you want ", zap.Error(err))
 	}

@@ -29,18 +29,11 @@ type GenCertReq struct {
 	Province      string
 }
 
-type QueryCertReq struct {
+type QueryCertsReq struct {
 	OrgId     string
 	UserId    string
-	UserType  db.UserType
-	CertUsage db.CertUsage
-}
-
-type QueryCertByStatusReq struct {
-	OrgId     string
-	UserId    string
-	UserType  db.UserType
-	CertUsage db.CertUsage
+	UserType  string
+	CertUsage string
 }
 
 type RenewCertReq struct {

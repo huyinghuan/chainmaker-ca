@@ -136,32 +136,22 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 	}, nil
 }
 
-//Query cert which certstatus is active
-func QueryCert(queryCertReq *QueryCertReq) (*CertInfos, error) {
-	certInfo, err := models.FindCertInfo(queryCertReq.UserId, queryCertReq.OrgId, queryCertReq.CertUsage, queryCertReq.UserType)
-	if err != nil { //can not find the cert meeting the requirement
-		logger.Error("query cert failed", zap.Error(err))
-		return nil, err
+//Query certs by certstatus
+func QueryCerts(req *QueryCertsReq) ([]*CertInfos, error) {
+	var (
+		userType  db.UserType
+		certUsage db.CertUsage
+		err       error
+	)
+	userType, err = CheckParametersUserType(req.UserType)
+	if err != nil {
+		userType = 0
 	}
-	certContent, err := models.FindCertContentBySn(certInfo.SerialNumber)
-	if err != nil { //can not find the cert meeting the requirement
-		logger.Error("query cert failed", zap.Error(err))
-		return nil, err
+	certUsage, err = checkParametersCertUsage(req.CertUsage)
+	if err != nil {
+		certUsage = 0
 	}
-	return &CertInfos{
-		UserId:      certInfo.UserId,
-		OrgId:       certInfo.OrgId,
-		UserType:    db.UserType2NameMap[certInfo.UserType],
-		CertUsage:   db.CertUsage2NameMap[certInfo.CertUsage],
-		CertSn:      certInfo.SerialNumber,
-		CertContent: certContent.Content,
-		InvalidDate: certContent.InvalidDate,
-	}, nil
-}
-
-//Query cert by certstatus
-func QueryCertByStatus(queryCertByStatusReq *QueryCertByStatusReq) ([]*CertInfos, error) {
-	certInfoList, err := models.FindCertInfos(queryCertByStatusReq.UserId, queryCertByStatusReq.OrgId, queryCertByStatusReq.CertUsage, queryCertByStatusReq.UserType)
+	certInfoList, err := models.FindCertInfos(req.UserId, req.OrgId, certUsage, userType)
 	if err != nil {
 		logger.Error("query cert by status failed", zap.Error(err))
 		return nil, err

@@ -97,28 +97,19 @@ func GenCert() gin.HandlerFunc {
 	}
 }
 
-//Query certificate
-func QueryCert() gin.HandlerFunc {
+//Query certificates
+func QueryCerts() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var queryCertReq QueryCertReq
 		if err := c.ShouldBind(&queryCertReq); err != nil {
 			InputErrorJSONResp(err.Error(), c)
 			return
 		}
-		if err := services.CheckParametersEmpty(queryCertReq.OrgId, queryCertReq.UserType, queryCertReq.CertUsage); err != nil {
-			InputMissingJSONResp(err.Error(), c)
-			return
-		}
-		curUserType, curCertUsage, err := services.CheckParameters(queryCertReq.OrgId, queryCertReq.UserId, queryCertReq.UserType, queryCertReq.CertUsage)
-		if err != nil {
-			InputErrorJSONResp(err.Error(), c)
-			return
-		}
-		certInfos, err := services.QueryCert(&services.QueryCertReq{
+		certInfos, err := services.QueryCerts(&services.QueryCertsReq{
 			OrgId:     queryCertReq.OrgId,
 			UserId:    queryCertReq.UserId,
-			UserType:  curUserType,
-			CertUsage: curCertUsage,
+			UserType:  queryCertReq.UserType,
+			CertUsage: queryCertReq.CertUsage,
 		})
 		if err != nil {
 			ServerErrorJSONResp(err.Error(), c)
@@ -127,45 +118,6 @@ func QueryCert() gin.HandlerFunc {
 		SuccessfulJSONResp("", certInfos, c)
 	}
 }
-
-//Query certificate by status
-// func QueryCertByStatus() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		var queryCertByStatusReq QueryCertByStatusReq
-// 		if err := c.ShouldBind(&queryCertByStatusReq); err != nil {
-// 			InputErrorJSONResp(err.Error(), c)
-// 			return
-// 		}
-// 		if err := services.CheckParametersEmpty(queryCertByStatusReq.OrgId, queryCertByStatusReq.UserId,
-// 			queryCertByStatusReq.UserType, queryCertByStatusReq.CertUsage); err != nil {
-// 			InputMissingJSONResp(err.Error(), c)
-// 			return
-// 		}
-// 		curUserType, curCertUsage, err := services.CheckParameters(queryCertByStatusReq.OrgId, queryCertByStatusReq.UserId, queryCertByStatusReq.UserType, queryCertByStatusReq.CertUsage)
-// 		if err != nil {
-// 			InputErrorJSONResp(err.Error(), c)
-// 			return
-// 		}
-// 		curCertStatus, ok := db.Name2CertStatusMap[queryCertByStatusReq.CertStatus]
-// 		if !ok {
-// 			err := fmt.Errorf("the Cert Status does not meet the requirements")
-// 			InputErrorJSONResp(err.Error(), c)
-// 			return
-// 		}
-// 		certInfosList, err := services.QueryCertByStatus(&services.QueryCertByStatusReq{
-// 			OrgId:      queryCertByStatusReq.OrgId,
-// 			UserId:     queryCertByStatusReq.UserId,
-// 			UserType:   curUserType,
-// 			CertUsage:  curCertUsage,
-// 			CertStatus: curCertStatus,
-// 		})
-// 		if err != nil {
-// 			ServerErrorJSONResp(err.Error(), c)
-// 			return
-// 		}
-// 		SuccessfulJSONResp("", certInfosList, c)
-// 	}
-// }
 
 //renew certificate
 func RenewCert() gin.HandlerFunc {
@@ -252,8 +204,7 @@ func GenCsr() gin.HandlerFunc {
 			InputErrorJSONResp(err.Error(), c)
 			return
 		}
-		if err := services.CheckParametersEmpty(genCsrReq.OrgId, genCsrReq.UserId,
-			genCsrReq.UserType, genCsrReq.PrivateKeyPwd,
+		if err := services.CheckParametersEmpty(genCsrReq.OrgId, genCsrReq.UserType,
 			genCsrReq.Country, genCsrReq.Locality, genCsrReq.Province); err != nil {
 			InputMissingJSONResp(err.Error(), c)
 			return
