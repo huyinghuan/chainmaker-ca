@@ -41,13 +41,13 @@ root_config:
       cert_path: ../crypto-config/rootCA/sign/root-sign.crt               
       private_key_path: ../crypto-config/rootCA/sign/root-sign.key       
 
-  # csr:
-  #   CN: root.org-wx                   # The CommonName field of X509 is equivalent to the user ID
-  #   O: org-wx                         # The Orgnization field of X509 is equivalent to an organization ID
-  #   OU: root                          # The OrgnizationUnit field of X509 is equivalent to the user type
-  #   country: CN                       # The Country field for X509
-  #   locality: Beijing                 # The Locality field for X509
-  #   province: Beijing                 # The province field for X509  
+  csr:
+    CN: root.org-wx                   # The CommonName field of X509 is equivalent to the user ID
+    O: org-wx                         # The Orgnization field of X509 is equivalent to an organization ID
+    OU: root                          # The OrgnizationUnit field of X509 is equivalent to the user type
+    country: CN                       # The Country field for X509
+    locality: Beijing                 # The Locality field for X509
+    province: Beijing                 # The province field for X509  
 
 # intermediate config
 intermediate_config:                 # Optional, fill in the intermediate CA that will generate the configuration when the service is started. Multiple intermediate CA configurations can be filled

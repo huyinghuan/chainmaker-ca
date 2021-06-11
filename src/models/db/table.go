@@ -29,7 +29,6 @@ type CertContent struct {
 	SerialNumber       int64  `gorm:"uniqueIndex"`
 	Content            string `gorm:"type:longtext"`
 	Signature          string `gorm:"type:longtext"`
-	CertRaw            string `gorm:"type:longtext"`
 	Country            string
 	Locality           string
 	Province           string
@@ -55,7 +54,6 @@ type CertInfo struct {
 	P2pNodeId    string
 	UserType     UserType
 	CertUsage    CertUsage
-	CertStatus   CertStatus
 	UserId       string
 	OrgId        string
 }

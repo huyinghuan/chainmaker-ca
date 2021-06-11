@@ -43,22 +43,3 @@ func CreateCertAndInfoTransaction(certContent *db.CertContent, certInfo *db.Cert
 	})
 	return err
 }
-
-//The  transaction that updata old cert and inserts new cert and new certinfo into the database
-func CreateCertAndUpdateTransaction(certContent *db.CertContent, oldCertInfo *db.CertInfo, newCertInfo *db.CertInfo) error {
-	err := db.DB.Debug().Transaction(func(tx *gorm.DB) error {
-		if err := db.DB.Debug().Model(&db.CertInfo{}).
-			Where("serial_number=?", oldCertInfo.SerialNumber).Update("cert_status", db.EXPIRED).Error; err != nil {
-			err = fmt.Errorf("[DB] find cert info by sn failed: %s", err.Error())
-			return err
-		}
-		if err := tx.Create(certContent).Error; err != nil {
-			return fmt.Errorf("[DB] create cert content to db failed: %s, sn: %d", err.Error(), certContent.SerialNumber)
-		}
-		if err := tx.Create(newCertInfo).Error; err != nil {
-			return fmt.Errorf("[DB] create certInfo to db failed: %s, sn: %d", err.Error(), certContent.SerialNumber)
-		}
-		return nil
-	})
-	return err
-}

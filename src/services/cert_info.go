@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package services
 
 import (
-	"encoding/base64"
 	"fmt"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models"
@@ -16,16 +15,15 @@ import (
 )
 
 type CertConditions struct {
-	UserType   db.UserType
-	CertUsage  db.CertUsage
-	UserId     string
-	OrgId      string
-	CertStatus db.CertStatus
+	UserType  db.UserType
+	CertUsage db.CertUsage
+	UserId    string
+	OrgId     string
 }
 
 //Create certinfo
 func CreateCertInfo(certContent *db.CertContent, privateKeyId string, conditions *CertConditions) (*db.CertInfo, error) {
-	_, err := models.FindActiveCertInfoByConditions(conditions.UserId, conditions.OrgId, conditions.CertUsage, conditions.UserType)
+	_, err := models.FindCertInfo(conditions.UserId, conditions.OrgId, conditions.CertUsage, conditions.UserType)
 	if err == nil {
 		return nil, fmt.Errorf("create cert info failed: cert info is exist")
 	}
@@ -47,11 +45,7 @@ func createCertInfo(certContent *db.CertContent, privateKeyId string, conditions
 		}
 		issueCertSn = issueCertInfo.SerialNumber
 	}
-	certBytes, err := base64.StdEncoding.DecodeString(certContent.Content)
-	if err != nil {
-		return nil, err
-	}
-
+	certBytes := []byte(certContent.Content)
 	p2pNodeId, err := GetP2pNetNodeId(conditions.UserType, conditions.CertUsage, certBytes)
 	if err != nil {
 		return nil, err
@@ -65,7 +59,6 @@ func createCertInfo(certContent *db.CertContent, privateKeyId string, conditions
 		CertUsage:    conditions.CertUsage,
 		OrgId:        conditions.OrgId,
 		UserId:       conditions.UserId,
-		CertStatus:   conditions.CertStatus,
 	}
 	return certInfo, nil
 }

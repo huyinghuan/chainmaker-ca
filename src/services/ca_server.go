@@ -3,7 +3,6 @@ package services
 import (
 	"crypto/rand"
 	"crypto/x509/pkix"
-	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -46,11 +45,10 @@ func GenCertByCsr(genCertByCsrReq *GenCertByCsrReq) (string, error) {
 	}
 	//create certInfo
 	certConditions := &CertConditions{
-		UserType:   genCertByCsrReq.UserType,
-		CertUsage:  genCertByCsrReq.CertUsage,
-		UserId:     genCertByCsrReq.UserId,
-		OrgId:      genCertByCsrReq.OrgId,
-		CertStatus: db.ACTIVE,
+		UserType:  genCertByCsrReq.UserType,
+		CertUsage: genCertByCsrReq.CertUsage,
+		UserId:    genCertByCsrReq.UserId,
+		OrgId:     genCertByCsrReq.OrgId,
 	}
 	certInfo, err := CreateCertInfo(certContent, "", certConditions)
 	if err != nil {
@@ -119,11 +117,10 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 		return nil, err
 	}
 	certConditions := &CertConditions{
-		UserType:   genCertReq.UserType,
-		CertUsage:  genCertReq.CertUsage,
-		UserId:     genCertReq.UserId,
-		OrgId:      genCertReq.OrgId,
-		CertStatus: db.ACTIVE,
+		UserType:  genCertReq.UserType,
+		CertUsage: genCertReq.CertUsage,
+		UserId:    genCertReq.UserId,
+		OrgId:     genCertReq.OrgId,
 	}
 	certInfo, err := CreateCertInfo(certContent, keyPair.Ski, certConditions)
 	if err != nil {
@@ -141,7 +138,7 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 
 //Query cert which certstatus is active
 func QueryCert(queryCertReq *QueryCertReq) (*CertInfos, error) {
-	certInfo, err := models.FindActiveCertInfoByConditions(queryCertReq.UserId, queryCertReq.OrgId, queryCertReq.CertUsage, queryCertReq.UserType)
+	certInfo, err := models.FindCertInfo(queryCertReq.UserId, queryCertReq.OrgId, queryCertReq.CertUsage, queryCertReq.UserType)
 	if err != nil { //can not find the cert meeting the requirement
 		logger.Error("query cert failed", zap.Error(err))
 		return nil, err
@@ -156,7 +153,6 @@ func QueryCert(queryCertReq *QueryCertReq) (*CertInfos, error) {
 		OrgId:       certInfo.OrgId,
 		UserType:    db.UserType2NameMap[certInfo.UserType],
 		CertUsage:   db.CertUsage2NameMap[certInfo.CertUsage],
-		CertStatus:  db.CertStatus2NameMap[certInfo.CertStatus],
 		CertSn:      certInfo.SerialNumber,
 		CertContent: certContent.Content,
 		InvalidDate: certContent.InvalidDate,
@@ -165,7 +161,7 @@ func QueryCert(queryCertReq *QueryCertReq) (*CertInfos, error) {
 
 //Query cert by certstatus
 func QueryCertByStatus(queryCertByStatusReq *QueryCertByStatusReq) ([]*CertInfos, error) {
-	certInfoList, err := models.FindCertInfoByConditions(queryCertByStatusReq.UserId, queryCertByStatusReq.OrgId, queryCertByStatusReq.CertUsage, queryCertByStatusReq.UserType, queryCertByStatusReq.CertStatus)
+	certInfoList, err := models.FindCertInfos(queryCertByStatusReq.UserId, queryCertByStatusReq.OrgId, queryCertByStatusReq.CertUsage, queryCertByStatusReq.UserType)
 	if err != nil {
 		logger.Error("query cert by status failed", zap.Error(err))
 		return nil, err
@@ -182,7 +178,6 @@ func QueryCertByStatus(queryCertByStatusReq *QueryCertByStatusReq) ([]*CertInfos
 			OrgId:       certInfo.OrgId,
 			UserType:    db.UserType2NameMap[certInfo.UserType],
 			CertUsage:   db.CertUsage2NameMap[certInfo.CertUsage],
-			CertStatus:  db.CertStatus2NameMap[certInfo.CertStatus],
 			CertSn:      certInfo.SerialNumber,
 			CertContent: certContent.Content,
 			InvalidDate: certContent.InvalidDate,
@@ -197,61 +192,42 @@ func RenewCert(renewCertReq *RenewCertReq) (string, error) {
 	var empty string
 	certInfo, err := models.FindCertInfoBySn(renewCertReq.CertSn)
 	if err != nil {
-		logger.Error("update cert failed", zap.Error(err))
-		return empty, err
-	}
-	if certInfo.CertStatus == db.EXPIRED {
-		err = fmt.Errorf("cert has expired")
-		logger.Error("update cert failed", zap.Error(err))
+		logger.Error("renew cert failed", zap.Error(err))
 		return empty, err
 	}
 	certContent, err := models.FindCertContentBySn(renewCertReq.CertSn)
 	if err != nil {
-		logger.Error("update cert failed", zap.Error(err))
+		logger.Error("renew cert failed", zap.Error(err))
 		return empty, err
 	}
 	issuerPrivateKey, issuerCertBytes, err := searchIssuerCa(certInfo.OrgId, certInfo.UserType, certInfo.CertUsage)
 	if err != nil {
-		logger.Error("update cert failed", zap.Error(err))
+		logger.Error("renew cert failed", zap.Error(err))
 		return empty, err
 	}
-	csrBytes, err := base64.StdEncoding.DecodeString(certContent.CsrContent)
+	csrBytes := []byte(certContent.CsrContent)
+	oldCert, err := ParseCertificate([]byte(certContent.Content))
 	if err != nil {
-		logger.Error("update cert failed", zap.Error(err))
+		logger.Error("renew cert failed", zap.Error(err))
 		return empty, err
 	}
-	certRequestConfig := &CertRequestConfig{
-		HashType:         utils.Name2HashTypeMap[allConfig.GetHashType()],
-		IssuerPrivateKey: issuerPrivateKey,
-		CsrBytes:         csrBytes,
-		IssuerCertBytes:  issuerCertBytes,
-		ExpireYear:       int32(allConfig.GetDefaultExpireTime()),
-		CertUsage:        certInfo.CertUsage,
-		UserType:         certInfo.UserType,
-	}
-	newcertContent, err := IssueCertificate(certRequestConfig)
+	//renew invalid date
+	oldCert.NotAfter = oldCert.NotAfter.Add(time.Duration(expireYearFromConfig()) * 365 * 24 * time.Hour).UTC()
+
+	newCertContent, err := UpdateCert(&UpdateCertConfig{
+		OldCert:         oldCert,
+		OldCsrBytes:     csrBytes,
+		IssuerCertBytes: issuerCertBytes,
+		IssuerKey:       issuerPrivateKey,
+	})
 	if err != nil {
-		logger.Error("update cert failed", zap.Error(err))
 		return empty, err
 	}
-	certConditions := &CertConditions{
-		UserType:   certInfo.UserType,
-		CertUsage:  certInfo.CertUsage,
-		UserId:     certInfo.UserId,
-		OrgId:      certInfo.OrgId,
-		CertStatus: db.ACTIVE,
-	}
-	newCertInfo, err := createCertInfo(newcertContent, certInfo.PrivateKeyId, certConditions)
+	err = models.UpdateCertContent(certContent, newCertContent)
 	if err != nil {
-		logger.Error("update cert failed", zap.Error(err))
 		return empty, err
 	}
-	err = models.CreateCertAndUpdateTransaction(newcertContent, certInfo, newCertInfo)
-	if err != nil {
-		logger.Error("update cert failed", zap.Error(err))
-		return empty, err
-	}
-	return newcertContent.Content, nil
+	return newCertContent.Content, nil
 }
 
 //Revoke  certificate
@@ -323,12 +299,7 @@ func GenCrl(genCrlReq *GenCrlReq) ([]byte, error) {
 		logger.Error("crl list get failed", zap.Error(err))
 		return nil, err
 	}
-	issuePrivateKeyByte, err := base64.StdEncoding.DecodeString(issueKeyPair.PrivateKey)
-	if err != nil {
-		logger.Error("crl list get failed", zap.Error(err))
-		return nil, err
-	}
-
+	issuePrivateKeyByte := []byte(issueKeyPair.PrivateKey)
 	hashPwd, err := hex.DecodeString(issueKeyPair.PrivateKeyPwd)
 	if err != nil {
 		return nil, err
@@ -421,13 +392,13 @@ func CheckParametersEmpty(parameters ...string) error {
 
 func CheckCert(orgId string, userId string, userType db.UserType, certUsage db.CertUsage) error {
 	if userType == db.INTERMRDIARY_CA {
-		_, err := models.FindActiveCertInfoByConditions("", orgId, certUsage, db.INTERMRDIARY_CA)
+		_, err := models.FindCertInfo("", orgId, certUsage, db.INTERMRDIARY_CA)
 		if err == nil {
 			return fmt.Errorf("the ca cert has already existed")
 		}
 		return nil
 	}
-	_, err := models.FindActiveCertInfoByConditions(userId, orgId, certUsage, userType)
+	_, err := models.FindCertInfo(userId, orgId, certUsage, userType)
 	if err == nil {
 		return fmt.Errorf("the cert has already existed")
 	}

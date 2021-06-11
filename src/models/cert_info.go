@@ -56,10 +56,10 @@ func FindCertInfoByIssuerSn(issuerSn int64) (*db.CertInfo, error) {
 	return &certInfo, nil
 }
 
-//Find  certinfo which certstatus is active by conditions
-func FindActiveCertInfoByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType) (*db.CertInfo, error) {
+//Find certinfo by conditions
+func FindCertInfo(userId, orgId string, usage db.CertUsage, userType db.UserType) (*db.CertInfo, error) {
 	var certInfo db.CertInfo
-	tx := db.DB.Debug().Where("cert_status = ?", db.ACTIVE)
+	tx := db.DB.Debug()
 	if userId != "" {
 		tx = tx.Where("user_id=?", userId)
 	}
@@ -79,18 +79,8 @@ func FindActiveCertInfoByConditions(userId, orgId string, usage db.CertUsage, us
 	return &certInfo, nil
 }
 
-//Update certinfo by sn
-func UpdateCertInfoBySn(certInfo *db.CertInfo, sn int64) error {
-	if err := db.DB.Debug().Model(&db.CertInfo{}).
-		Where("SerialNumber=?", certInfo.SerialNumber).Update("SerialNumber", sn).Error; err != nil {
-		err = fmt.Errorf("[DB] find cert info by sn failed: %s", err.Error())
-		return err
-	}
-	return nil
-}
-
-//Find certinfo by conditions
-func FindCertInfoByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType, certStatus db.CertStatus) ([]*db.CertInfo, error) {
+//Find certinfos by conditions
+func FindCertInfos(userId, orgId string, usage db.CertUsage, userType db.UserType) ([]*db.CertInfo, error) {
 	var certInfos []*db.CertInfo
 	tx := db.DB.Debug()
 	if userId != "" {
@@ -104,9 +94,6 @@ func FindCertInfoByConditions(userId, orgId string, usage db.CertUsage, userType
 	}
 	if usage != 0 {
 		tx = tx.Where("cert_usage=?", usage)
-	}
-	if certStatus != 0 {
-		tx = tx.Where("cert_status=?", certStatus)
 	}
 	err := tx.Find(&certInfos).Error
 	if err != nil {

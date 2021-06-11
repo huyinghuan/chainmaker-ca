@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package services
 
 import (
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 
@@ -43,7 +42,7 @@ func CreateIntermediateCA() error {
 
 //Check if intermediateCA already exists
 func exsitIntermediateCA(csrConf *utils.CsrConf) bool {
-	_, err := models.FindActiveCertInfoByConditions(csrConf.CN, csrConf.O, 0, db.INTERMRDIARY_CA)
+	_, err := models.FindCertInfo(csrConf.CN, csrConf.O, 0, db.INTERMRDIARY_CA)
 	return err == nil
 }
 
@@ -132,11 +131,10 @@ func genIntermediateCA(caConfig *utils.ImCaConfig, certUsage db.CertUsage, rootK
 		return err
 	}
 	certConditions := &CertConditions{
-		UserType:   db.INTERMRDIARY_CA,
-		CertUsage:  certUsage,
-		UserId:     caConfig.CsrConf.CN,
-		OrgId:      caConfig.CsrConf.O,
-		CertStatus: db.ACTIVE,
+		UserType:  db.INTERMRDIARY_CA,
+		CertUsage: certUsage,
+		UserId:    caConfig.CsrConf.CN,
+		OrgId:     caConfig.CsrConf.O,
 	}
 	certInfo, err := CreateCertInfo(certContent, generateKeyPair.Ski, certConditions)
 	if err != nil {
@@ -162,7 +160,7 @@ func createCsrReqConf(csrConfig *utils.CsrConf, privateKey crypto.PrivateKey) *C
 }
 
 func createIMCACertReqConf(csrByte []byte, certUsage db.CertUsage, rootKeyPath string) (*CertRequestConfig, error) {
-	certInfo, err := models.FindActiveCertInfoByConditions("", "", certUsage, db.ROOT_CA)
+	certInfo, err := models.FindCertInfo("", "", certUsage, db.ROOT_CA)
 	if err != nil {
 		return nil, err
 	}
@@ -174,10 +172,7 @@ func createIMCACertReqConf(csrByte []byte, certUsage db.CertUsage, rootKeyPath s
 	if err != nil {
 		return nil, fmt.Errorf("create intermediate ca cert req config failed: %s", err.Error())
 	}
-	deCertContent, err := base64.StdEncoding.DecodeString(certContent.Content)
-	if err != nil {
-		return nil, err
-	}
+	deCertContent := []byte(certContent.Content)
 	issueprivateKey, err := ParsePrivateKey(issuerPrivateKeyBytes)
 	if err != nil {
 		return nil, err

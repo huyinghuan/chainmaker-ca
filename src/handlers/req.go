@@ -32,14 +32,6 @@ type QueryCertReq struct {
 	CertUsage string `json:"certUsage"`
 }
 
-type QueryCertByStatusReq struct {
-	OrgId      string `json:"orgId"`
-	UserId     string `json:"userId"`
-	UserType   string `json:"userType"`
-	CertUsage  string `json:"certUsage"`
-	CertStatus string `json:"certStatus"`
-}
-
 type RenewCertReq struct {
 	CertSn int64 `json:"certSn"`
 }

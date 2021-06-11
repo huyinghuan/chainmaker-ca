@@ -11,7 +11,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
@@ -109,9 +108,8 @@ func IssueCertBySelf(rootCertConf *RootCertRequestConfig) (*db.CertContent, erro
 	}
 	certContent := &db.CertContent{
 		SerialNumber:       template.SerialNumber.Int64(),
-		Content:            base64.StdEncoding.EncodeToString(certPemBytes),
+		Content:            string(certPemBytes),
 		Signature:          hex.EncodeToString(template.Signature),
-		CertRaw:            base64.StdEncoding.EncodeToString(x509certEncode),
 		Country:            template.Subject.Country[0],
 		Locality:           template.Subject.Locality[0],
 		Province:           template.Subject.Province[0],
@@ -193,9 +191,8 @@ func IssueCertificate(certConf *CertRequestConfig) (*db.CertContent, error) {
 	}
 	certContent := &db.CertContent{
 		SerialNumber:       template.SerialNumber.Int64(),
-		Content:            base64.StdEncoding.EncodeToString(certPemBytes),
+		Content:            string(certPemBytes),
 		Signature:          hex.EncodeToString(template.Signature),
-		CertRaw:            base64.StdEncoding.EncodeToString(x509certEncode),
 		Country:            template.Subject.Country[0],
 		Locality:           template.Subject.Locality[0],
 		Province:           template.Subject.Province[0],
@@ -206,7 +203,7 @@ func IssueCertificate(certConf *CertRequestConfig) (*db.CertContent, error) {
 		Aki:                hex.EncodeToString(template.AuthorityKeyId),
 		KeyUsage:           int(template.KeyUsage),
 		ExtKeyUsage:        extKeyUsageStr,
-		CsrContent:         base64.StdEncoding.EncodeToString(certConf.CsrBytes),
+		CsrContent:         string(certConf.CsrBytes),
 		IsCa:               template.IsCA,
 		IssueDate:          template.NotBefore.Unix(),
 		InvalidDate:        template.NotAfter.Unix(),
@@ -378,9 +375,8 @@ func ConvertToCertContent(certBytes []byte) (cert *x509.Certificate, certContent
 	}
 	certContent = &db.CertContent{
 		SerialNumber:       cert.SerialNumber.Int64(),
-		Content:            base64.StdEncoding.EncodeToString(certBytes),
+		Content:            string(certBytes),
 		Signature:          hex.EncodeToString(cert.Signature),
-		CertRaw:            base64.StdEncoding.EncodeToString(cert.Raw),
 		Country:            cert.Subject.Country[0],
 		Locality:           cert.Subject.Locality[0],
 		Province:           cert.Subject.Province[0],
@@ -396,4 +392,46 @@ func ConvertToCertContent(certBytes []byte) (cert *x509.Certificate, certContent
 		InvalidDate:        cert.NotAfter.Unix(),
 	}
 	return
+}
+
+type UpdateCertConfig struct {
+	OldCert         *x509.Certificate
+	OldCsrBytes     []byte
+	IssuerCertBytes []byte
+	IssuerKey       crypto.PrivateKey
+}
+
+func UpdateCert(updateConf *UpdateCertConfig) (*db.CertContent, error) {
+	csrOriginal, err := ParseCsr(updateConf.OldCsrBytes)
+	if err != nil {
+		return nil, err
+	}
+	csr, err := bcx509.X509CertCsrToChainMakerCertCsr(csrOriginal)
+	if err != nil {
+		return nil, fmt.Errorf("update cert failed: %s", err.Error())
+	}
+	issuerCert, err := ParseCertificate(updateConf.IssuerCertBytes)
+	if err != nil {
+		return nil, err
+	}
+	x509certEncode, err := bcx509.CreateCertificate(rand.Reader, updateConf.OldCert, issuerCert,
+		csr.PublicKey.ToStandardKey(), updateConf.IssuerKey.ToStandardKey())
+	if err != nil {
+		return nil, fmt.Errorf("update cert failed: %s", err.Error())
+	}
+
+	certPemBytes := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: x509certEncode})
+	extKeyUsageStr, err := ExtKeyUsageToString(updateConf.OldCert.ExtKeyUsage)
+	if err != nil {
+		return nil, err
+	}
+	certContent := &db.CertContent{
+		Content:     string(certPemBytes),
+		KeyUsage:    int(updateConf.OldCert.KeyUsage),
+		ExtKeyUsage: extKeyUsageStr,
+		IsCa:        updateConf.OldCert.IsCA,
+		IssueDate:   updateConf.OldCert.NotBefore.Unix(),
+		InvalidDate: updateConf.OldCert.NotAfter.Unix(),
+	}
+	return certContent, nil
 }

@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package services
 
 import (
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -117,10 +116,7 @@ func TestIssueCertificate(t *testing.T) {
 		fmt.Print("Issue Cert By Self failed")
 	}
 	//解码拿到证书流
-	certRequestConf.IssuerCertBytes, err = base64.StdEncoding.DecodeString(certContent.Content)
-	if err != nil {
-		fmt.Print("Decode certContent failed")
-	}
+	certRequestConf.IssuerCertBytes = []byte(certContent.Content)
 	//测试对应函数
 
 	certContent, err = IssueCertificate(&certRequestConf)
@@ -128,7 +124,7 @@ func TestIssueCertificate(t *testing.T) {
 		fmt.Print("Issue Certificate failed ", err.Error())
 		return
 	}
-	reCertContent, _ := base64.StdEncoding.DecodeString(certContent.Content)
+	reCertContent := []byte(certContent.Content)
 	file, _ := os.Create("cert.crt")
 	defer file.Close()
 	file.Write(reCertContent)

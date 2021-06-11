@@ -37,11 +37,10 @@ type QueryCertReq struct {
 }
 
 type QueryCertByStatusReq struct {
-	OrgId      string
-	UserId     string
-	UserType   db.UserType
-	CertUsage  db.CertUsage
-	CertStatus db.CertStatus
+	OrgId     string
+	UserId    string
+	UserType  db.UserType
+	CertUsage db.CertUsage
 }
 
 type RenewCertReq struct {

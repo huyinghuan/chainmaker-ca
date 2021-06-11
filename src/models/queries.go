@@ -9,8 +9,8 @@ package models
 import "chainmaker.org/chainmaker-ca-backend/src/models/db"
 
 //Find certcontent which certstatus is active by conditions
-func FindActiveCertContentByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType) (*db.CertContent, error) {
-	certInfo, err := FindActiveCertInfoByConditions(userId, orgId, usage, userType)
+func FindCertContent(userId, orgId string, usage db.CertUsage, userType db.UserType) (*db.CertContent, error) {
+	certInfo, err := FindCertInfo(userId, orgId, usage, userType)
 	if err != nil {
 		return nil, err
 	}
@@ -23,8 +23,8 @@ func FindActiveCertContentByConditions(userId, orgId string, usage db.CertUsage,
 }
 
 //Find certcontent which certstatus is active by conditions
-func FindActiveKeyPairByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType) (*db.KeyPair, error) {
-	certInfo, err := FindActiveCertInfoByConditions(userId, orgId, usage, userType)
+func FindKeyPair(userId, orgId string, usage db.CertUsage, userType db.UserType) (*db.KeyPair, error) {
+	certInfo, err := FindCertInfo(userId, orgId, usage, userType)
 	if err != nil {
 		return nil, err
 	}
@@ -37,8 +37,8 @@ func FindActiveKeyPairByConditions(userId, orgId string, usage db.CertUsage, use
 }
 
 //Find certcontent by conditions
-func FindCertContentByConditions(userId, orgId string, usage db.CertUsage, userType db.UserType, certStatus db.CertStatus) ([]*db.CertContent, error) {
-	certInfoList, err := FindCertInfoByConditions(userId, orgId, usage, userType, certStatus)
+func FindCertContents(userId, orgId string, usage db.CertUsage, userType db.UserType) ([]*db.CertContent, error) {
+	certInfoList, err := FindCertInfos(userId, orgId, usage, userType)
 	if err != nil {
 		return nil, err
 	}

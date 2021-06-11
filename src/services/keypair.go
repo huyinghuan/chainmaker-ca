@@ -9,7 +9,6 @@ package services
 import (
 	"crypto/rand"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
@@ -73,6 +72,7 @@ func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd s
 	var (
 		privKeyPemBytes, hashPwd []byte
 		hexHashPwd               string
+		privateKeyPem            string
 	)
 	if isKeyEncryptFromConfig() {
 		if len(privateKeyPwd) == 0 {
@@ -88,11 +88,11 @@ func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd s
 			return
 		}
 		hexHashPwd = hex.EncodeToString(hashPwd)
+		privateKeyPem = string(privKeyPemBytes)
 	} else {
-		privateKeyPem, _ := privateKey.String()
-		privKeyPemBytes = []byte(privateKeyPem)
+		privateKeyPem, _ = privateKey.String()
 	}
-	publicKeyPEM, _ := privateKey.PublicKey().String()
+	publicKeyPem, _ := privateKey.PublicKey().String()
 	ski, err := cert.ComputeSKI(hashType, privateKey.PublicKey().ToStandardKey())
 	if err != nil {
 		err = fmt.Errorf("create key pair failed: %s", err.Error())
@@ -100,8 +100,8 @@ func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd s
 	}
 	keyPair = &db.KeyPair{
 		Ski:           hex.EncodeToString(ski),
-		PrivateKey:    base64.StdEncoding.EncodeToString(privKeyPemBytes),
-		PublicKey:     base64.StdEncoding.EncodeToString([]byte(publicKeyPEM)),
+		PrivateKey:    privateKeyPem,
+		PublicKey:     publicKeyPem,
 		PrivateKeyPwd: hexHashPwd,
 		HashType:      utils.Name2HashTypeMap[hashTypeStr],
 		KeyType:       crypto.Name2KeyTypeMap[privateKeyTypeStr],
@@ -120,8 +120,7 @@ func CreateKeyPairNoEnc(privateKeyTypeStr string, hashTypeStr string) (privateKe
 		return
 	}
 	privateKeyPem, _ := privateKey.String()
-	privKeyPemBytes := []byte(privateKeyPem)
-	publicKeyPEM, _ := privateKey.PublicKey().String()
+	publicKeyPem, _ := privateKey.PublicKey().String()
 	ski, err := cert.ComputeSKI(hashType, privateKey.PublicKey().ToStandardKey())
 	if err != nil {
 		err = fmt.Errorf("create key pair failed: %s", err.Error())
@@ -129,8 +128,8 @@ func CreateKeyPairNoEnc(privateKeyTypeStr string, hashTypeStr string) (privateKe
 	}
 	keyPair = &db.KeyPair{
 		Ski:           hex.EncodeToString(ski),
-		PrivateKey:    base64.StdEncoding.EncodeToString(privKeyPemBytes),
-		PublicKey:     base64.StdEncoding.EncodeToString([]byte(publicKeyPEM)),
+		PrivateKey:    privateKeyPem,
+		PublicKey:     publicKeyPem,
 		PrivateKeyPwd: "",
 		HashType:      utils.Name2HashTypeMap[hashTypeStr],
 		KeyType:       crypto.Name2KeyTypeMap[privateKeyTypeStr],
@@ -165,8 +164,8 @@ func ConvertToKeyPair(privateKeyBytes []byte) (keyPair *db.KeyPair, privateKey c
 	publicKeyPEM, _ := privateKey.PublicKey().String()
 	keyPair = &db.KeyPair{
 		Ski:           hex.EncodeToString(ski),
-		PrivateKey:    base64.StdEncoding.EncodeToString(privateKeyBytes),
-		PublicKey:     base64.StdEncoding.EncodeToString([]byte(publicKeyPEM)),
+		PrivateKey:    string(privateKeyBytes),
+		PublicKey:     publicKeyPEM,
 		PrivateKeyPwd: "",
 		HashType:      hashType,
 		KeyType:       keyType,

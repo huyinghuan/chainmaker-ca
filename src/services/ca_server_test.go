@@ -103,11 +103,10 @@ func TestQueryCertByStatus(t *testing.T) {
 	InitDB()
 	InitServer()
 	queryCertByStatusReq := &QueryCertByStatusReq{
-		OrgId:      "org2",
-		UserId:     "org2_2",
-		UserType:   db.USER_ADMIN,
-		CertUsage:  db.SIGN,
-		CertStatus: db.EXPIRED,
+		OrgId:     "org2",
+		UserId:    "org2_2",
+		UserType:  db.USER_ADMIN,
+		CertUsage: db.SIGN,
 	}
 	certContentList, err := QueryCertByStatus(queryCertByStatusReq)
 	if err != nil {

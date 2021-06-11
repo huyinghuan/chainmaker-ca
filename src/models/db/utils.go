@@ -9,9 +9,6 @@ package db
 //CertType .
 type UserType int
 
-//CertStatus .
-type CertStatus int
-
 //CertUsage
 type CertUsage int
 
@@ -24,10 +21,6 @@ const (
 	NODE_COMMON
 )
 
-const (
-	ACTIVE CertStatus = iota + 1
-	EXPIRED
-)
 const (
 	SIGN CertUsage = iota + 1
 	TLS
@@ -55,18 +48,6 @@ var Name2UserTypeMap = map[string]UserType{
 	"common":    NODE_COMMON,
 }
 
-//CertStatus2NameMap CertStatus to string name
-var CertStatus2NameMap = map[CertStatus]string{
-	ACTIVE:  "active",
-	EXPIRED: "expired",
-}
-
-//Name2CertStatusMap string name to cert status
-var Name2CertStatusMap = map[string]CertStatus{
-	"active":  ACTIVE,
-	"expired": EXPIRED,
-}
-
 //CertUsage2NameMap .
 var CertUsage2NameMap = map[CertUsage]string{
 	SIGN:     "sign",
@@ -81,24 +62,4 @@ var Name2CertUsageMap = map[string]CertUsage{
 	"tls":      TLS,
 	"tls-sign": TLS_SIGN,
 	"tls-enc":  TLS_ENC,
-}
-
-//NodeType 节点类型
-type NodeType int
-
-const (
-	COMMON_NODE NodeType = iota + 1
-	CONSENSUS_NODE
-)
-
-//NodeType2NameMap .
-var NodeType2NameMap = map[NodeType]string{
-	COMMON_NODE:    "COMMON_NODE",
-	CONSENSUS_NODE: "CONSENSUS_NODE",
-}
-
-//Name2NodeTypeMap .
-var Name2NodeTypeMap = map[string]NodeType{
-	"COMMON_NODE":    COMMON_NODE,
-	"CONSENSUS_NODE": CONSENSUS_NODE,
 }

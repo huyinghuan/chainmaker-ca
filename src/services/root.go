@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package services
 
 import (
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 
@@ -98,11 +97,10 @@ func loadRootCaFromConfig(certConf *utils.CertConf, certUsage db.CertUsage) erro
 	}
 
 	conditions := &CertConditions{
-		UserType:   db.ROOT_CA,
-		CertUsage:  certUsage,
-		UserId:     cert.Subject.CommonName,
-		OrgId:      cert.Subject.Organization[0],
-		CertStatus: db.ACTIVE,
+		UserType:  db.ROOT_CA,
+		CertUsage: certUsage,
+		UserId:    cert.Subject.CommonName,
+		OrgId:     cert.Subject.Organization[0],
 	}
 	if exsitRootCA(conditions.UserId, conditions.OrgId, certUsage) {
 		return nil
@@ -223,7 +221,7 @@ func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr string, certU
 	if err != nil {
 		return err
 	}
-	certInfo, err := models.FindActiveCertInfoByConditions(rootCsrConf.CN, rootCsrConf.O, certUsage, db.ROOT_CA)
+	certInfo, err := models.FindCertInfo(rootCsrConf.CN, rootCsrConf.O, certUsage, db.ROOT_CA)
 	if err != nil {
 		privateKey, keyPair, err := CreateKeyPairNoEnc(keyTypeStr, hashTypeStr)
 		if err != nil {
@@ -247,11 +245,10 @@ func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr string, certU
 			return err
 		}
 		certConditions := &CertConditions{
-			UserType:   db.ROOT_CA,
-			CertUsage:  certUsage,
-			UserId:     rootCsrConf.CN,
-			OrgId:      rootCsrConf.O,
-			CertStatus: db.ACTIVE,
+			UserType:  db.ROOT_CA,
+			CertUsage: certUsage,
+			UserId:    rootCsrConf.CN,
+			OrgId:     rootCsrConf.O,
 		}
 		certInfo, err = CreateCertInfo(certContent, keyPair.Ski, certConditions)
 		if err != nil {
@@ -261,18 +258,12 @@ func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr string, certU
 		if err != nil {
 			return err
 		}
-		keyBytes, err := base64.StdEncoding.DecodeString(keyPair.PrivateKey)
-		if err != nil {
-			return fmt.Errorf("generate root ca failed:: %s", err.Error())
-		}
+		keyBytes := []byte(keyPair.PrivateKey)
 		err = WirteFile(keyPath, keyBytes)
 		if err != nil {
 			return fmt.Errorf("generate root ca failed:: %s", err.Error())
 		}
-		certBytes, err := base64.StdEncoding.DecodeString(certContent.Content)
-		if err != nil {
-			return fmt.Errorf("generate root ca failed:: %s", err.Error())
-		}
+		certBytes := []byte(certContent.Content)
 		err = WirteFile(certPath, certBytes)
 		if err != nil {
 			return fmt.Errorf("generate root ca failed: %s", err.Error())
@@ -283,6 +274,6 @@ func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr string, certU
 
 //Check if rootCA already exists
 func exsitRootCA(cn, o string, certUsage db.CertUsage) bool {
-	_, err := models.FindActiveCertInfoByConditions(cn, o, certUsage, db.ROOT_CA)
+	_, err := models.FindCertInfo(cn, o, certUsage, db.ROOT_CA)
 	return err == nil
 }

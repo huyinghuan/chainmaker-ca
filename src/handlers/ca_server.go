@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package handlers
 
 import (
-	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 
@@ -34,11 +33,7 @@ func GenCertByCsr() gin.HandlerFunc {
 			InputErrorJSONResp(err.Error(), c)
 			return
 		}
-		csrBytes, err := base64.StdEncoding.DecodeString(req.Csr)
-		if err != nil {
-			InputErrorJSONResp(err.Error(), c)
-			return
-		}
+		csrBytes := []byte(req.Csr)
 		csr, err := services.ParseCsr(csrBytes)
 		if err != nil {
 			InputErrorJSONResp(err.Error(), c)
@@ -134,43 +129,43 @@ func QueryCert() gin.HandlerFunc {
 }
 
 //Query certificate by status
-func QueryCertByStatus() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var queryCertByStatusReq QueryCertByStatusReq
-		if err := c.ShouldBind(&queryCertByStatusReq); err != nil {
-			InputErrorJSONResp(err.Error(), c)
-			return
-		}
-		if err := services.CheckParametersEmpty(queryCertByStatusReq.OrgId, queryCertByStatusReq.UserId,
-			queryCertByStatusReq.UserType, queryCertByStatusReq.CertUsage); err != nil {
-			InputMissingJSONResp(err.Error(), c)
-			return
-		}
-		curUserType, curCertUsage, err := services.CheckParameters(queryCertByStatusReq.OrgId, queryCertByStatusReq.UserId, queryCertByStatusReq.UserType, queryCertByStatusReq.CertUsage)
-		if err != nil {
-			InputErrorJSONResp(err.Error(), c)
-			return
-		}
-		curCertStatus, ok := db.Name2CertStatusMap[queryCertByStatusReq.CertStatus]
-		if !ok {
-			err := fmt.Errorf("the Cert Status does not meet the requirements")
-			InputErrorJSONResp(err.Error(), c)
-			return
-		}
-		certInfosList, err := services.QueryCertByStatus(&services.QueryCertByStatusReq{
-			OrgId:      queryCertByStatusReq.OrgId,
-			UserId:     queryCertByStatusReq.UserId,
-			UserType:   curUserType,
-			CertUsage:  curCertUsage,
-			CertStatus: curCertStatus,
-		})
-		if err != nil {
-			ServerErrorJSONResp(err.Error(), c)
-			return
-		}
-		SuccessfulJSONResp("", certInfosList, c)
-	}
-}
+// func QueryCertByStatus() gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		var queryCertByStatusReq QueryCertByStatusReq
+// 		if err := c.ShouldBind(&queryCertByStatusReq); err != nil {
+// 			InputErrorJSONResp(err.Error(), c)
+// 			return
+// 		}
+// 		if err := services.CheckParametersEmpty(queryCertByStatusReq.OrgId, queryCertByStatusReq.UserId,
+// 			queryCertByStatusReq.UserType, queryCertByStatusReq.CertUsage); err != nil {
+// 			InputMissingJSONResp(err.Error(), c)
+// 			return
+// 		}
+// 		curUserType, curCertUsage, err := services.CheckParameters(queryCertByStatusReq.OrgId, queryCertByStatusReq.UserId, queryCertByStatusReq.UserType, queryCertByStatusReq.CertUsage)
+// 		if err != nil {
+// 			InputErrorJSONResp(err.Error(), c)
+// 			return
+// 		}
+// 		curCertStatus, ok := db.Name2CertStatusMap[queryCertByStatusReq.CertStatus]
+// 		if !ok {
+// 			err := fmt.Errorf("the Cert Status does not meet the requirements")
+// 			InputErrorJSONResp(err.Error(), c)
+// 			return
+// 		}
+// 		certInfosList, err := services.QueryCertByStatus(&services.QueryCertByStatusReq{
+// 			OrgId:      queryCertByStatusReq.OrgId,
+// 			UserId:     queryCertByStatusReq.UserId,
+// 			UserType:   curUserType,
+// 			CertUsage:  curCertUsage,
+// 			CertStatus: curCertStatus,
+// 		})
+// 		if err != nil {
+// 			ServerErrorJSONResp(err.Error(), c)
+// 			return
+// 		}
+// 		SuccessfulJSONResp("", certInfosList, c)
+// 	}
+// }
 
 //renew certificate
 func RenewCert() gin.HandlerFunc {
@@ -220,8 +215,7 @@ func RevokeCert() gin.HandlerFunc {
 		}
 
 		crlBytes = pem.EncodeToMemory(&pem.Block{Type: "CRL", Bytes: crlBytes})
-		reCrlList := base64.StdEncoding.EncodeToString(crlBytes)
-		SuccessfulJSONResp("", reCrlList, c)
+		SuccessfulJSONResp("", string(crlBytes), c)
 	}
 }
 
@@ -246,8 +240,7 @@ func GenCrl() gin.HandlerFunc {
 			return
 		}
 		crlBytes = pem.EncodeToMemory(&pem.Block{Type: "CRL", Bytes: crlBytes})
-		reCrlList := base64.StdEncoding.EncodeToString(crlBytes)
-		SuccessfulJSONResp("", reCrlList, c)
+		SuccessfulJSONResp("", string(crlBytes), c)
 	}
 }
 
@@ -283,7 +276,6 @@ func GenCsr() gin.HandlerFunc {
 			ServerErrorJSONResp(err.Error(), c)
 			return
 		}
-		reCsr := base64.StdEncoding.EncodeToString(csrByte)
-		SuccessfulJSONResp("", reCsr, c)
+		SuccessfulJSONResp("", string(csrByte), c)
 	}
 }

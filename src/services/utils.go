@@ -8,7 +8,6 @@ package services
 
 import (
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -235,10 +234,10 @@ func searchIssuerCa(orgId string, userType db.UserType, certUsage db.CertUsage) 
 		return searchRootCa(issuerCertUsage)
 	}
 	var issuerCertInfo *db.CertInfo
-	issuerCertInfo, err = models.FindActiveCertInfoByConditions("", orgId, issuerCertUsage, db.INTERMRDIARY_CA)
+	issuerCertInfo, err = models.FindCertInfo("", orgId, issuerCertUsage, db.INTERMRDIARY_CA)
 	if err != nil {
 		if checkIntermediateCaConf() != nil {
-			issuerCertInfo, err = models.FindActiveCertInfoByConditions("", "", issuerCertUsage, db.INTERMRDIARY_CA)
+			issuerCertInfo, err = models.FindCertInfo("", "", issuerCertUsage, db.INTERMRDIARY_CA)
 			if err != nil {
 				return searchRootCa(issuerCertUsage)
 			}
@@ -251,17 +250,14 @@ func searchIssuerCa(orgId string, userType db.UserType, certUsage db.CertUsage) 
 	if err != nil {
 		return
 	}
-	issuerCertBytes, err = base64.StdEncoding.DecodeString(issuerCertContent.Content)
-	if err != nil {
-		return
-	}
+	issuerCertBytes = []byte(issuerCertContent.Content)
 	var issuerKeyPair *db.KeyPair
 	issuerKeyPair, err = models.FindKeyPairBySki(issuerCertInfo.PrivateKeyId)
 	if err != nil {
 		return
 	}
 	var deIssuerPK []byte
-	deIssuerPK, err = base64.StdEncoding.DecodeString(issuerKeyPair.PrivateKey)
+	deIssuerPK = []byte(issuerKeyPair.PrivateKey)
 	if err != nil {
 		return
 	}
@@ -281,14 +277,11 @@ func searchIssuerCa(orgId string, userType db.UserType, certUsage db.CertUsage) 
 
 func searchRootCa(certUsage db.CertUsage) (rootKey crypto.PrivateKey, rootCertBytes []byte, err error) {
 	var rootCertContent *db.CertContent
-	rootCertContent, err = models.FindActiveCertContentByConditions("", "", certUsage, db.ROOT_CA)
+	rootCertContent, err = models.FindCertContent("", "", certUsage, db.ROOT_CA)
 	if err != nil {
 		return
 	}
-	rootCertBytes, err = base64.StdEncoding.DecodeString(rootCertContent.Content)
-	if err != nil {
-		return
-	}
+	rootCertBytes = []byte(rootCertContent.Content)
 	var rootConf *utils.CertConf
 	if certUsage == db.SIGN {
 		rootConf, err = checkRootSignConf()
@@ -335,10 +328,7 @@ func GetX509Certificate(Sn int64) (*x509.Certificate, error) {
 	if err != nil {
 		return nil, err
 	}
-	certContentByte, err := base64.StdEncoding.DecodeString(certContent.Content)
-	if err != nil {
-		return nil, err
-	}
+	certContentByte := []byte(certContent.Content)
 	certContentByteUse, err := ParseCertificate(certContentByte)
 	if err != nil {
 		return nil, err
