@@ -42,7 +42,7 @@ type CertContent struct {
 	CsrContent         string `gorm:"type:longtext"`
 	IsCa               bool
 	IssueDate          int64
-	InvalidDate        int64
+	ExpirationDate     int64
 }
 
 //CertInfo Other relevant information
@@ -52,10 +52,10 @@ type CertInfo struct {
 	PrivateKeyId string
 	IssuerSn     int64
 	P2pNodeId    string
-	UserType     UserType
-	CertUsage    CertUsage
-	UserId       string
-	OrgId        string
+	OrgId        string    `gorm:"index: orgid_usertype_certusage_userid_index,unique"`
+	UserType     UserType  `gorm:"index: orgid_usertype_certusage_userid_index,unique"`
+	CertUsage    CertUsage `gorm:"index: orgid_usertype_certusage_userid_index,unique"`
+	UserId       string    `gorm:"index: orgid_usertype_certusage_userid_index,unique"`
 }
 
 //KeyPair public/private key pair informations
@@ -72,24 +72,27 @@ type KeyPair struct {
 //RevokedCert revoked cert
 type RevokedCert struct {
 	TableModel
-	OrgId            string
-	RevokedCertSN    int64
+	RevokedCertSN    int64 `gorm:"uniqueIndex"`
 	Reason           string
 	RevokedStartTime int64
 	RevokedEndTime   int64
 	RevokedBy        int64
+	OrgId            string
 }
 
 //Table name function
 func (*CertContent) TableName() string {
 	return CERT_CONTENT_NAME
 }
+
 func (*CertInfo) TableName() string {
 	return CERT_INFO_NAME
 }
+
 func (*KeyPair) TableName() string {
 	return KEY_PAIR_NAME
 }
+
 func (*RevokedCert) TableName() string {
 	return REVOKED_CERT_NAME
 }

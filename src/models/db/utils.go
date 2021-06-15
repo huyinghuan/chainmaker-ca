@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 package db
 
-//CertType .
+//CertType
 type UserType int
 
 //CertUsage

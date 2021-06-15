@@ -158,7 +158,7 @@ func RevokeCert() gin.HandlerFunc {
 		}
 		crlBytes, err := services.RevokeCert(&services.RevokeCertReq{
 			RevokedCertSn: revokeCertReq.RevokedCertSn,
-			IssueCertSn:   revokeCertReq.IssuerCertSn,
+			IssuerCertSn:  revokeCertReq.IssuerCertSn,
 			Reason:        revokeCertReq.Reason,
 		})
 		if err != nil {
@@ -185,7 +185,7 @@ func GenCrl() gin.HandlerFunc {
 			return
 		}
 		crlBytes, err := services.GenCrl(&services.GenCrlReq{
-			IssueCertSn: genCrlReq.IssuerCertSn,
+			IssuerCertSn: genCrlReq.IssuerCertSn,
 		})
 		if err != nil {
 			ServerErrorJSONResp(err.Error(), c)

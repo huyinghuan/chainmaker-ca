@@ -119,7 +119,7 @@ func TestRevokedCert(t *testing.T) {
 	InitServer()
 	revokedCertReq := &RevokeCertReq{
 		RevokedCertSn: 480460,
-		IssueCertSn:   0,
+		IssuerCertSn:  0,
 		Reason:        "",
 	}
 	crl, err := RevokeCert(revokedCertReq)

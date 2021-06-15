@@ -42,12 +42,12 @@ type RenewCertReq struct {
 
 type RevokeCertReq struct {
 	RevokedCertSn int64
-	IssueCertSn   int64
+	IssuerCertSn  int64
 	Reason        string
 }
 
 type GenCrlReq struct {
-	IssueCertSn int64
+	IssuerCertSn int64
 }
 
 type GenCsrReq struct {
@@ -66,12 +66,11 @@ type CertAndPrivateKey struct {
 }
 
 type CertInfos struct {
-	UserId      string `json:"userId"`
-	OrgId       string `json:"orgId"`
-	UserType    string `json:"userType"`
-	CertUsage   string `json:"certUsage"`
-	CertStatus  string `json:"certStatus"`
-	CertSn      int64  `json:"certSn"`
-	CertContent string `json:"certContent"`
-	InvalidDate int64  `json:"invalidDate"`
+	UserId         string `json:"userId"`
+	OrgId          string `json:"orgId"`
+	UserType       string `json:"userType"`
+	CertUsage      string `json:"certUsage"`
+	CertSn         int64  `json:"certSn"`
+	CertContent    string `json:"certContent"`
+	ExpirationDate int64  `json:"expirationDate"`
 }

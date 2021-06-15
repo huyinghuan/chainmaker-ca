@@ -1,3 +1,9 @@
+/*
+Copyright (C) BABEC. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package services
 
 import (
@@ -164,20 +170,19 @@ func QueryCerts(req *QueryCertsReq) ([]*CertInfos, error) {
 			return nil, err
 		}
 		res = append(res, &CertInfos{
-			UserId:      certInfo.UserId,
-			OrgId:       certInfo.OrgId,
-			UserType:    db.UserType2NameMap[certInfo.UserType],
-			CertUsage:   db.CertUsage2NameMap[certInfo.CertUsage],
-			CertSn:      certInfo.SerialNumber,
-			CertContent: certContent.Content,
-			InvalidDate: certContent.InvalidDate,
+			UserId:         certInfo.UserId,
+			OrgId:          certInfo.OrgId,
+			UserType:       db.UserType2NameMap[certInfo.UserType],
+			CertUsage:      db.CertUsage2NameMap[certInfo.CertUsage],
+			CertSn:         certInfo.SerialNumber,
+			CertContent:    certContent.Content,
+			ExpirationDate: certContent.ExpirationDate,
 		})
 	}
 	return res, nil
 }
 
-//renew the cert invail time
-//in fact a new certificate is issued
+//renew the cert expiration date
 func RenewCert(renewCertReq *RenewCertReq) (string, error) {
 	var empty string
 	certInfo, err := models.FindCertInfoBySn(renewCertReq.CertSn)
@@ -228,7 +233,15 @@ func RevokeCert(revokeCertReq *RevokeCertReq) ([]byte, error) {
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
 	}
-	ok, err := searchCertChain(revokeCertReq.RevokedCertSn, revokeCertReq.IssueCertSn)
+
+	_, err = models.QueryRevokedCertByRevokedSn(revokeCertReq.IssuerCertSn)
+	if err == nil { //find it and is already revoked
+		err = fmt.Errorf("issuer cert had already been revoked")
+		logger.Error("revoked cert failed", zap.Error(err))
+		return nil, err
+	}
+
+	ok, err := searchCertChain(revokeCertReq.RevokedCertSn, revokeCertReq.IssuerCertSn)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +250,7 @@ func RevokeCert(revokeCertReq *RevokeCertReq) ([]byte, error) {
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
 	}
-	issueCertInfo, err := models.FindCertInfoBySn(revokeCertReq.IssueCertSn)
+	issueCertInfo, err := models.FindCertInfoBySn(revokeCertReq.IssuerCertSn)
 	if err != nil {
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
@@ -252,8 +265,8 @@ func RevokeCert(revokeCertReq *RevokeCertReq) ([]byte, error) {
 		RevokedCertSN:    revokeCertReq.RevokedCertSn,
 		Reason:           revokeCertReq.Reason,
 		RevokedStartTime: time.Now().Unix(),
-		RevokedEndTime:   revokedCertContent.InvalidDate,
-		RevokedBy:        revokeCertReq.IssueCertSn,
+		RevokedEndTime:   revokedCertContent.ExpirationDate,
+		RevokedBy:        revokeCertReq.IssuerCertSn,
 	}
 	err = models.InsertRevokedCert(revokedCert)
 	if err != nil {
@@ -262,7 +275,7 @@ func RevokeCert(revokeCertReq *RevokeCertReq) ([]byte, error) {
 	}
 	//create crl
 	genCrlReq := &GenCrlReq{
-		IssueCertSn: revokeCertReq.IssueCertSn,
+		IssuerCertSn: revokeCertReq.IssuerCertSn,
 	}
 	crlBytes, err := GenCrl(genCrlReq)
 	if err != nil {
@@ -274,12 +287,12 @@ func RevokeCert(revokeCertReq *RevokeCertReq) ([]byte, error) {
 
 //Get the latest crllist
 func GenCrl(genCrlReq *GenCrlReq) ([]byte, error) {
-	issueCertUse, err := GetX509Certificate(genCrlReq.IssueCertSn)
+	issueCertUse, err := GetX509Certificate(genCrlReq.IssuerCertSn)
 	if err != nil {
 		logger.Error("crl list get failed", zap.Error(err))
 		return nil, err
 	}
-	issueCertInfo, err := models.FindCertInfoBySn(genCrlReq.IssueCertSn)
+	issueCertInfo, err := models.FindCertInfoBySn(genCrlReq.IssuerCertSn)
 	if err != nil {
 		logger.Error("crl list get failed", zap.Error(err))
 		return nil, err
@@ -301,7 +314,7 @@ func GenCrl(genCrlReq *GenCrlReq) ([]byte, error) {
 		return nil, err
 	}
 
-	revokedCertsList, err := models.QueryRevokedCertByIssueSn(genCrlReq.IssueCertSn)
+	revokedCertsList, err := models.QueryRevokedCertByIssueSn(genCrlReq.IssuerCertSn)
 	if err != nil {
 		logger.Error("crl list get failed", zap.Error(err))
 		return nil, err

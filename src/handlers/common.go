@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -53,17 +52,9 @@ func SuccessfulJSONResp(msg string, data interface{}, c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-//SuccessfulFileResp File
-func SuccessfulFileResp(fileName string, data []byte, c *gin.Context) {
-	c.Writer.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
-	c.Writer.Header().Add("Content-Type", "application/octet-stream")
-	c.Data(http.StatusOK, "application/octet-stream", data)
-}
-
 //Cors Cross-domain Cors
 func Cors() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		fmt.Printf("%v\n", c.Request.Header)
 		method := c.Request.Method
 		origin := c.Request.Header.Get("Origin")
 		if origin != "" {

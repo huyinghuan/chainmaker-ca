@@ -122,7 +122,7 @@ func IssueCertBySelf(rootCertConf *RootCertRequestConfig) (*db.CertContent, erro
 		ExtKeyUsage:        extKeyUsageStr,
 		IsCa:               template.IsCA,
 		IssueDate:          template.NotBefore.Unix(),
-		InvalidDate:        template.NotAfter.Unix(),
+		ExpirationDate:     template.NotAfter.Unix(),
 	}
 	return certContent, nil
 }
@@ -206,7 +206,7 @@ func IssueCertificate(certConf *CertRequestConfig) (*db.CertContent, error) {
 		CsrContent:         string(certConf.CsrBytes),
 		IsCa:               template.IsCA,
 		IssueDate:          template.NotBefore.Unix(),
-		InvalidDate:        template.NotAfter.Unix(),
+		ExpirationDate:     template.NotAfter.Unix(),
 	}
 	return certContent, nil
 }
@@ -389,7 +389,7 @@ func ConvertToCertContent(certBytes []byte) (cert *x509.Certificate, certContent
 		ExtKeyUsage:        extKeyUsageStr,
 		IsCa:               cert.IsCA,
 		IssueDate:          cert.NotBefore.Unix(),
-		InvalidDate:        cert.NotAfter.Unix(),
+		ExpirationDate:     cert.NotAfter.Unix(),
 	}
 	return
 }
@@ -426,12 +426,12 @@ func UpdateCert(updateConf *UpdateCertConfig) (*db.CertContent, error) {
 		return nil, err
 	}
 	certContent := &db.CertContent{
-		Content:     string(certPemBytes),
-		KeyUsage:    int(updateConf.OldCert.KeyUsage),
-		ExtKeyUsage: extKeyUsageStr,
-		IsCa:        updateConf.OldCert.IsCA,
-		IssueDate:   updateConf.OldCert.NotBefore.Unix(),
-		InvalidDate: updateConf.OldCert.NotAfter.Unix(),
+		Content:        string(certPemBytes),
+		KeyUsage:       int(updateConf.OldCert.KeyUsage),
+		ExtKeyUsage:    extKeyUsageStr,
+		IsCa:           updateConf.OldCert.IsCA,
+		IssueDate:      updateConf.OldCert.NotBefore.Unix(),
+		ExpirationDate: updateConf.OldCert.NotAfter.Unix(),
 	}
 	return certContent, nil
 }
