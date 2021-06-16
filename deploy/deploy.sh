@@ -22,10 +22,10 @@ docker run -d \
 -v $path/crypto-config:/crypto-config \
 -u root \
 --privileged=true \
---name chainmaker-ca \
+--name ca-server \
 --restart always \
 ubuntu:18.04 \
 bash -c "./chainmaker-ca -config ./conf/config.yaml"
 sleep 2s
-docker logs chainmaker-ca
+docker logs ca-server
 echo "chainmaker-ca server start!"

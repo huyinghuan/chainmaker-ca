@@ -10,7 +10,7 @@ log_config:
 db_config:
   user: root
   password: 123456
-  ip: 192.168.12.145
+  ip: 192.168.12.156
   port: 13306
   dbname: chainmaker_ca
 
@@ -20,7 +20,7 @@ base_config:
   expire_year: 2                                     # Valid life of issue
   hash_type: SHA256                                  # using the hash type SHA256/SHA3_256/SM3 is currently supported
   key_type: ECC_NISTP256                             # Using key types ECC_NISTP256/SM2 is currently supported
-  can_issue_ca: true                                 # Multistage CA switch
+  can_issue_ca: false                                # Multistage CA switch
   provide_service_for: [org1,org2,org7]              # A list of organizations to which services are provide
   key_encrypt: false                                 # Whether the key is stored in encryption
 
@@ -36,12 +36,10 @@ root_config:
       cert_type: tls
       cert_path: ../crypto-config/rootCA/tls/root-tls.crt            
       private_key_path: ../crypto-config/rootCA/tls/root-tls.key      
-      private_key_pwd: wx123
     -
       cert_type: sign
       cert_path: ../crypto-config/rootCA/sign/root-sign.crt               
       private_key_path: ../crypto-config/rootCA/sign/root-sign.key       
-      private_key_pwd: wx123
 
   csr:
     CN: root.org-wx                   # The CommonName field of X509 is equivalent to the user ID
@@ -57,23 +55,6 @@ intermediate_config:                 # Optional, fill in the intermediate CA tha
     csr:
       CN: ca.org8
       O: org1
-      OU: ca
-      country: CN
-      locality: Beijing
-      province: Beijing
-  -
-    csr:
-      CN: ca.org9
-      O: org2
-      OU: ca
-      country: CN
-      locality: Beijing
-      province: Beijing
-    private_key_pwd: wx123
-  -
-    csr:
-      CN: ca.org7
-      O: org7
       OU: ca
       country: CN
       locality: Beijing
