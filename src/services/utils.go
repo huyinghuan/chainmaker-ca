@@ -217,7 +217,7 @@ func getCaType() (utils.CaType, error) {
 		ok     bool
 	)
 	if caType, ok = utils.Name2CaTypeMap[allConfig.GetCaType()]; !ok {
-		return caType, fmt.Errorf("check ca type failed: ca type is unsupport!Currently supported types: [tls],[sign],[solo] or [double]")
+		return caType, fmt.Errorf("check ca type failed: ca type is unsupport!Currently supported types: [tls],[sign],[single_root] or [double_root]")
 	}
 	return caType, nil
 }

@@ -53,6 +53,6 @@ var CaType2NameMap = map[CaType]string{
 var Name2CaTypeMap = map[string]CaType{
 	"tls":         TLS,
 	"sign":        SIGN,
-	"solo_root":   SINGLE_ROOT,
+	"single_root": SINGLE_ROOT,
 	"double_root": DOUBLE_ROOT,
 }
