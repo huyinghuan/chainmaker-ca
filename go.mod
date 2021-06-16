@@ -10,7 +10,7 @@ require (
 	go.uber.org/zap v1.16.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gorm.io/driver/mysql v1.1.0
-	gorm.io/gorm v1.21.10
+	gorm.io/gorm v1.21.11
 )
 
 replace chainmaker.org/chainmaker-go/common => ./src/common
