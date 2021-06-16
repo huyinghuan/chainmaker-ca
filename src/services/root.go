@@ -207,8 +207,8 @@ func GenerateDoubleRootCa(rootCsrConf *utils.CsrConf) error {
 
 //Generate single root CA
 func GenerateSingleRootCa(rootCsrConf *utils.CsrConf, rootCertConf *utils.CertConf, certUsage db.CertUsage) error {
-	keyTypeStr := hashTypeFromConfig()
-	hashTypeStr := keyTypeFromConfig()
+	keyTypeStr := keyTypeFromConfig()
+	hashTypeStr := hashTypeFromConfig()
 	err := genRootCa(rootCsrConf, keyTypeStr, hashTypeStr, certUsage, rootCertConf.PrivateKeyPath, rootCertConf.CertPath)
 	if err != nil {
 		return err

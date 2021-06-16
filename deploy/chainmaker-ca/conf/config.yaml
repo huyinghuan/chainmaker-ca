@@ -16,7 +16,7 @@ db_config:
 
 # Base config
 base_config:
-  ca_type: double_root                               # Boot mode: sign/tls/double_root/solo_root 
+  ca_type: single_root                               # Boot mode: sign/tls/double_root/single_root 
   expire_year: 2                                     # Valid life of issue
   hash_type: SHA256                                  # using the hash type SHA256/SHA3_256/SM3 is currently supported
   key_type: ECC_NISTP256                             # Using key types ECC_NISTP256/SM2 is currently supported

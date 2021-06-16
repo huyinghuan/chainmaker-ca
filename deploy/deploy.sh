@@ -10,12 +10,12 @@ docker run -d \
     --restart always \
     mysql:8.0
 echo "waiting for database initialization..."
-sleep 12s
+sleep 10s
 docker logs --tail=10 ca-mysql
 
 echo "start ca services..."
 docker run -d \
--p 8090:8090 \
+-p 8096:8090 \
 -w /chainmaker-ca \
 -v $path/chainmaker-ca:/chainmaker-ca \
 -v $path/log:/log \
