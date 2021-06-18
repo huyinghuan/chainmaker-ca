@@ -11,26 +11,18 @@ import (
 	"testing"
 )
 
+const ConfigPath = "../conf/config.yaml"
+
 func TestInitConf(t *testing.T) {
-	SetConfig(GetConfigEnv())
+	SetConfig(ConfigPath)
 }
 
 func TestGetAllConf(t *testing.T) {
 	TestInitConf(t)
 	allConf := GetAllConfig()
-
-	fmt.Printf("base config: %v\n", allConf.GetBaseConf())
-	fmt.Printf("root config: %v\n", allConf.GetRootConf())
-	for _, v := range allConf.GetIntermediateConf() {
-		fmt.Printf("Intermediate ca config: %v\n", v)
-	}
-}
-
-func TestGetSomeConf(t *testing.T) {
-	TestInitConf(t)
-	allConf := GetAllConfig()
-	hashType := allConf.GetHashType()
-	keyType := allConf.GetKeyType()
-	fmt.Printf("hash type :%s\n", hashType)
-	fmt.Printf("key type :%s\n", keyType)
+	fmt.Printf("all config: %+v\n", allConf)
+	fmt.Printf("Log config: %+v\n", allConf.GetLogConf())
+	fmt.Printf("DB config: %+v\n", allConf.GetDBConf())
+	fmt.Printf("Base config: %+v\n", allConf.GetBaseConf())
+	fmt.Printf("Root ca config: %+v\n", allConf.GetRootConf())
 }

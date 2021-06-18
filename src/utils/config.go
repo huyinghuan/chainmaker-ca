@@ -72,7 +72,7 @@ func GetConfigEnv() string {
 	}
 	fmt.Println("[env]:", env)
 	if env == "" {
-		fmt.Println("env is empty, set default: space")
+		fmt.Println("env is empty, set default")
 		env = ""
 	}
 	return env
@@ -116,20 +116,16 @@ func InitConfig(configPath string) {
 
 //DBConfig /
 type DBConfig struct {
-	User     string
-	Password string
-	IP       string
-	Port     string
-	DbName   string
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
+	IP       string `mapstructure:"ip"`
+	Port     string `mapstructure:"port"`
+	DbName   string `mapstructure:"dbname"`
 }
 
 //GetDBConfig --Get DB config from config file.
 func GetDBConfig() string {
-	var dbConfig DBConfig
-	err := viper.UnmarshalKey("db_config", &dbConfig)
-	if err != nil {
-		panic(err)
-	}
+	dbConfig := allConf.GetDBConf()
 	mysqlURL := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s&parseTime=True&loc=Local",
 		dbConfig.User, dbConfig.Password, dbConfig.IP, dbConfig.Port, dbConfig.DbName, "utf8")
 	return mysqlURL
@@ -141,6 +137,9 @@ func GetAllConf() (*AllConfig, error) {
 	err := viper.Unmarshal(&allConf)
 	if err != nil {
 		return nil, fmt.Errorf("get all config failed: %s", err.Error())
+	}
+	if allConf.DBConf == nil {
+		return nil, fmt.Errorf("get all config failed: not found db config")
 	}
 	if allConf.BaseConf == nil {
 		return nil, fmt.Errorf("get all config failed: not found base config")
@@ -205,4 +204,8 @@ func (ac *AllConfig) GetIntermediateConf() []*ImCaConfig {
 
 func (ac *AllConfig) GetLogConf() *loggers.LogConifg {
 	return ac.LogConf
+}
+
+func (ac *AllConfig) GetDBConf() *DBConfig {
+	return ac.DBConf
 }

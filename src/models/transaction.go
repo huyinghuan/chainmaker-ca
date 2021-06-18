@@ -13,9 +13,9 @@ import (
 	"gorm.io/gorm"
 )
 
-//The  transaction that inserts cert, kepair, and certinfo into the database
+//The transaction that inserts cert, kepair, and certinfo into the database
 func CreateCertTransaction(certContent *db.CertContent, certInfo *db.CertInfo, keyPair *db.KeyPair) error {
-	err := db.DB.Debug().Transaction(func(tx *gorm.DB) error {
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(keyPair).Error; err != nil {
 			return fmt.Errorf("[DB] create key pair error: %s", err.Error())
 		}
@@ -30,9 +30,9 @@ func CreateCertTransaction(certContent *db.CertContent, certInfo *db.CertInfo, k
 	return err
 }
 
-//The  transaction that inserts cert and certinfo into the database
+//The transaction that inserts cert and certinfo into the database
 func CreateCertAndInfoTransaction(certContent *db.CertContent, certInfo *db.CertInfo) error {
-	err := db.DB.Debug().Transaction(func(tx *gorm.DB) error {
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(certContent).Error; err != nil {
 			return fmt.Errorf("[DB] create cert content to db failed: %s, sn: %d", err.Error(), certContent.SerialNumber)
 		}

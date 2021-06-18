@@ -8,123 +8,82 @@ package services
 
 import (
 	"fmt"
+	"log"
 	"testing"
 
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
-	"go.uber.org/zap"
 )
 
-func TestGenerateCertByCsr(t *testing.T) {
-	InitDB()
-	InitServer()
-	var csrRequest CSRRequest
-	//先createkeypair
-	var privateKeyTypeStr string
-	var hashTypeStr string
-	var privateKeyPwd string
-	privateKeyTypeStr = "ECC_NISTP256"
-	hashTypeStr = "SHA256"
-	privateKeyPwd = "123456"
-	privateKey, _, err := CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd)
-	if err != nil {
-		fmt.Println(err.Error())
-		fmt.Print("Create KeyPair Error")
-		return
-	}
-	//构造数据csrRequest的假数据
-	csrRequest.PrivateKey = privateKey
-	csrRequest.Country = "China"
-	csrRequest.Locality = "default"
-	csrRequest.OrgId = "org2"
-	csrRequest.Province = "default"
-	csrRequest.UserId = "default"
-	csrRequest.UserType = db.USER_ADMIN
-
-	//用BuildCSRReqConf获得CSRRequestConfig
-	csrRequestConf := BuildCSRReqConf(&csrRequest)
-	//用createCSR获得csr流文件
-	csrByte, err := createCSR(csrRequestConf)
-	if err != nil {
-		fmt.Print("createCSR byte failed")
-	}
-	generateCertByCsrReq := &GenCertByCsrReq{
-		OrgId:     "org",
-		UserId:    "default",
-		UserType:  db.USER_ADMIN,
-		CertUsage: db.SIGN,
-		CsrBytes:  csrByte,
-	}
-	cerContent, err := GenCertByCsr(generateCertByCsrReq)
-	if err != nil {
-		fmt.Print("Generate Cert By Csr failed ", err.Error())
-	}
-	fmt.Print(cerContent)
-}
+const (
+	OrgId                  = "TestOrg1"
+	UserId                 = "TestUser"
+	UserType  db.UserType  = db.USER_ADMIN
+	CertUsage db.CertUsage = db.TLS
+	Country                = "CN"
+	Locality               = "Beijing"
+	Province               = "Beijing"
+)
 
 func TestGenCert(t *testing.T) {
-	InitDB()
-	InitServer()
-	genCertReq := &GenCertReq{
-		OrgId:         "org2",
-		UserId:        "default",
-		UserType:      db.USER_ADMIN,
-		CertUsage:     db.TLS_ENC,
-		PrivateKeyPwd: "123456",
-		Country:       "China",
-		Locality:      "HaIdian",
-		Province:      "Beijing",
+	TestInit(t)
+	req := &GenCertReq{
+		OrgId:     OrgId,
+		UserId:    UserId,
+		UserType:  UserType,
+		CertUsage: CertUsage,
+		Country:   Country,
+		Locality:  Locality,
+		Province:  Province,
 	}
-	cerContentAndprivateKey, err := GenCert(genCertReq)
+	certAndPirvateKey, err := GenCert(req)
 	if err != nil {
-		fmt.Print("Generate Cert failed", err.Error())
+		log.Fatalf("gen cert failed: %s", err.Error())
 	}
-	fmt.Println(cerContentAndprivateKey.Cert)
-	fmt.Print(cerContentAndprivateKey.PrivateKey)
-}
-func TestQueryCertByStatus(t *testing.T) {
-	InitDB()
-	InitServer()
-	queryCertByStatusReq := &QueryCertsReq{
-		OrgId:     "org2",
-		UserId:    "org2_2",
-		UserType:  "admin",
-		CertUsage: "sign",
-	}
-	certContentList, err := QueryCerts(queryCertByStatusReq)
-	if err != nil {
-		fmt.Print("no cert you want ", zap.Error(err))
-	}
-	fmt.Println("find the cert")
-	for index, _ := range certContentList {
-		fmt.Printf("这个是%d\n", index)
-		//fmt.Println(value)
-	}
+	fmt.Printf("cert content: %s\n", certAndPirvateKey.Cert)
+	fmt.Printf("private key: %s\n", certAndPirvateKey.PrivateKey)
 }
 
-func TestUpdateCert(t *testing.T) {
-	InitDB()
-	InitServer()
-	updateCertReq := &RenewCertReq{
-		CertSn: 806294,
+func TestGenCsr(t *testing.T) {
+	TestInit(t)
+	req := &GenCsrReq{
+		OrgId:    OrgId,
+		UserId:   UserId,
+		UserType: UserType,
+		Country:  Country,
+		Locality: Locality,
+		Province: Province,
 	}
-	cetContent, err := RenewCert(updateCertReq)
+	csrBytes, err := GenCsr(req)
 	if err != nil {
-		fmt.Print("update failed ", err.Error())
+		log.Fatalf("gen csr failed: %s", err.Error())
 	}
-	fmt.Print(cetContent)
+	fmt.Println(string(csrBytes))
 }
 
-func TestRevokedCert(t *testing.T) {
-	InitDB()
-	InitServer()
-	revokedCertReq := &RevokeCertReq{
-		RevokedCertSn: 480460,
-		IssuerCertSn:  0,
-		Reason:        "",
+func TestGenCertByCsr(t *testing.T) {
+	TestInit(t)
+	req := &GenCsrReq{
+		OrgId:    OrgId,
+		UserId:   UserId,
+		UserType: UserType,
+		Country:  Country,
+		Locality: Locality,
+		Province: Province,
 	}
-	crl, err := RevokeCert(revokedCertReq)
+	csrBytes, err := GenCsr(req)
 	if err != nil {
-		fmt.Print("Revoked Cert failed ", err.Error())
+		log.Fatalf("gen csr failed: %s", err.Error())
 	}
-	fmt.Print(crl)
+	csrReq := &GenCertByCsrReq{
+		OrgId:     OrgId,
+		UserId:    UserId,
+		UserType:  UserType,
+		CertUsage: CertUsage,
+		CsrBytes:  csrBytes,
+	}
+	certContent, err := GenCertByCsr(csrReq)
+	if err != nil {
+		log.Fatalf("gen csr failed: %s", err.Error())
+	}
+	fmt.Printf(certContent)
 }

@@ -12,46 +12,20 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 )
 
-//Inserts certinfo into the database
-func InsertCertInfo(certInfo *db.CertInfo) error {
-	if err := db.DB.Debug().Create(certInfo).Error; err != nil {
-		return fmt.Errorf("[DB] create cert info to db failed: %s, sn: %d", err.Error(), certInfo.SerialNumber)
-	}
-	return nil
-}
-
 //Find certinfo by sn
 func FindCertInfoBySn(sn int64) (*db.CertInfo, error) {
 	var certInfo db.CertInfo
-	if err := db.DB.Debug().Where("serial_number=?", sn).First(&certInfo).Error; err != nil {
+	if err := db.DB.Where("serial_number=?", sn).First(&certInfo).Error; err != nil {
 		return nil, fmt.Errorf("[DB] find cert infos by sn error: %s, sn: %d", err.Error(), sn)
 	}
 	return &certInfo, nil
 }
 
-//Check to see if certinfo exists
-func IsCertInfoExist(sn int64) *db.CertInfo {
-	var certInfo db.CertInfo
-	if err := db.DB.Debug().Where("serial_number=?", sn).First(&certInfo).Error; err != nil {
-		return nil
-	}
-	return &certInfo
-}
-
 //Find certinfo by privateKeyid
 func FindCertInfoByPrivateKey(privateKeyId string) (*db.CertInfo, error) {
 	var certInfo db.CertInfo
-	if err := db.DB.Debug().Where("private_key_id=?", privateKeyId).First(&certInfo).Error; err != nil {
-		return nil, fmt.Errorf("[DB] find cert infos by private key id failed: %s, private key id: %s", err.Error(), privateKeyId)
-	}
-	return &certInfo, nil
-}
-
-//Findcertinfo by issuersn
-func FindCertInfoByIssuerSn(issuerSn int64) (*db.CertInfo, error) {
-	var certInfo db.CertInfo
-	if err := db.DB.Debug().Where("issure_sn=?", issuerSn).First(&certInfo).Error; err != nil {
-		return nil, fmt.Errorf("[DB] find cert infos by issuer sn failed: %s, issuer sn: %d", err.Error(), issuerSn)
+	if err := db.DB.Where("private_key_id=?", privateKeyId).First(&certInfo).Error; err != nil {
+		return nil, fmt.Errorf("[DB] find cert info by private key id failed: %s, private key id: %s", err.Error(), privateKeyId)
 	}
 	return &certInfo, nil
 }
@@ -59,7 +33,7 @@ func FindCertInfoByIssuerSn(issuerSn int64) (*db.CertInfo, error) {
 //Find certinfo by conditions
 func FindCertInfo(userId, orgId string, usage db.CertUsage, userType db.UserType) (*db.CertInfo, error) {
 	var certInfo db.CertInfo
-	tx := db.DB.Debug()
+	tx := db.DB
 	if userId != "" {
 		tx = tx.Where("user_id=?", userId)
 	}
@@ -82,7 +56,7 @@ func FindCertInfo(userId, orgId string, usage db.CertUsage, userType db.UserType
 //Find certinfos by conditions
 func FindCertInfos(userId, orgId string, usage db.CertUsage, userType db.UserType) ([]*db.CertInfo, error) {
 	var certInfos []*db.CertInfo
-	tx := db.DB.Debug()
+	tx := db.DB
 	if userId != "" {
 		tx = tx.Where("user_id=?", userId)
 	}
@@ -97,7 +71,7 @@ func FindCertInfos(userId, orgId string, usage db.CertUsage, userType db.UserTyp
 	}
 	err := tx.Find(&certInfos).Error
 	if err != nil {
-		return nil, fmt.Errorf("[DB] find cert info by conditions failed: %s", err.Error())
+		return nil, fmt.Errorf("[DB] find cert infos by conditions failed: %s", err.Error())
 	}
 	return certInfos, nil
 }

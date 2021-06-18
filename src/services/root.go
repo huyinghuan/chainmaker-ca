@@ -78,12 +78,12 @@ func LoadRootCaFromConfig() error {
 	return nil
 }
 
-func loadRootCaFromConfig(certConf *utils.CertConf, certUsage db.CertUsage) error {
-	keyBytes, err := ioutil.ReadFile(certConf.PrivateKeyPath)
+func loadRootCaFromConfig(certPath, privateKeyPath string, certUsage db.CertUsage) error {
+	keyBytes, err := ioutil.ReadFile(privateKeyPath)
 	if err != nil {
 		return fmt.Errorf("load root ca failed: %s", err.Error())
 	}
-	certBytes, err := ioutil.ReadFile(certConf.CertPath)
+	certBytes, err := ioutil.ReadFile(certPath)
 	if err != nil {
 		return fmt.Errorf("load root ca failed: %s", err.Error())
 	}
@@ -126,11 +126,11 @@ func LoadDoubleRootCa() error {
 	if err != nil {
 		return err
 	}
-	err = loadRootCaFromConfig(signCertConf, db.SIGN)
+	err = loadRootCaFromConfig(signCertConf.CertPath, signCertConf.PrivateKeyPath, db.SIGN)
 	if err != nil {
 		return err
 	}
-	err = loadRootCaFromConfig(tlsCertConf, db.TLS)
+	err = loadRootCaFromConfig(tlsCertConf.CertPath, tlsCertConf.PrivateKeyPath, db.TLS)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func LoadDoubleRootCa() error {
 
 //Load single root CA from the path in the configuration file
 func LoadSingleRootCa(certConf *utils.CertConf, certUsage db.CertUsage) error {
-	return loadRootCaFromConfig(certConf, certUsage)
+	return loadRootCaFromConfig(certConf.CertPath, certConf.PrivateKeyPath, certUsage)
 }
 
 //Generate root CA

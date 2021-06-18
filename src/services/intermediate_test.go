@@ -7,15 +7,14 @@ SPDX-License-Identifier: Apache-2.0
 package services
 
 import (
-	"fmt"
+	"log"
 	"testing"
 )
 
-func TestProductIntermediateCA(t *testing.T) {
-	InitDB()
-	InitServer()
+func TestCreateIntermediateCA(t *testing.T) {
+	TestInit(t)
 	err := CreateIntermediateCA()
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatalf("create intermediate ca failed: %s", err.Error())
 	}
 }
