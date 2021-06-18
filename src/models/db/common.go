@@ -63,3 +63,10 @@ var Name2CertUsageMap = map[string]CertUsage{
 	"tls-sign": TLS_SIGN,
 	"tls-enc":  TLS_ENC,
 }
+
+type AccessRole int
+
+const (
+	ADMIN AccessRole = iota + 1
+	USER
+)

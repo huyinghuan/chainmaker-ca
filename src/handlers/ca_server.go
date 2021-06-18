@@ -166,7 +166,7 @@ func RevokeCert() gin.HandlerFunc {
 			return
 		}
 
-		crlBytes = pem.EncodeToMemory(&pem.Block{Type: "CRL", Bytes: crlBytes})
+		crlBytes = pem.EncodeToMemory(&pem.Block{Type: "X509 CRL", Bytes: crlBytes})
 		SuccessfulJSONResp("", string(crlBytes), c)
 	}
 }
@@ -191,7 +191,7 @@ func GenCrl() gin.HandlerFunc {
 			ServerErrorJSONResp(err.Error(), c)
 			return
 		}
-		crlBytes = pem.EncodeToMemory(&pem.Block{Type: "CRL", Bytes: crlBytes})
+		crlBytes = pem.EncodeToMemory(&pem.Block{Type: "X509 CRL", Bytes: crlBytes})
 		SuccessfulJSONResp("", string(crlBytes), c)
 	}
 }
