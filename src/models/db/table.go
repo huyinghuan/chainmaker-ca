@@ -15,6 +15,7 @@ const (
 	CERT_INFO_NAME    = "cert_info"
 	KEY_PAIR_NAME     = "key_pair"
 	REVOKED_CERT_NAME = "revoked_cert"
+	ACCESS_CONTROL    = "app_info"
 )
 
 type TableModel struct {
@@ -80,6 +81,13 @@ type RevokedCert struct {
 	OrgId            string
 }
 
+type AppInfo struct {
+	TableModel
+	AppId   string `gorm:"uniqueIndex"`
+	AppKey  string
+	AppRole AccessRole
+}
+
 //Table name function
 func (*CertContent) TableName() string {
 	return CERT_CONTENT_NAME
@@ -95,4 +103,8 @@ func (*KeyPair) TableName() string {
 
 func (*RevokedCert) TableName() string {
 	return REVOKED_CERT_NAME
+}
+
+func (*AppInfo) TableName() string {
+	return ACCESS_CONTROL
 }

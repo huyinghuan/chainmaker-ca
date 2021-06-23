@@ -12,6 +12,7 @@ type GenCertByCsrReq struct {
 	UserType  string `json:"userType"`
 	CertUsage string `json:"certUsage"`
 	Csr       string `json:"csr"`
+	Token     string `json:"token"`
 }
 
 type GenCertReq struct {
@@ -23,6 +24,7 @@ type GenCertReq struct {
 	Country       string `json:"country"`
 	Locality      string `json:"locality"`
 	Province      string `json:"province"`
+	Token         string `json:"token"`
 }
 
 type QueryCertReq struct {
@@ -30,20 +32,24 @@ type QueryCertReq struct {
 	UserId    string `json:"userId"`
 	UserType  string `json:"userType"`
 	CertUsage string `json:"certUsage"`
+	Token     string `json:"token"`
 }
 
 type RenewCertReq struct {
-	CertSn int64 `json:"certSn"`
+	CertSn int64  `json:"certSn"`
+	Token  string `json:"token"`
 }
 
 type RevokeCertReq struct {
 	RevokedCertSn int64  `json:"revokedCertSn"`
 	IssuerCertSn  int64  `json:"issuerCertSn"`
 	Reason        string `json:"reason"`
+	Token         string `json:"token"`
 }
 
 type GenCrlReq struct {
-	IssuerCertSn int64 `json:"issuerCertSn"`
+	IssuerCertSn int64  `json:"issuerCertSn"`
+	Token        string `json:"token"`
 }
 
 type GenCsrReq struct {
@@ -54,4 +60,15 @@ type GenCsrReq struct {
 	Country       string `json:"country"`
 	Locality      string `json:"locality"`
 	Province      string `json:"province"`
+	Token         string `json:"token"`
+}
+
+type LoginReq struct {
+	AppId  string `json:"appId"`
+	AppKey string `json:"appKey"`
+	Token  string `json:"token"`
+}
+
+type TokenReq struct {
+	Token string `json:"token"`
 }

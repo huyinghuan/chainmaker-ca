@@ -58,10 +58,18 @@ func ParseCertificate(certBytes []byte) (*x509.Certificate, error) {
 
 //Convert privatekey byte to privatekey
 func ParsePrivateKey(privateKeyBytes []byte) (crypto.PrivateKey, error) {
-	block, _ := pem.Decode(privateKeyBytes)
-	privateKey, err := asym.PrivateKeyFromDER(block.Bytes)
+	var (
+		privateKey crypto.PrivateKey
+		err        error
+	)
+	block, rest := pem.Decode(privateKeyBytes)
+	if block == nil {
+		privateKey, err = asym.PrivateKeyFromDER(rest)
+	} else {
+		privateKey, err = asym.PrivateKeyFromDER(block.Bytes)
+	}
 	if err != nil {
-		return nil, fmt.Errorf("parse private key from DER failed: %s", err.Error())
+		return nil, fmt.Errorf("parse private key failed: %s", err.Error())
 	}
 	return privateKey, nil
 }
@@ -83,12 +91,19 @@ func KeyBytesToPrivateKey(privateKeyBytes []byte, hashPwd string) (privateKey cr
 
 //ParseCsr
 func ParseCsr(csrBytes []byte) (*x509.CertificateRequest, error) {
-	block, _ := pem.Decode(csrBytes)
-	csrBC, err := bcx509.ParseCertificateRequest(block.Bytes)
+	var (
+		csrBC *bcx509.CertificateRequest
+		err   error
+	)
+	block, rest := pem.Decode(csrBytes)
+	if block == nil {
+		csrBC, err = bcx509.ParseCertificateRequest(rest)
+	} else {
+		csrBC, err = bcx509.ParseCertificateRequest(block.Bytes)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("parse certificate request failed: %s", err.Error())
 	}
-
 	return bcx509.ChainMakerCertCsrToX509CertCsr(csrBC)
 }
 
@@ -379,6 +394,9 @@ func checkCsrConf(csrConf *utils.CsrConf) error {
 func checkRootSignConf() (*utils.CertConf, error) {
 	certConf := rootCertConfFromConfig()
 	for _, v := range certConf {
+		if v == nil {
+			continue
+		}
 		if v.CertType == "sign" {
 			return v, nil
 		}
@@ -389,9 +407,40 @@ func checkRootSignConf() (*utils.CertConf, error) {
 func checkRootTlsConf() (*utils.CertConf, error) {
 	certConf := rootCertConfFromConfig()
 	for _, v := range certConf {
+		if v == nil {
+			continue
+		}
 		if v.CertType == "tls" {
 			return v, nil
 		}
 	}
 	return nil, fmt.Errorf("the correct path to tls the cert was not found")
+}
+
+func checkAccessControlConf() ([]*AppInfo, error) {
+	ok := IsAccessControlFromConfig()
+	if !ok {
+		return nil, nil
+	}
+	confs := accessControlFromConfig()
+	if confs == nil || len(confs) == 0 {
+		return nil, fmt.Errorf("the access control config can't be empty")
+	}
+	var appInfos []*AppInfo
+	for _, v := range confs {
+		if v == nil {
+			continue
+		}
+		role, ok := db.Name2AccessRoleMap[v.AppRole]
+		if !ok {
+			err := fmt.Errorf("check app role failed: role type is unsupport!")
+			return nil, err
+		}
+		appInfos = append(appInfos, &AppInfo{
+			AppId:   v.AppId,
+			AppKey:  v.AppKey,
+			AppRole: role,
+		})
+	}
+	return appInfos, nil
 }

@@ -18,6 +18,8 @@ const (
 	DefaultWorkDirectory = "./"
 
 	DefaultCRLNextTime = time.Hour
+
+	DefaultTokenSecretKey = "d02f421ed76e0e26e9def824a8b84c7c223d484762d6d060a8b71e1649d1abbf"
 )
 
 var HashType2NameMap = map[crypto.HashType]string{

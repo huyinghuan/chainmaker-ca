@@ -66,6 +66,7 @@ func DBInit() {
 		&CertInfo{},
 		&KeyPair{},
 		&RevokedCert{},
+		&AppInfo{},
 	)
 	if err != nil {
 		err = fmt.Errorf("[DB] create table failed: %s", err.Error())

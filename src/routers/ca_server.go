@@ -14,11 +14,19 @@ import (
 const ROUTERS_HEADER = "/api/ca"
 
 func LoadCAServerRouter(e *gin.Engine) {
-	e.POST(ROUTERS_HEADER+"/gencertbycsr", handlers.GenCertByCsr())
-	e.POST(ROUTERS_HEADER+"/gencert", handlers.GenCert())
-	e.POST(ROUTERS_HEADER+"/querycerts", handlers.QueryCerts())
-	e.POST(ROUTERS_HEADER+"/renewcert", handlers.RenewCert())
-	e.POST(ROUTERS_HEADER+"/revokecert", handlers.RevokeCert())
-	e.POST(ROUTERS_HEADER+"/gencrl", handlers.GenCrl())
-	e.POST(ROUTERS_HEADER+"/gencsr", handlers.GenCsr())
+	routerGroup := e.Group(ROUTERS_HEADER)
+	{
+		routerGroup.POST("/gencertbycsr", handlers.GenCertByCsr())
+		routerGroup.POST("/gencert", handlers.GenCert())
+		routerGroup.POST("/querycerts", handlers.QueryCerts())
+		routerGroup.POST("/renewcert", handlers.RenewCert())
+		routerGroup.POST("/revokecert", handlers.RevokeCert())
+		routerGroup.POST("/gencrl", handlers.GenCrl())
+		routerGroup.POST("/gencsr", handlers.GenCsr())
+	}
+}
+
+func LoadLoginRouter(e *gin.Engine) {
+	routerGroup := e.Group(ROUTERS_HEADER)
+	routerGroup.POST("/login", handlers.Login())
 }

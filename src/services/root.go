@@ -13,6 +13,7 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
+	"chainmaker.org/chainmaker-go/common/crypto"
 )
 
 //Generate the root CA
@@ -173,7 +174,7 @@ func GenerateRootCa(rootCaConf *utils.CaConfig) error {
 			return err
 		}
 	case utils.TLS:
-		tlsCertConf, err := checkRootSignConf()
+		tlsCertConf, err := checkRootTlsConf()
 		err = GenerateSingleRootCa(rootCaConf.CsrConf, tlsCertConf, db.TLS)
 		if err != nil {
 			return err
@@ -276,4 +277,44 @@ func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr string, certU
 func exsitRootCA(cn, o string, certUsage db.CertUsage) bool {
 	_, err := models.FindCertInfo(cn, o, certUsage, db.ROOT_CA)
 	return err == nil
+}
+
+func GetRootPrivate(certUsage db.CertUsage) (crypto.PrivateKey, error) {
+	if certUsage == db.TLS {
+		tlsCertConf, err := checkRootTlsConf()
+		if err != nil {
+			err := fmt.Errorf("get root tls key path failed: %s", err.Error())
+			return nil, err
+		}
+		issuerPrivateKeyBytes, err := ioutil.ReadFile(tlsCertConf.PrivateKeyPath)
+		if err != nil {
+			err := fmt.Errorf("get root tls key file failed: %s", err.Error())
+			return nil, err
+		}
+		issuePrivateKey, err := ParsePrivateKey(issuerPrivateKeyBytes)
+		if err != nil {
+			err := fmt.Errorf("get root tls private key failed: %s", err.Error())
+			return nil, err
+		}
+		return issuePrivateKey, nil
+	}
+	if certUsage == db.SIGN {
+		signCertConf, err := checkRootSignConf()
+		if err != nil {
+			err := fmt.Errorf("get root sign key path failed: %s", err.Error())
+			return nil, err
+		}
+		issuerPrivateKeyBytes, err := ioutil.ReadFile(signCertConf.PrivateKeyPath)
+		if err != nil {
+			err := fmt.Errorf("get root sign key file failed: %s", err.Error())
+			return nil, err
+		}
+		issuePrivateKey, err := ParsePrivateKey(issuerPrivateKeyBytes)
+		if err != nil {
+			err := fmt.Errorf("get root sign private key failed: %s", err.Error())
+			return nil, err
+		}
+		return issuePrivateKey, nil
+	}
+	return nil, fmt.Errorf("get root private key failed: cert usage is unsupport")
 }

@@ -24,6 +24,9 @@ func CreateIntermediateCA() error {
 	}
 	imCaConfs := imCaConfFromConfig()
 	for i := 0; i < len(imCaConfs); i++ {
+		if imCaConfs[i] == nil{
+			return nil
+		}
 		err := checkCsrConf(imCaConfs[i].CsrConf)
 		if err != nil {
 			logger.Error("create intermediate ca failed", zap.Error(err))

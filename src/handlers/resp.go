@@ -25,3 +25,8 @@ type StandardResp struct {
 	Msg  string      `json:"msg"`
 	Data interface{} `json:"data"`
 }
+
+type LoginResp struct {
+	AccessToken string `json:"accessToken"`
+	ExpiressIn  int64  `json:"expiressIn"`
+}

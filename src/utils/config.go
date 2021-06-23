@@ -18,11 +18,12 @@ import (
 var allConf *AllConfig
 
 type AllConfig struct {
-	LogConf            *loggers.LogConifg `mapstructure:"log_config"`
-	DBConf             *DBConfig          `mapstructure:"db_config"`
-	BaseConf           *BaseConf          `mapstructure:"base_config"`
-	RootCaConf         *CaConfig          `mapstructure:"root_config"`
-	IntermediateCaConf []*ImCaConfig      `mapstructure:"intermediate_config"`
+	LogConf             *loggers.LogConifg   `mapstructure:"log_config"`
+	DBConf              *DBConfig            `mapstructure:"db_config"`
+	BaseConf            *BaseConf            `mapstructure:"base_config"`
+	RootCaConf          *CaConfig            `mapstructure:"root_config"`
+	IntermediateCaConfs []*ImCaConfig        `mapstructure:"intermediate_config"`
+	AccessControlConfs  []*AccessControlConf `mapstructure:"access_control_config"`
 }
 
 type BaseConf struct {
@@ -33,6 +34,7 @@ type BaseConf struct {
 	CanIssueca        bool     `mapstructure:"can_issue_ca"`
 	ProvideServiceFor []string `mapstructure:"provide_service_for"`
 	IsKeyEncrypt      bool     `mapstructure:"key_encrypt"`
+	AccessControl     bool     `mapstructure:"access_control"`
 }
 
 type CaConfig struct {
@@ -58,6 +60,12 @@ type CertConf struct {
 	CertType       string `mapstructure:"cert_type"`
 	CertPath       string `mapstructure:"cert_path"`
 	PrivateKeyPath string `mapstructure:"private_key_path"`
+}
+
+type AccessControlConf struct {
+	AppRole string `mapstructure:"app_role"`
+	AppId   string `mapstructure:"app_id"`
+	AppKey  string `mapstructure:"app_key"`
 }
 
 // GetConfigEnv --Specify the path and name of the configuration file (Env)
@@ -178,6 +186,10 @@ func (ac *AllConfig) IsKeyEncrypt() bool {
 	return ac.BaseConf.IsKeyEncrypt
 }
 
+func (ac *AllConfig) IsAccessControl() bool {
+	return ac.BaseConf.AccessControl
+}
+
 func (ac *AllConfig) GetCaType() string {
 	return ac.BaseConf.CaType
 }
@@ -199,7 +211,7 @@ func (ac *AllConfig) GetBaseConf() *BaseConf {
 }
 
 func (ac *AllConfig) GetIntermediateConf() []*ImCaConfig {
-	return ac.IntermediateCaConf
+	return ac.IntermediateCaConfs
 }
 
 func (ac *AllConfig) GetLogConf() *loggers.LogConifg {
@@ -208,4 +220,8 @@ func (ac *AllConfig) GetLogConf() *loggers.LogConifg {
 
 func (ac *AllConfig) GetDBConf() *DBConfig {
 	return ac.DBConf
+}
+
+func (ac *AllConfig) GetAccessControlConf() []*AccessControlConf {
+	return ac.AccessControlConfs
 }

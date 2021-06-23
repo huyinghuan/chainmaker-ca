@@ -45,10 +45,22 @@ func isKeyEncryptFromConfig() bool {
 	return allConfig.IsKeyEncrypt()
 }
 
+func IsAccessControlFromConfig() bool {
+	return allConfig.IsAccessControl()
+}
+
 func rootCertConfFromConfig() []*utils.CertConf {
 	return allConfig.GetRootCertConf()
 }
 
 func rootCsrConfFromConfig() *utils.CsrConf {
 	return allConfig.GetRootCsrConf()
+}
+
+func isUseAccessControlFromConfig() bool {
+	return allConfig.IsAccessControl()
+}
+
+func accessControlFromConfig() []*utils.AccessControlConf {
+	return allConfig.GetAccessControlConf()
 }

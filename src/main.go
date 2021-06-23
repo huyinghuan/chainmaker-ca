@@ -25,6 +25,10 @@ func init() {
 }
 
 func main() {
+	isUseJwt, err := services.InitAccessControl()
+	if err != nil {
+		panic(err)
+	}
 	g := gin.New()
 	//loading middleware
 	g.Use(loggers.GinLogger(), loggers.GinRecovery(true))
@@ -36,6 +40,10 @@ func main() {
 		})
 	})
 	//loading route
+	routers.LoadLoginRouter(g)
+	if isUseJwt {
+		g.Use(handlers.JWTAuthMiddleware())
+	}
 	routers.LoadCAServerRouter(g)
 	g.Run(":8090")
 }

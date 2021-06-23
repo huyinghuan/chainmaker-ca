@@ -70,3 +70,15 @@ const (
 	ADMIN AccessRole = iota + 1
 	USER
 )
+
+//AccessRole2NameMap .
+var AccessRole2NameMap = map[AccessRole]string{
+	ADMIN: "admin",
+	USER:  "user",
+}
+
+//Name2AccessRoleMap .
+var Name2AccessRoleMap = map[string]AccessRole{
+	"admin": ADMIN,
+	"user":  USER,
+}

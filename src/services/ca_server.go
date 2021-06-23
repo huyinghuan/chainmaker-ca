@@ -17,6 +17,7 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
+	"chainmaker.org/chainmaker-go/common/crypto"
 	"chainmaker.org/chainmaker-go/common/crypto/x509"
 	"go.uber.org/zap"
 )
@@ -26,14 +27,17 @@ func GenCertByCsr(genCertByCsrReq *GenCertByCsrReq) (string, error) {
 	var empty string
 	err := CheckCert(genCertByCsrReq.OrgId, genCertByCsrReq.UserId, genCertByCsrReq.UserType, genCertByCsrReq.CertUsage)
 	if err != nil {
+		logger.Error("generate cert by csr failed", zap.Error(err))
 		return empty, err
 	}
 	hashType, err := checkHashType(hashTypeFromConfig())
 	if err != nil {
+		logger.Error("generate cert by csr failed", zap.Error(err))
 		return empty, err
 	}
 	issuerPrivateKey, issuerCertBytes, err := searchIssuerCa(genCertByCsrReq.OrgId, genCertByCsrReq.UserType, genCertByCsrReq.CertUsage)
 	if err != nil {
+		logger.Error("generate cert by csr failed", zap.Error(err))
 		return empty, err
 	}
 	certRequestConfig := &CertRequestConfig{
@@ -47,6 +51,7 @@ func GenCertByCsr(genCertByCsrReq *GenCertByCsrReq) (string, error) {
 	}
 	certContent, err := IssueCertificate(certRequestConfig)
 	if err != nil {
+		logger.Error("generate cert by csr failed", zap.Error(err))
 		return empty, err
 	}
 	//create certInfo
@@ -63,6 +68,7 @@ func GenCertByCsr(genCertByCsrReq *GenCertByCsrReq) (string, error) {
 	}
 	err = models.CreateCertAndInfoTransaction(certContent, certInfo)
 	if err != nil {
+		logger.Error("generate cert by csr failed", zap.Error(err))
 		return empty, err
 	}
 	return certContent.Content, nil
@@ -72,6 +78,7 @@ func GenCertByCsr(genCertByCsrReq *GenCertByCsrReq) (string, error) {
 func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 	err := CheckCert(genCertReq.OrgId, genCertReq.UserId, genCertReq.UserType, genCertReq.CertUsage)
 	if err != nil {
+		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
 	}
 	//create csr
@@ -106,6 +113,7 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 	}
 	hashType, err := checkHashType(hashTypeFromConfig())
 	if err != nil {
+		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
 	}
 	certRequestConfig := &CertRequestConfig{
@@ -130,10 +138,12 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 	}
 	certInfo, err := CreateCertInfo(certContent, keyPair.Ski, certConditions)
 	if err != nil {
+		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
 	}
 	err = models.CreateCertTransaction(certContent, certInfo, keyPair)
 	if err != nil {
+		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
 	}
 	return &CertAndPrivateKey{
@@ -216,10 +226,12 @@ func RenewCert(renewCertReq *RenewCertReq) (string, error) {
 		IssuerKey:       issuerPrivateKey,
 	})
 	if err != nil {
+		logger.Error("renew cert failed", zap.Error(err))
 		return empty, err
 	}
 	err = models.UpdateCertContent(certContent, newCertContent)
 	if err != nil {
+		logger.Error("renew cert failed", zap.Error(err))
 		return empty, err
 	}
 	return newCertContent.Content, nil
@@ -243,6 +255,7 @@ func RevokeCert(revokeCertReq *RevokeCertReq) ([]byte, error) {
 
 	ok, err := searchCertChain(revokeCertReq.RevokedCertSn, revokeCertReq.IssuerCertSn)
 	if err != nil {
+		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
 	}
 	if !ok {
@@ -297,23 +310,32 @@ func GenCrl(genCrlReq *GenCrlReq) ([]byte, error) {
 		logger.Error("crl list get failed", zap.Error(err))
 		return nil, err
 	}
-	issueKeyPair, err := models.FindKeyPairBySki(issueCertInfo.PrivateKeyId)
-	if err != nil {
-		logger.Error("crl list get failed", zap.Error(err))
-		return nil, err
-	}
-	issuePrivateKeyByte := []byte(issueKeyPair.PrivateKey)
-	hashPwd, err := hex.DecodeString(issueKeyPair.PrivateKeyPwd)
-	if err != nil {
-		return nil, err
-	}
+	var issuePrivateKey crypto.PrivateKey
+	if issueCertInfo.UserType == db.ROOT_CA {
+		issuePrivateKey, err = GetRootPrivate(issueCertInfo.CertUsage)
+		if err != nil {
+			logger.Error("crl list get failed", zap.Error(err))
+			return nil, err
+		}
+	} else {
+		issueKeyPair, err := models.FindKeyPairBySki(issueCertInfo.PrivateKeyId)
+		if err != nil {
+			logger.Error("crl list get failed", zap.Error(err))
+			return nil, err
+		}
+		issuePrivateKeyByte := []byte(issueKeyPair.PrivateKey)
+		hashPwd, err := hex.DecodeString(issueKeyPair.PrivateKeyPwd)
+		if err != nil {
+			logger.Error("crl list get failed", zap.Error(err))
+			return nil, err
+		}
 
-	issuePrivateKey, err := KeyBytesToPrivateKey(issuePrivateKeyByte, string(hashPwd))
-	if err != nil {
-		logger.Error("crl list get failed", zap.Error(err))
-		return nil, err
+		issuePrivateKey, err = KeyBytesToPrivateKey(issuePrivateKeyByte, string(hashPwd))
+		if err != nil {
+			logger.Error("crl list get failed", zap.Error(err))
+			return nil, err
+		}
 	}
-
 	revokedCertsList, err := models.QueryRevokedCertByIssueSn(genCrlReq.IssuerCertSn)
 	if err != nil {
 		logger.Error("crl list get failed", zap.Error(err))
