@@ -16,6 +16,7 @@ db_config:
 
 # Base config
 base_config:
+  server_port: 8090                                  # Server port configuration
   ca_type: double_root                               # Ca server type : double_root/single_root/tls/sign
   expire_year: 2                                     # The expiration time of the certificate (year)
   hash_type: SHA256                                  # SHA256/SHA3_256/SM3

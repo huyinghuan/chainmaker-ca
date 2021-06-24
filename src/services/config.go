@@ -14,6 +14,13 @@ const (
 	DEFAULT_CSR_PROVINCE = "Beijing"
 )
 
+func ServerPortFromConfig() string {
+	if len(allConfig.GetServerPort()) == 0 {
+		return ":8090"
+	}
+	return ":" + allConfig.GetServerPort()
+}
+
 func rootCaConfFromConfig() *utils.CaConfig {
 	return allConfig.GetRootConf()
 }

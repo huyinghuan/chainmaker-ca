@@ -27,6 +27,7 @@ type AllConfig struct {
 }
 
 type BaseConf struct {
+	ServerPort        string   `mapstructure:"server_port"`
 	CaType            string   `mapstructure:"ca_type"`
 	ExpireYear        int      `mapstructure:"expire_year"`
 	HashType          string   `mapstructure:"hash_type"`
@@ -160,6 +161,10 @@ func GetAllConf() (*AllConfig, error) {
 
 func GetAllConfig() *AllConfig {
 	return allConf
+}
+
+func (ac *AllConfig) GetServerPort() string {
+	return ac.BaseConf.ServerPort
 }
 
 func (ac *AllConfig) GetHashType() string {

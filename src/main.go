@@ -45,5 +45,6 @@ func main() {
 		g.Use(handlers.JWTAuthMiddleware())
 	}
 	routers.LoadCAServerRouter(g)
-	g.Run(":8090")
+	serverPort := services.ServerPortFromConfig()
+	g.Run(serverPort)
 }
