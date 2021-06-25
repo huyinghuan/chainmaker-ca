@@ -283,7 +283,7 @@ func RevokeCert(revokeCertReq *RevokeCertReq) ([]byte, error) {
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
 	}
-	logger.Error("issuer cert info", zap.Any("issuer cert info", issueCertInfo))
+	logger.Info("issuer cert info", zap.Any("issuer cert info", issueCertInfo))
 	revokedCertContent, err := models.FindCertContentBySn(revokeCertReq.RevokedCertSn)
 	if err != nil {
 		logger.Error("revoked cert failed", zap.Error(err))
@@ -311,11 +311,13 @@ func RevokeCert(revokeCertReq *RevokeCertReq) ([]byte, error) {
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
 	}
+	logger.Info("revoke cert", zap.String("crl", string(crlBytes)))
 	return crlBytes, nil
 }
 
 //Get the latest crllist
 func GenCrl(genCrlReq *GenCrlReq) ([]byte, error) {
+	logger.Info("generate crl", zap.Any("req", genCrlReq))
 	issueCertUse, err := GetX509Certificate(genCrlReq.IssuerCertSn)
 	if err != nil {
 		logger.Error("crl list get failed", zap.Error(err))
@@ -326,6 +328,7 @@ func GenCrl(genCrlReq *GenCrlReq) ([]byte, error) {
 		logger.Error("crl list get failed", zap.Error(err))
 		return nil, err
 	}
+	logger.Info("generate crl", zap.Any("issuer cert info", issueCertInfo))
 	var issuePrivateKey crypto.PrivateKey
 	if issueCertInfo.UserType == db.ROOT_CA {
 		issuePrivateKey, err = GetRootPrivate(issueCertInfo.CertUsage)
@@ -372,11 +375,13 @@ func GenCrl(genCrlReq *GenCrlReq) ([]byte, error) {
 		logger.Error("crl list get failed", zap.Error(err))
 		return nil, err
 	}
+	logger.Info("generate crl", zap.String("crl", string(crlBytes)))
 	return crlBytes, nil
 }
 
 //Generate csr
 func GenCsr(genCsrReq *GenCsrReq) ([]byte, error) {
+	logger.Info("generate csr", zap.Any("req", genCsrReq))
 	privateKeyTypeStr := keyTypeFromConfig()
 	hashTypeStr := hashTypeFromConfig()
 	privateKeyPwd := genCsrReq.PrivateKeyPwd
@@ -400,6 +405,7 @@ func GenCsr(genCsrReq *GenCsrReq) ([]byte, error) {
 		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
 	}
+	logger.Info("generate csr", zap.String("csr", string(csrByte)))
 	return csrByte, nil
 }
 

@@ -42,7 +42,8 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		if err := services.CheckParametersEmpty(req.Token); err != nil {
+		if len(req.Token) == 0 {
+			err := fmt.Errorf("token can't be empty")
 			InputMissingJSONResp(err.Error(), c)
 			c.Abort()
 			return
