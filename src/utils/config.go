@@ -13,9 +13,11 @@ import (
 
 	"chainmaker.org/chainmaker-ca-backend/src/loggers"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 var allConf *AllConfig
+var logger *zap.Logger
 
 type AllConfig struct {
 	LogConf             *loggers.LogConifg   `mapstructure:"log_config"`
@@ -108,6 +110,7 @@ func SetConfig(envPath string) {
 
 //InitConfig --init config
 func InitConfig(configPath string) {
+	logger = loggers.GetLogger()
 	viper.SetConfigFile(configPath)
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -121,6 +124,7 @@ func InitConfig(configPath string) {
 	if err != nil {
 		panic(err)
 	}
+	logger.Info("init config successful", zap.Any("allconfig", allConf))
 }
 
 //DBConfig /

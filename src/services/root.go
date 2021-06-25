@@ -14,6 +14,7 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"chainmaker.org/chainmaker-go/common/crypto"
+	"go.uber.org/zap"
 )
 
 //Generate the root CA
@@ -39,6 +40,7 @@ func LoadRootCaFromConfig() error {
 	if err != nil {
 		return err
 	}
+	logger.Info("load root ca from config", zap.String("ca type", utils.CaType2NameMap[caType]))
 	switch caType {
 	case utils.DOUBLE_ROOT:
 		err := LoadDoubleRootCa()
@@ -123,10 +125,12 @@ func LoadDoubleRootCa() error {
 	if err != nil {
 		return err
 	}
+	logger.Info("load double root ca", zap.Any("sign cert conf", signCertConf))
 	tlsCertConf, err := checkRootTlsConf()
 	if err != nil {
 		return err
 	}
+	logger.Info("load double root ca", zap.Any("tls cert conf", tlsCertConf))
 	err = loadRootCaFromConfig(signCertConf.CertPath, signCertConf.PrivateKeyPath, db.SIGN)
 	if err != nil {
 		return err
