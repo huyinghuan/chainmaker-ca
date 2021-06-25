@@ -30,6 +30,7 @@ func GenCertByCsr(genCertByCsrReq *GenCertByCsrReq) (string, error) {
 		logger.Error("generate cert by csr failed", zap.Error(err))
 		return empty, err
 	}
+	logger.Info("generate cert by csr", zap.Any("req", genCertByCsrReq))
 	hashType, err := checkHashType(hashTypeFromConfig())
 	if err != nil {
 		logger.Error("generate cert by csr failed", zap.Error(err))
@@ -66,11 +67,13 @@ func GenCertByCsr(genCertByCsrReq *GenCertByCsrReq) (string, error) {
 		logger.Error("generate cert by csr failed", zap.Error(err))
 		return empty, err
 	}
+	logger.Info("generate cert by csr", zap.Any("cert info", certInfo))
 	err = models.CreateCertAndInfoTransaction(certContent, certInfo)
 	if err != nil {
 		logger.Error("generate cert by csr failed", zap.Error(err))
 		return empty, err
 	}
+	logger.Info("generate cert by csr successfully", zap.String("cert", certContent.Content))
 	return certContent.Content, nil
 }
 
@@ -81,6 +84,7 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
 	}
+	logger.Info("generate cert", zap.Any("req", genCertReq))
 	//create csr
 	//first create keypair
 	privateKeyTypeStr := keyTypeFromConfig()
@@ -141,11 +145,14 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
 	}
+	logger.Info("generare cert", zap.Any("cert info", certInfo))
 	err = models.CreateCertTransaction(certContent, certInfo, keyPair)
 	if err != nil {
 		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
 	}
+	logger.Info("generate cert", zap.String("cert", certContent.Content))
+	logger.Info("generate cert", zap.String("private key", keyPair.PrivateKey))
 	return &CertAndPrivateKey{
 		Cert:       certContent.Content,
 		PrivateKey: keyPair.PrivateKey,
@@ -167,6 +174,7 @@ func QueryCerts(req *QueryCertsReq) ([]*CertInfos, error) {
 	if err != nil {
 		certUsage = 0
 	}
+	logger.Info("query certs", zap.Any("req", req))
 	certInfoList, err := models.FindCertInfos(req.UserId, req.OrgId, certUsage, userType)
 	if err != nil {
 		logger.Error("query cert by status failed", zap.Error(err))
@@ -189,12 +197,14 @@ func QueryCerts(req *QueryCertsReq) ([]*CertInfos, error) {
 			ExpirationDate: certContent.ExpirationDate,
 		})
 	}
+	logger.Info("query certs", zap.Any("resp", res))
 	return res, nil
 }
 
 //renew the cert expiration date
 func RenewCert(renewCertReq *RenewCertReq) (string, error) {
 	var empty string
+	logger.Info("renew cert", zap.Int64("cert sn", renewCertReq.CertSn))
 	certInfo, err := models.FindCertInfoBySn(renewCertReq.CertSn)
 	if err != nil {
 		logger.Error("renew cert failed", zap.Error(err))
@@ -216,8 +226,11 @@ func RenewCert(renewCertReq *RenewCertReq) (string, error) {
 		logger.Error("renew cert failed", zap.Error(err))
 		return empty, err
 	}
+	logger.Info("renew cert", zap.Any("old cert expiration date", oldCert.NotAfter.UTC()))
 	//renew invalid date
 	oldCert.NotAfter = oldCert.NotAfter.Add(time.Duration(expireYearFromConfig()) * 365 * 24 * time.Hour).UTC()
+
+	logger.Info("renew cert", zap.Any("new cert expiration date", oldCert.NotAfter.UTC()))
 
 	newCertContent, err := UpdateCert(&UpdateCertConfig{
 		OldCert:         oldCert,
@@ -234,11 +247,13 @@ func RenewCert(renewCertReq *RenewCertReq) (string, error) {
 		logger.Error("renew cert failed", zap.Error(err))
 		return empty, err
 	}
+	logger.Info("renew cert", zap.String("cert", newCertContent.Content))
 	return newCertContent.Content, nil
 }
 
 //Revoke  certificate
 func RevokeCert(revokeCertReq *RevokeCertReq) ([]byte, error) {
+	logger.Info("revoke cert", zap.Any("req", revokeCertReq))
 	_, err := models.QueryRevokedCertByRevokedSn(revokeCertReq.RevokedCertSn)
 	if err == nil { //find it and is already revoked
 		err = fmt.Errorf("this cert had already been revoked")
@@ -268,6 +283,7 @@ func RevokeCert(revokeCertReq *RevokeCertReq) ([]byte, error) {
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
 	}
+	logger.Error("issuer cert info", zap.Any("issuer cert info", issueCertInfo))
 	revokedCertContent, err := models.FindCertContentBySn(revokeCertReq.RevokedCertSn)
 	if err != nil {
 		logger.Error("revoked cert failed", zap.Error(err))

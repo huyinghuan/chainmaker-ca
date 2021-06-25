@@ -52,6 +52,7 @@ func LoadRootCaFromConfig() error {
 		if err != nil {
 			return err
 		}
+		logger.Info("load double root ca", zap.Any("sign cert conf", signCertConf))
 		err = LoadSingleRootCa(signCertConf, db.SIGN)
 		if err != nil {
 			return err
@@ -61,6 +62,7 @@ func LoadRootCaFromConfig() error {
 		if signCertConf == nil {
 			return fmt.Errorf("load root ca from config failed: the correct path to sign the cert was not found")
 		}
+		logger.Info("load double root ca", zap.Any("sign cert conf", signCertConf))
 		err = LoadSingleRootCa(signCertConf, db.SIGN)
 		if err != nil {
 			return err
@@ -70,6 +72,7 @@ func LoadRootCaFromConfig() error {
 		if tlsCertConf == nil {
 			return fmt.Errorf("load root ca from config failed: the correct path to sign the cert was not found")
 		}
+		logger.Info("load double root ca", zap.Any("tls cert conf", tlsCertConf))
 		if tlsCertConf == nil {
 			return fmt.Errorf("load root ca from config failed: the correct path to tls the cert was not found")
 		}
@@ -116,6 +119,7 @@ func loadRootCaFromConfig(certPath, privateKeyPath string, certUsage db.CertUsag
 	if err != nil {
 		return err
 	}
+	logger.Info("loading ca from config successfully")
 	return nil
 }
 
@@ -153,6 +157,7 @@ func GenerateRootCa(rootCaConf *utils.CaConfig) error {
 	if err != nil {
 		return err
 	}
+	logger.Info("generate root ca", zap.String("ca type", utils.CaType2NameMap[caType]))
 	switch caType {
 	case utils.DOUBLE_ROOT:
 		err := GenerateDoubleRootCa(rootCaConf.CsrConf)
@@ -164,6 +169,7 @@ func GenerateRootCa(rootCaConf *utils.CaConfig) error {
 		if err != nil {
 			return err
 		}
+		logger.Info("generate double root ca", zap.Any("sign cert conf", signCertConf))
 		err = GenerateSingleRootCa(rootCaConf.CsrConf, signCertConf, db.SIGN)
 		if err != nil {
 			return err
@@ -173,12 +179,17 @@ func GenerateRootCa(rootCaConf *utils.CaConfig) error {
 		if err != nil {
 			return err
 		}
+		logger.Info("generate double root ca", zap.Any("sign cert conf", signCertConf))
 		err = GenerateSingleRootCa(rootCaConf.CsrConf, signCertConf, db.SIGN)
 		if err != nil {
 			return err
 		}
 	case utils.TLS:
 		tlsCertConf, err := checkRootTlsConf()
+		if err != nil {
+			return err
+		}
+		logger.Info("generate double root ca", zap.Any("sign cert conf", tlsCertConf))
 		err = GenerateSingleRootCa(rootCaConf.CsrConf, tlsCertConf, db.TLS)
 		if err != nil {
 			return err
@@ -193,10 +204,12 @@ func GenerateDoubleRootCa(rootCsrConf *utils.CsrConf) error {
 	if err != nil {
 		return err
 	}
+	logger.Info("generate double root ca", zap.Any("sign cert conf", signCertConf))
 	tlsCertConf, err := checkRootTlsConf()
 	if err != nil {
 		return err
 	}
+	logger.Info("generate double root ca", zap.Any("tls cert conf", tlsCertConf))
 	keyTypeStr := keyTypeFromConfig()
 	hashTypeStr := hashTypeFromConfig()
 	err = genRootCa(rootCsrConf, keyTypeStr, hashTypeStr, db.SIGN, signCertConf.PrivateKeyPath, signCertConf.CertPath)
@@ -273,6 +286,7 @@ func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr string, certU
 		if err != nil {
 			return fmt.Errorf("generate root ca failed: %s", err.Error())
 		}
+		logger.Info("generate root ca successfully")
 	}
 	return nil
 }

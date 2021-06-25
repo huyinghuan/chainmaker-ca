@@ -87,7 +87,7 @@ func InitAccessControl() (bool, error) {
 	if !isUseAccessControlFromConfig() {
 		return false, nil
 	}
-
+	logger.Info("init access control start")
 	appInfos, err := checkAccessControlConf()
 	if err != nil {
 		err := fmt.Errorf("init access control failed: %s", err.Error())
@@ -95,6 +95,7 @@ func InitAccessControl() (bool, error) {
 	}
 
 	for _, v := range appInfos {
+		logger.Info("init access control", zap.Any("app info", v))
 		_, err := models.FindAppInfo(v.AppId)
 		if err != nil {
 			err := models.InsertAppInfo(&db.AppInfo{
@@ -108,5 +109,6 @@ func InitAccessControl() (bool, error) {
 			}
 		}
 	}
+	logger.Info("init access control end")
 	return true, nil
 }

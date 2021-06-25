@@ -24,7 +24,7 @@ func CreateIntermediateCA() error {
 	}
 	imCaConfs := imCaConfFromConfig()
 	for i := 0; i < len(imCaConfs); i++ {
-		if imCaConfs[i] == nil{
+		if imCaConfs[i] == nil {
 			return nil
 		}
 		err := checkCsrConf(imCaConfs[i].CsrConf)
@@ -32,6 +32,7 @@ func CreateIntermediateCA() error {
 			logger.Error("create intermediate ca failed", zap.Error(err))
 			continue
 		}
+		logger.Info("create intermediate ca", zap.Any("csr config", imCaConfs[i].CsrConf))
 		if exsitIntermediateCA(imCaConfs[i].CsrConf) {
 			continue
 		}
@@ -54,6 +55,7 @@ func createIntermediateCA(caConfig *utils.ImCaConfig) error {
 	if err != nil {
 		return err
 	}
+	logger.Info("create intermediate ca", zap.String("ca type", utils.CaType2NameMap[caType]))
 	if caType == utils.SINGLE_ROOT || caType == utils.SIGN || caType == utils.TLS {
 		err := GenSingleIntermediateCA(caConfig, caType)
 		if err != nil {
@@ -76,6 +78,7 @@ func GenSingleIntermediateCA(caConfig *utils.ImCaConfig, caType utils.CaType) er
 		if err != nil {
 			return err
 		}
+		logger.Info("generate single intermediate CA", zap.Any("tls cert conf", tlsCertConf))
 		err = genIntermediateCA(caConfig, db.TLS, tlsCertConf.PrivateKeyPath)
 		if err != nil {
 			return err
@@ -85,6 +88,7 @@ func GenSingleIntermediateCA(caConfig *utils.ImCaConfig, caType utils.CaType) er
 	if err != nil {
 		return err
 	}
+	logger.Info("generate single intermediate CA", zap.Any("sign cert conf", signCertConf))
 	err = genIntermediateCA(caConfig, db.SIGN, signCertConf.PrivateKeyPath)
 	if err != nil {
 		return err
@@ -98,6 +102,7 @@ func GenDoubleIntermediateCA(caConfig *utils.ImCaConfig) error {
 	if err != nil {
 		return err
 	}
+	logger.Info("generate double intermediate CA", zap.Any("sign cert conf", signCertConf))
 	err = genIntermediateCA(caConfig, db.SIGN, signCertConf.PrivateKeyPath)
 	if err != nil {
 		return err
@@ -106,6 +111,7 @@ func GenDoubleIntermediateCA(caConfig *utils.ImCaConfig) error {
 	if err != nil {
 		return err
 	}
+	logger.Info("generate double intermediate CA", zap.Any("tls cert conf", tlsCertConf))
 	err = genIntermediateCA(caConfig, db.TLS, tlsCertConf.PrivateKeyPath)
 	if err != nil {
 		return err
@@ -147,6 +153,7 @@ func genIntermediateCA(caConfig *utils.ImCaConfig, certUsage db.CertUsage, rootK
 	if err != nil {
 		return err
 	}
+	logger.Info("create intermediate ca successfully")
 	return nil
 }
 
