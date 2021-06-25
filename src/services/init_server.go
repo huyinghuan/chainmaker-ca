@@ -20,6 +20,7 @@ var allConfig *utils.AllConfig
 //Init server
 func InitServer() {
 	logger = loggers.GetLogger()
+	logger.Info("init server start")
 	allConfig = utils.GetAllConfig()
 	err := CreateRootCa()
 	if err != nil {
@@ -30,6 +31,7 @@ func InitServer() {
 		logger.Error("init server failed", zap.Error(err))
 		return
 	}
+	logger.Info("init server end")
 }
 
 func checkBaseConf() {

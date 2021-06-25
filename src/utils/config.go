@@ -110,7 +110,6 @@ func SetConfig(envPath string) {
 
 //InitConfig --init config
 func InitConfig(configPath string) {
-	logger = loggers.GetLogger()
 	viper.SetConfigFile(configPath)
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -124,6 +123,7 @@ func InitConfig(configPath string) {
 	if err != nil {
 		panic(err)
 	}
+	logger = loggers.GetLogger()
 	logger.Info("init config successful", zap.Any("allconfig", allConf))
 }
 
