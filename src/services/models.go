@@ -71,7 +71,7 @@ type CertInfos struct {
 	UserType       string `json:"userType"`
 	CertUsage      string `json:"certUsage"`
 	CertSn         int64  `json:"certSn"`
-	IssuerSn       int64  `json:"IssuerSn"`
+	IssuerSn       int64  `json:"issuerSn"`
 	CertContent    string `json:"certContent"`
 	ExpirationDate int64  `json:"expirationDate"`
 }
