@@ -20,6 +20,7 @@ func TestInit(t *testing.T) {
 	utils.SetConfig(ConfigPath)
 	db.DBInit()
 	allConfig = utils.GetAllConfig()
+	InitServer()
 }
 
 func TestGenRootCa(t *testing.T) {

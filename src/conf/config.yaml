@@ -68,4 +68,3 @@ access_control_config:
     app_role: user
     app_id: user1
     app_key: passw0rd
-    

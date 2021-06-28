@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package services
 
 import (
+	"encoding/pem"
 	"fmt"
 	"log"
 	"testing"
@@ -86,4 +87,81 @@ func TestGenCertByCsr(t *testing.T) {
 		log.Fatalf("gen csr failed: %s", err.Error())
 	}
 	fmt.Printf(certContent)
+}
+
+func TestQueryCerts(t *testing.T) {
+	TestInit(t)
+	queryReq := &QueryCertsReq{
+		//OrgId:     OrgId,
+		//UserId: UserId,
+		//UserType: db.UserType2NameMap[UserType],
+		CertUsage: db.CertUsage2NameMap[CertUsage],
+	}
+	resp, err := QueryCerts(queryReq)
+	if err != nil {
+		log.Fatalf("query certs failed: %s", err.Error())
+	}
+	for _, v := range resp {
+		fmt.Printf("cert info: %+v\n", v)
+	}
+}
+
+func TestRenewCert(t *testing.T) {
+	TestInit(t)
+	queryReq := &QueryCertsReq{
+		OrgId:     OrgId,
+		UserId:    UserId,
+		UserType:  db.UserType2NameMap[UserType],
+		CertUsage: db.CertUsage2NameMap[CertUsage],
+	}
+	resp, _ := QueryCerts(queryReq)
+	req := &RenewCertReq{
+		CertSn: resp[0].CertSn,
+	}
+	cert, err := RenewCert(req)
+	if err != nil {
+		log.Fatalf("renew cert failed: %s", err.Error())
+	}
+	fmt.Printf("cert: %s", cert)
+}
+
+func TestRevokeCert(t *testing.T) {
+	TestInit(t)
+	queryReq := &QueryCertsReq{
+		OrgId:     OrgId,
+		UserId:    UserId,
+		UserType:  db.UserType2NameMap[UserType],
+		CertUsage: db.CertUsage2NameMap[CertUsage],
+	}
+	resp, _ := QueryCerts(queryReq)
+	req := &RevokeCertReq{
+		RevokedCertSn: resp[0].CertSn,
+		IssuerCertSn:  resp[0].IssuerSn,
+	}
+	crl, err := RevokeCert(req)
+	if err != nil {
+		log.Fatalf("revoke cert failed: %s", err.Error())
+	}
+	crlBytes := pem.EncodeToMemory(&pem.Block{Type: "X509 CRL", Bytes: crl})
+	fmt.Println("crl: " + string(crlBytes))
+}
+
+func TestGenCrl(t *testing.T) {
+	TestInit(t)
+	queryReq := &QueryCertsReq{
+		OrgId:     OrgId,
+		UserId:    UserId,
+		UserType:  db.UserType2NameMap[UserType],
+		CertUsage: db.CertUsage2NameMap[CertUsage],
+	}
+	resp, _ := QueryCerts(queryReq)
+	req := &GenCrlReq{
+		IssuerCertSn: resp[0].IssuerSn,
+	}
+	crl, err := GenCrl(req)
+	if err != nil {
+		log.Fatalf("generate crl failed: %s", err.Error())
+	}
+	crlBytes := pem.EncodeToMemory(&pem.Block{Type: "X509 CRL", Bytes: crl})
+	fmt.Println("crl: " + string(crlBytes))
 }

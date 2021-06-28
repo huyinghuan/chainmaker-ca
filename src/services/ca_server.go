@@ -196,6 +196,7 @@ func QueryCerts(req *QueryCertsReq) ([]*CertInfos, error) {
 			UserType:       db.UserType2NameMap[certInfo.UserType],
 			CertUsage:      db.CertUsage2NameMap[certInfo.CertUsage],
 			CertSn:         certInfo.SerialNumber,
+			IssuerSn:       certInfo.IssuerSn,
 			CertContent:    certContent.Content,
 			ExpirationDate: certContent.ExpirationDate,
 		})

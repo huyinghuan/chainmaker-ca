@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"chainmaker.org/chainmaker-ca-backend/src/handlers"
@@ -46,5 +47,9 @@ func main() {
 	}
 	routers.LoadCAServerRouter(g)
 	serverPort := services.ServerPortFromConfig()
-	g.Run(serverPort)
+	err = g.Run(serverPort)
+	if err != nil {
+		err := fmt.Errorf("gin server start failed: %s", err.Error())
+		panic(err)
+	}
 }
