@@ -85,6 +85,7 @@ func GetAppToken(appId, appKey string) (string, error) {
 
 func InitAccessControl() (bool, error) {
 	if !isUseAccessControlFromConfig() {
+		logger.Info("the access control module is not enabled")
 		return false, nil
 	}
 	logger.Info("init access control start")

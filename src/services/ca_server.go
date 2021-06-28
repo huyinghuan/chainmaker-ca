@@ -36,11 +36,13 @@ func GenCertByCsr(genCertByCsrReq *GenCertByCsrReq) (string, error) {
 		logger.Error("generate cert by csr failed", zap.Error(err))
 		return empty, err
 	}
+
 	issuerPrivateKey, issuerCertBytes, err := searchIssuerCa(genCertByCsrReq.OrgId, genCertByCsrReq.UserType, genCertByCsrReq.CertUsage)
 	if err != nil {
 		logger.Error("generate cert by csr failed", zap.Error(err))
 		return empty, err
 	}
+
 	certRequestConfig := &CertRequestConfig{
 		HashType:         hashType,
 		IssuerPrivateKey: issuerPrivateKey,
@@ -110,6 +112,7 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 		logger.Error("generate cert failed", zap.Error(err))
 		return nil, err
 	}
+
 	issuerPrivateKey, issuerCertBytes, err := searchIssuerCa(genCertReq.OrgId, genCertReq.UserType, genCertReq.CertUsage)
 	if err != nil {
 		logger.Error("generate cert failed", zap.Error(err))

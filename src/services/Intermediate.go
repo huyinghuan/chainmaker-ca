@@ -20,6 +20,7 @@ import (
 //create intermediateCA which is written in the configuration file
 func CreateIntermediateCA() error {
 	if checkIntermediateCaConf() == nil {
+		logger.Info("there is not find intermediate ca config")
 		return nil
 	}
 	imCaConfs := imCaConfFromConfig()
@@ -34,6 +35,7 @@ func CreateIntermediateCA() error {
 		}
 		logger.Info("create intermediate ca", zap.Any("csr config", imCaConfs[i].CsrConf))
 		if exsitIntermediateCA(imCaConfs[i].CsrConf) {
+			logger.Info("the intermediate ca info is already exist")
 			continue
 		}
 		err = createIntermediateCA(imCaConfs[i])
@@ -78,7 +80,7 @@ func GenSingleIntermediateCA(caConfig *utils.ImCaConfig, caType utils.CaType) er
 		if err != nil {
 			return err
 		}
-		logger.Info("generate single intermediate CA", zap.Any("tls cert conf", tlsCertConf))
+		logger.Info("generate single intermediate CA", zap.Any("root tls cert conf", tlsCertConf))
 		err = genIntermediateCA(caConfig, db.TLS, tlsCertConf.PrivateKeyPath)
 		if err != nil {
 			return err
@@ -88,7 +90,7 @@ func GenSingleIntermediateCA(caConfig *utils.ImCaConfig, caType utils.CaType) er
 	if err != nil {
 		return err
 	}
-	logger.Info("generate single intermediate CA", zap.Any("sign cert conf", signCertConf))
+	logger.Info("generate single intermediate CA", zap.Any("root sign cert conf", signCertConf))
 	err = genIntermediateCA(caConfig, db.SIGN, signCertConf.PrivateKeyPath)
 	if err != nil {
 		return err
@@ -149,6 +151,9 @@ func genIntermediateCA(caConfig *utils.ImCaConfig, certUsage db.CertUsage, rootK
 	if err != nil {
 		return err
 	}
+
+	logger.Info("generate intermediate ca", zap.Any("cert info", certInfo))
+
 	err = models.CreateCertTransaction(certContent, certInfo, generateKeyPair)
 	if err != nil {
 		return err

@@ -52,7 +52,9 @@ func LoadRootCaFromConfig() error {
 		if err != nil {
 			return err
 		}
+
 		logger.Info("load double root ca", zap.Any("sign cert conf", signCertConf))
+
 		err = LoadSingleRootCa(signCertConf, db.SIGN)
 		if err != nil {
 			return err
@@ -72,6 +74,7 @@ func LoadRootCaFromConfig() error {
 		if tlsCertConf == nil {
 			return fmt.Errorf("load root ca from config failed: the correct path to sign the cert was not found")
 		}
+
 		logger.Info("load double root ca", zap.Any("tls cert conf", tlsCertConf))
 		if tlsCertConf == nil {
 			return fmt.Errorf("load root ca from config failed: the correct path to tls the cert was not found")
@@ -102,6 +105,8 @@ func loadRootCaFromConfig(certPath, privateKeyPath string, certUsage db.CertUsag
 		return err
 	}
 
+	logger.Info("loaf root ca from config", zap.Any("cert content", certContent))
+
 	conditions := &CertConditions{
 		UserType:  db.ROOT_CA,
 		CertUsage: certUsage,
@@ -109,17 +114,23 @@ func loadRootCaFromConfig(certPath, privateKeyPath string, certUsage db.CertUsag
 		OrgId:     cert.Subject.Organization[0],
 	}
 	if exsitRootCA(conditions.UserId, conditions.OrgId, certUsage) {
+		logger.Info("the load ca info from config is already exist")
 		return nil
 	}
 	certInfo, err := CreateCertInfo(certContent, keyPair.Ski, conditions)
 	if err != nil {
 		return err
 	}
+
+	logger.Info("load root ca from config", zap.Any("cert info", certInfo))
+
 	err = models.CreateCertAndInfoTransaction(certContent, certInfo)
 	if err != nil {
 		return err
 	}
+
 	logger.Info("loading ca from config successfully")
+
 	return nil
 }
 
@@ -157,7 +168,9 @@ func GenerateRootCa(rootCaConf *utils.CaConfig) error {
 	if err != nil {
 		return err
 	}
+
 	logger.Info("generate root ca", zap.String("ca type", utils.CaType2NameMap[caType]))
+
 	switch caType {
 	case utils.DOUBLE_ROOT:
 		err := GenerateDoubleRootCa(rootCaConf.CsrConf)
@@ -239,6 +252,7 @@ func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr string, certU
 	if err != nil {
 		return err
 	}
+	logger.Info("generate root ca", zap.Any("root csr", rootCsrConf))
 	certInfo, err := models.FindCertInfo(rootCsrConf.CN, rootCsrConf.O, certUsage, db.ROOT_CA)
 	if err != nil {
 		privateKey, keyPair, err := CreateKeyPairNoEnc(keyTypeStr, hashTypeStr)
@@ -272,6 +286,9 @@ func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr string, certU
 		if err != nil {
 			return err
 		}
+
+		logger.Info("generate root ca", zap.Any("cert info", certInfo))
+
 		err = models.CreateCertAndInfoTransaction(certContent, certInfo)
 		if err != nil {
 			return err
@@ -288,6 +305,7 @@ func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr string, certU
 		}
 		logger.Info("generate root ca successfully")
 	}
+	logger.Info("the root ca of the csr is already exist")
 	return nil
 }
 
