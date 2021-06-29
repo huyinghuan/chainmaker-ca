@@ -21,7 +21,7 @@ import (
 	"chainmaker.org/chainmaker-go/common/crypto/hash"
 )
 
-//CreatePrivKey create key pair
+//CreatePrivKey create private key
 func createPrivKey(keyTypeStr string) (crypto.PrivateKey, error) {
 	keyType, err := checkKeyType(keyTypeStr)
 	if err != nil {

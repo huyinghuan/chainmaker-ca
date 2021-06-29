@@ -17,7 +17,7 @@ import (
 	"go.uber.org/zap"
 )
 
-//create intermediateCA which is written in the configuration file
+//CreateIntermediateCA Create intermediate CA in the configuration file
 func CreateIntermediateCA() error {
 	if checkIntermediateCaConf() == nil {
 		logger.Info("there is not find intermediate ca config")
@@ -46,7 +46,7 @@ func CreateIntermediateCA() error {
 	return nil
 }
 
-//Check if intermediateCA already exists
+//Check if intermediate CA already exists
 func exsitIntermediateCA(csrConf *utils.CsrConf) bool {
 	_, err := models.FindCertInfo(csrConf.CN, csrConf.O, 0, db.INTERMRDIARY_CA)
 	return err == nil
@@ -73,7 +73,7 @@ func createIntermediateCA(caConfig *utils.ImCaConfig) error {
 	return nil
 }
 
-//Generate single root intermediateCA
+//Generate intermediate CA if catype is single_root
 func GenSingleIntermediateCA(caConfig *utils.ImCaConfig, caType utils.CaType) error {
 	if caType == utils.TLS {
 		tlsCertConf, err := checkRootTlsConf()
@@ -98,7 +98,7 @@ func GenSingleIntermediateCA(caConfig *utils.ImCaConfig, caType utils.CaType) er
 	return nil
 }
 
-//Generate double root intermediateCA
+//Generate intermediate CA if catype is double_root
 func GenDoubleIntermediateCA(caConfig *utils.ImCaConfig) error {
 	signCertConf, err := checkRootSignConf()
 	if err != nil {

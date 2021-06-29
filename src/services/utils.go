@@ -24,7 +24,7 @@ import (
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
 )
 
-//WirteCertToFile
+//WirteFile wirte file to file path
 func WirteFile(filePath string, fileBytes []byte) error {
 	dir, _ := path.Split(filePath)
 	err := CreateDir(dir)
@@ -38,7 +38,7 @@ func WirteFile(filePath string, fileBytes []byte) error {
 	return nil
 }
 
-//ParseCertificate.
+//ParseCertificate parse cert file to x.509 cert struct
 func ParseCertificate(certBytes []byte) (*x509.Certificate, error) {
 	var (
 		cert *bcx509.Certificate
@@ -89,7 +89,7 @@ func KeyBytesToPrivateKey(privateKeyBytes []byte, hashPwd string) (privateKey cr
 	return
 }
 
-//ParseCsr
+//ParseCsr parse csr file to x.509 cert request
 func ParseCsr(csrBytes []byte) (*x509.CertificateRequest, error) {
 	var (
 		csrBC *bcx509.CertificateRequest
@@ -201,7 +201,7 @@ func checkParamsOfCertReq(orgId, userId string, userType db.UserType, certUsage 
 	return fmt.Errorf("check params of req failed: the organization cannot be serviced")
 }
 
-//Check and transform usertype(string) ot db.UserType
+//Check and convert usertype(string) ot db.UserType
 func CheckParametersUserType(userTypeStr string) (db.UserType, error) {
 	var (
 		userType db.UserType
@@ -237,7 +237,7 @@ func getCaType() (utils.CaType, error) {
 	return caType, nil
 }
 
-//Find the issuer through the orgid
+//Find the issuer by the orgid
 func searchIssuerCa(orgId string, userType db.UserType, certUsage db.CertUsage) (issuerPrivateKey crypto.PrivateKey,
 	issuerCertBytes []byte, err error) {
 	caType, err := getCaType()
@@ -322,7 +322,6 @@ func searchRootCa(certUsage db.CertUsage) (rootKey crypto.PrivateKey, rootCertBy
 	return
 }
 
-//Determine the CertUsage field of the CA you are looking for based on the startup mode and the one the user provided
 func covertCertUsage(certUsage db.CertUsage, caType utils.CaType) db.CertUsage {
 	if caType == utils.DOUBLE_ROOT {
 		if certUsage == db.SIGN {

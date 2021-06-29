@@ -58,7 +58,7 @@ func GenCertByCsr(genCertByCsrReq *GenCertByCsrReq) (string, error) {
 		logger.Error("generate cert by csr failed", zap.Error(err))
 		return empty, err
 	}
-	//create certInfo
+
 	certConditions := &CertConditions{
 		UserType:  genCertByCsrReq.UserType,
 		CertUsage: genCertByCsrReq.CertUsage,
@@ -88,8 +88,6 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 		return nil, err
 	}
 	logger.Info("generate cert", zap.Any("req", genCertReq))
-	//create csr
-	//first create keypair
 	privateKeyTypeStr := keyTypeFromConfig()
 	hashTypeStr := hashTypeFromConfig()
 	privateKeyPwd := genCertReq.PrivateKeyPwd
@@ -163,7 +161,7 @@ func GenCert(genCertReq *GenCertReq) (*CertAndPrivateKey, error) {
 	}, nil
 }
 
-//Query certs by certstatus
+//Query certs
 func QueryCerts(req *QueryCertsReq) ([]*CertInfos, error) {
 	var (
 		userType  db.UserType
@@ -320,7 +318,7 @@ func RevokeCert(revokeCertReq *RevokeCertReq) ([]byte, error) {
 	return crlBytes, nil
 }
 
-//Get the latest crllist
+//Get the latest crl
 func GenCrl(genCrlReq *GenCrlReq) ([]byte, error) {
 	logger.Info("generate crl", zap.Any("req", genCrlReq))
 	issueCertUse, err := GetX509Certificate(genCrlReq.IssuerCertSn)
@@ -336,7 +334,7 @@ func GenCrl(genCrlReq *GenCrlReq) ([]byte, error) {
 	logger.Info("generate crl", zap.Any("issuer cert info", issueCertInfo))
 	var issuePrivateKey crypto.PrivateKey
 	if issueCertInfo.UserType == db.ROOT_CA {
-		issuePrivateKey, err = GetRootPrivate(issueCertInfo.CertUsage)
+		issuePrivateKey, err = GetRootPrivateKey(issueCertInfo.CertUsage)
 		if err != nil {
 			logger.Error("crl list get failed", zap.Error(err))
 			return nil, err
@@ -445,6 +443,7 @@ func CheckParametersEmpty(parameters ...string) error {
 	return nil
 }
 
+//Check if the certificate already exists
 func CheckCert(orgId string, userId string, userType db.UserType, certUsage db.CertUsage) error {
 	if userType == db.INTERMRDIARY_CA {
 		_, err := models.FindCertInfo("", orgId, certUsage, db.INTERMRDIARY_CA)

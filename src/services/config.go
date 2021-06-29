@@ -17,6 +17,7 @@ const (
 	DEFAULT_CSR_PROVINCE = "Beijing"
 )
 
+//The port number in the configuration file
 func ServerPortFromConfig() string {
 	if len(allConfig.GetServerPort()) == 0 {
 		return ":8090"
@@ -55,6 +56,7 @@ func isKeyEncryptFromConfig() bool {
 	return allConfig.IsKeyEncrypt()
 }
 
+//IsAccessControlFromConfig whether access control is enabled in the configuration file
 func IsAccessControlFromConfig() bool {
 	return allConfig.IsAccessControl()
 }

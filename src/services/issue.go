@@ -70,7 +70,7 @@ type RootCertRequestConfig struct {
 	HashType           string
 }
 
-//Issue cert by self
+//Issue cert by self(root ca)
 func IssueCertBySelf(rootCertConf *RootCertRequestConfig) (*db.CertContent, error) {
 	genCertConf := &GenCertRequestConfig{
 		Country:            []string{rootCertConf.Country},
@@ -211,7 +211,6 @@ func IssueCertificate(certConf *CertRequestConfig) (*db.CertContent, error) {
 	return certContent, nil
 }
 
-//createCSR create csr
 func createCSR(csrConf *CSRRequestConfig) ([]byte, error) {
 
 	signatureAlgorithm := getSignatureAlgorithm(csrConf.PrivateKey)
@@ -239,6 +238,7 @@ func createCSR(csrConf *CSRRequestConfig) ([]byte, error) {
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: data}), nil
 }
 
+//Build the KeyUsage and ExtKeyUsage of the certificate based on the role and purpose of the certificate
 func getKeyUsageAndExtKeyUsage(userType db.UserType,
 	certUsage db.CertUsage) (x509.KeyUsage, []x509.ExtKeyUsage) {
 	var (
@@ -285,7 +285,7 @@ type CSRRequest struct {
 	PrivateKey crypto.PrivateKey
 }
 
-//Build csrreqconf
+//Build CSR request config
 func BuildCSRReqConf(csrReq *CSRRequest) *CSRRequestConfig {
 	organizationalUnit := db.UserType2NameMap[csrReq.UserType]
 	organization := csrReq.OrgId
@@ -402,6 +402,7 @@ type UpdateCertConfig struct {
 	IssuerKey       crypto.PrivateKey
 }
 
+//Update cert info
 func UpdateCert(updateConf *UpdateCertConfig) (*db.CertContent, error) {
 	csrOriginal, err := ParseCsr(updateConf.OldCsrBytes)
 	if err != nil {

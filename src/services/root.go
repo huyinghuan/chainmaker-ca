@@ -314,7 +314,8 @@ func exsitRootCA(cn, o string, certUsage db.CertUsage) bool {
 	return err == nil
 }
 
-func GetRootPrivate(certUsage db.CertUsage) (crypto.PrivateKey, error) {
+//Get root private from file
+func GetRootPrivateKey(certUsage db.CertUsage) (crypto.PrivateKey, error) {
 	if certUsage == db.TLS {
 		tlsCertConf, err := checkRootTlsConf()
 		if err != nil {

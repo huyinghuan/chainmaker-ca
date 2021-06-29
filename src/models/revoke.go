@@ -20,7 +20,7 @@ func InsertRevokedCert(revokedCert *db.RevokedCert) error {
 	return nil
 }
 
-//Query revokedcert by issuesn
+//Query revokedcert by issue sn
 func QueryRevokedCertByIssueSn(sn int64) ([]*db.RevokedCert, error) {
 	var revokedCerts []*db.RevokedCert
 	err := db.DB.Model(&db.RevokedCert{}).Where("revoked_by=?", sn).Find(&revokedCerts).Error
@@ -30,7 +30,7 @@ func QueryRevokedCertByIssueSn(sn int64) ([]*db.RevokedCert, error) {
 	return revokedCerts, nil
 }
 
-//Query revokedcert by revokedsn
+//Query revokedcert by revoke sn
 func QueryRevokedCertByRevokedSn(sn int64) (*db.RevokedCert, error) {
 	var revokedCert db.RevokedCert
 	err := db.DB.Model(&db.RevokedCert{}).Where("revoked_cert_sn=?", sn).First(&revokedCert).Error

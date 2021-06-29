@@ -32,7 +32,7 @@ func Login() gin.HandlerFunc {
 	}
 }
 
-// JWTAuthMiddleware
+//JWTAuthMiddleware
 func JWTAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req TokenReq

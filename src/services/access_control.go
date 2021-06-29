@@ -29,6 +29,7 @@ func (c Claims) Valid() error {
 	return c.StandardClaims.Valid()
 }
 
+//JWT generate token
 func GenToken(appId string, appRole db.AccessRole) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		appId,
@@ -40,6 +41,7 @@ func GenToken(appId string, appRole db.AccessRole) (string, error) {
 	return token.SignedString([]byte(utils.DefaultTokenSecretKey))
 }
 
+//JWT parse token
 func ParseToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(utils.DefaultTokenSecretKey), nil
@@ -65,6 +67,7 @@ func ParseToken(tokenString string) (*Claims, error) {
 	return nil, fmt.Errorf("err invalid token")
 }
 
+//GetAppToken get token by appId and appKey
 func GetAppToken(appId, appKey string) (string, error) {
 	appInfo, err := models.FindAppInfo(appId)
 	if err != nil {
@@ -83,6 +86,7 @@ func GetAppToken(appId, appKey string) (string, error) {
 	return token, nil
 }
 
+//InitAccessControl
 func InitAccessControl() (bool, error) {
 	if !isUseAccessControlFromConfig() {
 		logger.Info("the access control module is not enabled")
