@@ -13,18 +13,28 @@ type UserType int
 type CertUsage int
 
 const (
+	//ROOT_CA root ca
 	ROOT_CA UserType = iota + 1
+	//INTERMRDIARY_CA intermediatry ca
 	INTERMRDIARY_CA
+	//USER_ADMIN admin
 	USER_ADMIN
+	//USER_CLIENT client
 	USER_CLIENT
+	//NODE_CONSENSUS consensus
 	NODE_CONSENSUS
+	//NODE_COMMON common
 	NODE_COMMON
 )
 
 const (
+	//SIGN sign
 	SIGN CertUsage = iota + 1
+	//TLS tls
 	TLS
+	//TLS_SIGN tls-sign
 	TLS_SIGN
+	//TLS_ENC tls-enc
 	TLS_ENC
 )
 
@@ -67,7 +77,9 @@ var Name2CertUsageMap = map[string]CertUsage{
 type AccessRole int
 
 const (
+	//ADMIN admin
 	ADMIN AccessRole = iota + 1
+	//USER user
 	USER
 )
 

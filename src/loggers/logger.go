@@ -25,10 +25,15 @@ type LogConifg struct {
 }
 
 const (
-	DEFAULT_LOG_LEVEL      = "error"
-	DEFAULT_LOG_FILENAME   = "./log/ca.log"
-	DEFAULT_LOG_MAXSIZE    = 10
-	DEFAULT_LOG_MAXAGE     = 30
+	//DEFAULT_LOG_LEVEL Default log level
+	DEFAULT_LOG_LEVEL = "error"
+	//DEFAULT_LOG_FILENAME Default log filename
+	DEFAULT_LOG_FILENAME = "./log/ca.log"
+	//DEFAULT_LOG_MAXSIZE Default log maxsize
+	DEFAULT_LOG_MAXSIZE = 10
+	//DEFAULT_LOG_MAXAGE Default log maxage
+	DEFAULT_LOG_MAXAGE = 30
+	//DEFAULT_LOG_MAXBACKUPS Default log maxbackups
 	DEFAULT_LOG_MAXBACKUPS = 5
 )
 

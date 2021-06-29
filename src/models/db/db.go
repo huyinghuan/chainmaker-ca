@@ -22,8 +22,8 @@ import (
 //DB database
 var DB *gorm.DB
 
-//DB init
-func DBInit() {
+//DbInit db init
+func GormInit() {
 	var err error
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
@@ -35,12 +35,18 @@ func DBInit() {
 		},
 	)
 	DB, err = gorm.Open(mysql.New(mysql.Config{
-		DSN:                       utils.GetDBConfig(),
-		DefaultStringSize:         256,   // The default length of a field of type string
-		DisableDatetimePrecision:  true,  // Disable datetime accuracy, which is not supported by databases prior to MySQL 5.6
-		DontSupportRenameIndex:    true,  // When renaming an index, drop and create a new one. Databases prior to MySQL 5.7 and MariaDB do not support renaming indexes
-		DontSupportRenameColumn:   true,  // Use 'change' to rename columns. Prior to MySQL 8, databases and MariaDB do not support renaming columns
-		SkipInitializeWithVersion: false, // Automatically configured according to the current MySQL version
+		DSN: utils.GetDBConfig(),
+		// The default length of a field of type string
+		DefaultStringSize: 256,
+		// Disable datetime accuracy, which is not supported by databases prior to MySQL 5.6
+		DisableDatetimePrecision: true,
+		// When renaming an index, drop and create a new one.
+		//Databases prior to MySQL 5.7 and MariaDB do not support renaming indexes
+		DontSupportRenameIndex: true,
+		// Use 'change' to rename columns. Prior to MySQL 8, databases and MariaDB do not support renaming columns
+		DontSupportRenameColumn: true,
+		// Automatically configured according to the current MySQL version
+		SkipInitializeWithVersion: false,
 	}), &gorm.Config{
 		Logger: newLogger,
 		NamingStrategy: schema.NamingStrategy{
@@ -60,8 +66,11 @@ func DBInit() {
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Minute)
 	// Set table options
-	DB.Set("gorm:association_autoupdate", false).Set("gorm:association_autocreate", false).Set("gorm:table_options", "ENGINE=InnoDB")
-	err = DB.Set("gorm:table_options", "CHARSET=utf8").Set("gorm:table_options", "COLLATE=utf8_general_ci").AutoMigrate(
+	DB.Set("gorm:association_autoupdate", false).
+		Set("gorm:association_autocreate", false).
+		Set("gorm:table_options", "ENGINE=InnoDB")
+	err = DB.Set("gorm:table_options", "CHARSET=utf8").
+		Set("gorm:table_options", "COLLATE=utf8_general_ci").AutoMigrate(
 		&CertContent{},
 		&CertInfo{},
 		&KeyPair{},

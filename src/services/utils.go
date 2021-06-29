@@ -112,7 +112,7 @@ func CreateDir(dirPath string) error {
 	_, err := os.Stat(dirPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			err := os.MkdirAll(dirPath, os.ModePerm)
+			err = os.MkdirAll(dirPath, os.ModePerm)
 			if err != nil {
 				return fmt.Errorf("create dir failed: %s", err.Error())
 			}
@@ -143,7 +143,7 @@ func checkKeyType(keyTypeStr string) (crypto.KeyType, error) {
 		ok      bool
 	)
 	if keyType, ok = crypto.Name2KeyTypeMap[keyTypeStr]; !ok {
-		return keyType, fmt.Errorf("check key type failed: key type is unsupport!")
+		return keyType, fmt.Errorf("check key type failed: key type is unsupport")
 	}
 	return keyType, nil
 }
@@ -154,7 +154,7 @@ func checkHashType(hashTypeStr string) (crypto.HashType, error) {
 		ok       bool
 	)
 	if hashType, ok = crypto.HashAlgoMap[hashTypeStr]; !ok {
-		return hashType, fmt.Errorf("check hash type failed: hash type is unsupport!")
+		return hashType, fmt.Errorf("check hash type failed: hash type is unsupport")
 	}
 	return hashType, nil
 }
@@ -232,13 +232,14 @@ func getCaType() (utils.CaType, error) {
 		ok     bool
 	)
 	if caType, ok = utils.Name2CaTypeMap[allConfig.GetCaType()]; !ok {
-		return caType, fmt.Errorf("check ca type failed: ca type is unsupport!Currently supported types: [tls],[sign],[single_root] or [double_root]")
+		return caType, fmt.Errorf("ca type is unsupport,supported types: [tls],[sign],[single_root],[double_root]")
 	}
 	return caType, nil
 }
 
 //Find the issuer through the orgid
-func searchIssuerCa(orgId string, userType db.UserType, certUsage db.CertUsage) (issuerPrivateKey crypto.PrivateKey, issuerCertBytes []byte, err error) {
+func searchIssuerCa(orgId string, userType db.UserType, certUsage db.CertUsage) (issuerPrivateKey crypto.PrivateKey,
+	issuerCertBytes []byte, err error) {
 	caType, err := getCaType()
 	if err != nil {
 		return
@@ -326,9 +327,8 @@ func covertCertUsage(certUsage db.CertUsage, caType utils.CaType) db.CertUsage {
 	if caType == utils.DOUBLE_ROOT {
 		if certUsage == db.SIGN {
 			return db.SIGN
-		} else {
-			return db.TLS
 		}
+		return db.TLS
 	}
 	if caType == utils.SINGLE_ROOT || caType == utils.SIGN {
 		return db.SIGN
@@ -337,8 +337,8 @@ func covertCertUsage(certUsage db.CertUsage, caType utils.CaType) db.CertUsage {
 }
 
 //Get X509 certificate by sn
-func GetX509Certificate(Sn int64) (*x509.Certificate, error) {
-	certContent, err := models.FindCertContentBySn(Sn)
+func GetX509Certificate(sn int64) (*x509.Certificate, error) {
+	certContent, err := models.FindCertContentBySn(sn)
 	if err != nil {
 		return nil, err
 	}
@@ -432,7 +432,7 @@ func checkAccessControlConf() ([]*AppInfo, error) {
 		}
 		role, ok := db.Name2AccessRoleMap[v.AppRole]
 		if !ok {
-			err := fmt.Errorf("check app role failed: role type is unsupport!")
+			err := fmt.Errorf("check app role failed: role type is unsupport")
 			return nil, err
 		}
 		appInfos = append(appInfos, &AppInfo{

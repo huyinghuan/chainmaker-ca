@@ -42,7 +42,7 @@ func GenCertByCsr() gin.HandlerFunc {
 		}
 		if csr.Subject.Organization[0] != req.OrgId || csr.Subject.OrganizationalUnit[0] != req.UserType ||
 			curUserType != db.INTERMRDIARY_CA && csr.Subject.CommonName != req.UserId {
-			err := fmt.Errorf("the requested information does not match the CSR")
+			err = fmt.Errorf("the requested information does not match the CSR")
 			InputErrorJSONResp(err.Error(), c)
 			return
 		}
@@ -74,7 +74,8 @@ func GenCert() gin.HandlerFunc {
 			InputMissingJSONResp(err.Error(), c)
 			return
 		}
-		curUserType, curCertUsage, err := services.CheckParameters(genCertReq.OrgId, genCertReq.UserId, genCertReq.UserType, genCertReq.CertUsage)
+		curUserType, curCertUsage, err := services.CheckParameters(genCertReq.OrgId, genCertReq.UserId,
+			genCertReq.UserType, genCertReq.CertUsage)
 		if err != nil {
 			InputErrorJSONResp(err.Error(), c)
 			return

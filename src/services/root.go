@@ -243,7 +243,8 @@ func GenerateSingleRootCa(rootCsrConf *utils.CsrConf, rootCertConf *utils.CertCo
 	return nil
 }
 
-func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr string, certUsage db.CertUsage, keyPath, certPath string) error {
+func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr string,
+	certUsage db.CertUsage, keyPath, certPath string) error {
 	err := checkCsrConf(rootCsrConf)
 	if err != nil {
 		return err
@@ -317,17 +318,17 @@ func GetRootPrivate(certUsage db.CertUsage) (crypto.PrivateKey, error) {
 	if certUsage == db.TLS {
 		tlsCertConf, err := checkRootTlsConf()
 		if err != nil {
-			err := fmt.Errorf("get root tls key path failed: %s", err.Error())
+			err = fmt.Errorf("get root tls key path failed: %s", err.Error())
 			return nil, err
 		}
 		issuerPrivateKeyBytes, err := ioutil.ReadFile(tlsCertConf.PrivateKeyPath)
 		if err != nil {
-			err := fmt.Errorf("get root tls key file failed: %s", err.Error())
+			err = fmt.Errorf("get root tls key file failed: %s", err.Error())
 			return nil, err
 		}
 		issuePrivateKey, err := ParsePrivateKey(issuerPrivateKeyBytes)
 		if err != nil {
-			err := fmt.Errorf("get root tls private key failed: %s", err.Error())
+			err = fmt.Errorf("get root tls private key failed: %s", err.Error())
 			return nil, err
 		}
 		return issuePrivateKey, nil
@@ -335,17 +336,17 @@ func GetRootPrivate(certUsage db.CertUsage) (crypto.PrivateKey, error) {
 	if certUsage == db.SIGN {
 		signCertConf, err := checkRootSignConf()
 		if err != nil {
-			err := fmt.Errorf("get root sign key path failed: %s", err.Error())
+			err = fmt.Errorf("get root sign key path failed: %s", err.Error())
 			return nil, err
 		}
 		issuerPrivateKeyBytes, err := ioutil.ReadFile(signCertConf.PrivateKeyPath)
 		if err != nil {
-			err := fmt.Errorf("get root sign key file failed: %s", err.Error())
+			err = fmt.Errorf("get root sign key file failed: %s", err.Error())
 			return nil, err
 		}
 		issuePrivateKey, err := ParsePrivateKey(issuerPrivateKeyBytes)
 		if err != nil {
-			err := fmt.Errorf("get root sign private key failed: %s", err.Error())
+			err = fmt.Errorf("get root sign private key failed: %s", err.Error())
 			return nil, err
 		}
 		return issuePrivateKey, nil

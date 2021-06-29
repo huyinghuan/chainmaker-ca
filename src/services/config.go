@@ -9,8 +9,11 @@ package services
 import "chainmaker.org/chainmaker-ca-backend/src/utils"
 
 const (
+	//DEFAULT_CSR_COUNTRIY default csr country
 	DEFAULT_CSR_COUNTRIY = "China"
+	//DEFAULT_CSR_LOCALITY default csr locality
 	DEFAULT_CSR_LOCALITY = "Beijing"
+	//DEFAULT_CSR_PROVINCE default csr province
 	DEFAULT_CSR_PROVINCE = "Beijing"
 )
 

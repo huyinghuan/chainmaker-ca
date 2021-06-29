@@ -21,7 +21,7 @@ import (
 
 func init() {
 	utils.SetConfig(utils.GetConfigEnv())
-	db.DBInit()
+	db.GormInit()
 	services.InitServer()
 }
 
@@ -33,7 +33,6 @@ func main() {
 	g := gin.New()
 	//loading middleware
 	g.Use(loggers.GinLogger(), loggers.GinRecovery(true))
-	g.Use(handlers.Cors())
 	g.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"msg":  handlers.SUCCESS_MSG,
@@ -49,7 +48,7 @@ func main() {
 	serverPort := services.ServerPortFromConfig()
 	err = g.Run(serverPort)
 	if err != nil {
-		err := fmt.Errorf("gin server start failed: %s", err.Error())
+		err = fmt.Errorf("gin server start failed: %s", err.Error())
 		panic(err)
 	}
 }

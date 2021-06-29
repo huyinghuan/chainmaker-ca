@@ -22,7 +22,8 @@ type CertConditions struct {
 }
 
 //Create certinfo
-func CreateCertInfo(certContent *db.CertContent, privateKeyId string, conditions *CertConditions) (*db.CertInfo, error) {
+func CreateCertInfo(certContent *db.CertContent, privateKeyId string,
+	conditions *CertConditions) (*db.CertInfo, error) {
 	_, err := models.FindCertInfo(conditions.UserId, conditions.OrgId, conditions.CertUsage, conditions.UserType)
 	if err == nil {
 		return nil, fmt.Errorf("create cert info failed: cert info is exist")
@@ -34,7 +35,8 @@ func CreateCertInfo(certContent *db.CertContent, privateKeyId string, conditions
 	return cerInfo, nil
 }
 
-func createCertInfo(certContent *db.CertContent, privateKeyId string, conditions *CertConditions) (*db.CertInfo, error) {
+func createCertInfo(certContent *db.CertContent, privateKeyId string,
+	conditions *CertConditions) (*db.CertInfo, error) {
 	aki := certContent.Aki
 	var issueCertSn int64
 	if len(aki) != 0 {

@@ -11,11 +11,16 @@ import (
 )
 
 const (
+	//CERT_CONTENT_NAME table name
 	CERT_CONTENT_NAME = "cert_content"
-	CERT_INFO_NAME    = "cert_info"
-	KEY_PAIR_NAME     = "key_pair"
+	//CERT_INFO_NAME table name
+	CERT_INFO_NAME = "cert_info"
+	//KEY_PAIR_NAME table name
+	KEY_PAIR_NAME = "key_pair"
+	//REVOKED_CERT_NAME table name
 	REVOKED_CERT_NAME = "revoked_cert"
-	ACCESS_CONTROL    = "app_info"
+	//ACCESS_CONTROL table name
+	ACCESS_CONTROL = "app_info"
 )
 
 type TableModel struct {

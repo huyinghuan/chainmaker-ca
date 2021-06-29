@@ -25,7 +25,8 @@ func FindCertInfoBySn(sn int64) (*db.CertInfo, error) {
 func FindCertInfoByPrivateKey(privateKeyId string) (*db.CertInfo, error) {
 	var certInfo db.CertInfo
 	if err := db.DB.Where("private_key_id=?", privateKeyId).First(&certInfo).Error; err != nil {
-		return nil, fmt.Errorf("[DB] find cert info by private key id failed: %s, private key id: %s", err.Error(), privateKeyId)
+		return nil, fmt.Errorf("[DB] find cert info by private key id failed: %s, private key id: %s",
+			err.Error(), privateKeyId)
 	}
 	return &certInfo, nil
 }

@@ -13,13 +13,14 @@ import (
 )
 
 const (
-	DefaultPrivateKeyPwd = "d02f421ed76e0e26e9def824a8b84c7c223d484762d6d060a8b71e1649d1abbf"
-
+	//DefaultPrivateKeyPwd default private pwd
+	DefaultPrivateKeyPwd = "3051634071969152599"
+	//DefaultWorkDirectory default work dir
 	DefaultWorkDirectory = "./"
-
-	DefaultCRLNextTime = time.Hour
-
-	DefaultTokenSecretKey = "d02f421ed76e0e26e9def824a8b84c7c223d484762d6d060a8b71e1649d1abbf"
+	//DefaultCRLNextTime default crl next time
+	DefaultCRLNextTime = time.Hour * 24
+	//DefaultTokenSecretKey default token secret key
+	DefaultTokenSecretKey = "1045836262777123654"
 )
 
 var HashType2NameMap = map[crypto.HashType]string{
@@ -37,9 +38,13 @@ var Name2HashTypeMap = map[string]crypto.HashType{
 type CaType int
 
 const (
+	//TLS catype of tls
 	TLS CaType = iota + 1
+	//SIGN catype of sign
 	SIGN
+	//SINGLE_ROOT catype of single_root
 	SINGLE_ROOT
+	//DOUBLE_ROOT catype of double_root
 	DOUBLE_ROOT
 )
 

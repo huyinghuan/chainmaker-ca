@@ -37,7 +37,8 @@ func GenCertByCsr(genCertByCsrReq *GenCertByCsrReq) (string, error) {
 		return empty, err
 	}
 
-	issuerPrivateKey, issuerCertBytes, err := searchIssuerCa(genCertByCsrReq.OrgId, genCertByCsrReq.UserType, genCertByCsrReq.CertUsage)
+	issuerPrivateKey, issuerCertBytes, err := searchIssuerCa(genCertByCsrReq.OrgId,
+		genCertByCsrReq.UserType, genCertByCsrReq.CertUsage)
 	if err != nil {
 		logger.Error("generate cert by csr failed", zap.Error(err))
 		return empty, err
@@ -278,7 +279,7 @@ func RevokeCert(revokeCertReq *RevokeCertReq) ([]byte, error) {
 		return nil, err
 	}
 	if !ok {
-		err := fmt.Errorf("issue cert is not in revoked cert chain")
+		err = fmt.Errorf("issue cert is not in revoked cert chain")
 		logger.Error("revoked cert failed", zap.Error(err))
 		return nil, err
 	}
@@ -341,13 +342,15 @@ func GenCrl(genCrlReq *GenCrlReq) ([]byte, error) {
 			return nil, err
 		}
 	} else {
-		issueKeyPair, err := models.FindKeyPairBySki(issueCertInfo.PrivateKeyId)
+		var issueKeyPair *db.KeyPair
+		issueKeyPair, err = models.FindKeyPairBySki(issueCertInfo.PrivateKeyId)
 		if err != nil {
 			logger.Error("crl list get failed", zap.Error(err))
 			return nil, err
 		}
 		issuePrivateKeyByte := []byte(issueKeyPair.PrivateKey)
-		hashPwd, err := hex.DecodeString(issueKeyPair.PrivateKeyPwd)
+		var hashPwd []byte
+		hashPwd, err = hex.DecodeString(issueKeyPair.PrivateKeyPwd)
 		if err != nil {
 			logger.Error("crl list get failed", zap.Error(err))
 			return nil, err
@@ -414,7 +417,8 @@ func GenCsr(genCsrReq *GenCsrReq) ([]byte, error) {
 }
 
 //check orgId userId usertype certusage and determine whether to provIde certificate service
-func CheckParameters(orgId, userId, userTypeStr, certUsageStr string) (userType db.UserType, certUsage db.CertUsage, err error) {
+func CheckParameters(orgId, userId, userTypeStr, certUsageStr string) (userType db.UserType,
+	certUsage db.CertUsage, err error) {
 	userType, err = CheckParametersUserType(userTypeStr)
 	if err != nil {
 		return

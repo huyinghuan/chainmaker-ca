@@ -142,7 +142,7 @@ func IssueCertificate(certConf *CertRequestConfig) (*db.CertContent, error) {
 		return nil, fmt.Errorf("issue cert failed: %s", err.Error())
 	}
 
-	if err := csr.CheckSignature(); err != nil {
+	if err = csr.CheckSignature(); err != nil {
 		return nil, fmt.Errorf("issue cert failed: %s", err.Error())
 	}
 	genConf := &GenCertRequestConfig{
@@ -239,7 +239,8 @@ func createCSR(csrConf *CSRRequestConfig) ([]byte, error) {
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: data}), nil
 }
 
-func getKeyUsageAndExtKeyUsage(userType db.UserType, certUsage db.CertUsage) (x509.KeyUsage, []x509.ExtKeyUsage) {
+func getKeyUsageAndExtKeyUsage(userType db.UserType,
+	certUsage db.CertUsage) (x509.KeyUsage, []x509.ExtKeyUsage) {
 	var (
 		keyUsage    x509.KeyUsage
 		extKeyUsage []x509.ExtKeyUsage
@@ -286,22 +287,22 @@ type CSRRequest struct {
 
 //Build csrreqconf
 func BuildCSRReqConf(csrReq *CSRRequest) *CSRRequestConfig {
-	OU := db.UserType2NameMap[csrReq.UserType]
-	O := csrReq.OrgId
-	var CN string
+	organizationalUnit := db.UserType2NameMap[csrReq.UserType]
+	organization := csrReq.OrgId
+	var commonName string
 	if csrReq.UserType == db.INTERMRDIARY_CA || csrReq.UserType == db.ROOT_CA {
-		CN = db.UserType2NameMap[csrReq.UserType]
+		commonName = db.UserType2NameMap[csrReq.UserType]
 	} else {
-		CN = csrReq.UserId
+		commonName = csrReq.UserId
 	}
 	return &CSRRequestConfig{
 		PrivateKey:         csrReq.PrivateKey,
 		Country:            csrReq.Country,
 		Locality:           csrReq.Locality,
 		Province:           csrReq.Province,
-		OrganizationalUnit: OU,
-		Organization:       O,
-		CommonName:         CN,
+		OrganizationalUnit: organizationalUnit,
+		Organization:       organization,
+		CommonName:         commonName,
 	}
 }
 

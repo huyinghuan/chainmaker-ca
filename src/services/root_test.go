@@ -14,11 +14,17 @@ import (
 	"chainmaker.org/chainmaker-ca-backend/src/utils"
 )
 
-const ConfigPath = "../conf/config.yaml"
+const (
+	configPath  = "../conf/config.yaml"
+	keyTypeStr  = "SM2"
+	hashTypeStr = "SM3"
+	keyPath     = "./testdata/rootca/root.key"
+	certPath    = "./testdata/rootca/root.crt"
+)
 
 func TestInit(t *testing.T) {
-	utils.SetConfig(ConfigPath)
-	db.DBInit()
+	utils.SetConfig(configPath)
+	db.GormInit()
 	allConfig = utils.GetAllConfig()
 	InitServer()
 }
@@ -33,10 +39,6 @@ func TestGenRootCa(t *testing.T) {
 		Locality: "test.locality",
 		Province: "test.province",
 	}
-	keyTypeStr := "SM2"
-	hashTypeStr := "SM3"
-	keyPath := "./testdata/rootca/root.key"
-	certPath := "./testdata/rootca/root.crt"
 	err := genRootCa(rootCsrConf, keyTypeStr, hashTypeStr, db.SIGN, keyPath, certPath)
 	if err != nil {
 		log.Fatalf("gen root ca failed: %s", err.Error())

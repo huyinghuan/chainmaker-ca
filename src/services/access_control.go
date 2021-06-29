@@ -69,7 +69,7 @@ func GetAppToken(appId, appKey string) (string, error) {
 	appInfo, err := models.FindAppInfo(appId)
 	if err != nil {
 		logger.Error("get app token failed", zap.Error(err))
-		return "", err
+		return "", fmt.Errorf("get token failed: the Id inputted is wrong")
 	}
 	if appKey != appInfo.AppKey {
 		logger.Error("get app token failed", zap.Error(err))
@@ -91,7 +91,7 @@ func InitAccessControl() (bool, error) {
 	logger.Info("init access control start")
 	appInfos, err := checkAccessControlConf()
 	if err != nil {
-		err := fmt.Errorf("init access control failed: %s", err.Error())
+		err = fmt.Errorf("init access control failed: %s", err.Error())
 		return false, err
 	}
 
@@ -105,7 +105,7 @@ func InitAccessControl() (bool, error) {
 				AppRole: v.AppRole,
 			})
 			if err != nil {
-				err := fmt.Errorf("init access control failed: %s", err.Error())
+				err = fmt.Errorf("init access control failed: %s", err.Error())
 				return false, err
 			}
 		}

@@ -35,8 +35,16 @@ func InitServer() {
 	logger.Info("init server end")
 }
 
+const (
+	//SM3 GM SM3
+	SM3 = "SM3"
+	//SM2 GM SM2
+	SM2 = "SM2"
+)
+
 func checkBaseConf() {
-	if hashTypeFromConfig() == "SM3" && keyTypeFromConfig() != "SM2" || hashTypeFromConfig() != "SM3" && keyTypeFromConfig() == "SM2" {
+	if hashTypeFromConfig() == SM3 && keyTypeFromConfig() != SM2 ||
+		hashTypeFromConfig() != SM3 && keyTypeFromConfig() == SM2 {
 		err := fmt.Errorf("the sm3 should be used with the sm2")
 		panic(err)
 	}

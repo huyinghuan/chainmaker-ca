@@ -60,7 +60,8 @@ func decryptPrivKey(privKeyRaw []byte, hashPwd string) (crypto.PrivateKey, error
 }
 
 //CreateKeyPair create key pair
-func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd string) (privateKey crypto.PrivateKey, keyPair *db.KeyPair, err error) {
+func CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd string) (privateKey crypto.PrivateKey,
+	keyPair *db.KeyPair, err error) {
 	privateKey, err = createPrivKey(privateKeyTypeStr)
 	if err != nil {
 		return
@@ -110,7 +111,8 @@ func CreateKeyPair(privateKeyTypeStr string, hashTypeStr string, privateKeyPwd s
 }
 
 //CreateKeyPairNoEnc create key pair no encryption
-func CreateKeyPairNoEnc(privateKeyTypeStr string, hashTypeStr string) (privateKey crypto.PrivateKey, keyPair *db.KeyPair, err error) {
+func CreateKeyPairNoEnc(privateKeyTypeStr, hashTypeStr string) (privateKey crypto.PrivateKey,
+	keyPair *db.KeyPair, err error) {
 	privateKey, err = createPrivKey(privateKeyTypeStr)
 	if err != nil {
 		return

@@ -23,7 +23,8 @@ func FindCertContentBySn(sn int64) (*db.CertContent, error) {
 
 //Update cert content
 func UpdateCertContent(oldCertContent, newCertContent *db.CertContent) error {
-	if err := db.DB.Model(oldCertContent).Select("content", "cert_raw", "key_usage", "ext_key_usage", "is_ca", "issue_date", "expiration_date").
+	if err := db.DB.Model(oldCertContent).
+		Select("content", "cert_raw", "key_usage", "ext_key_usage", "is_ca", "issue_date", "expiration_date").
 		Updates(newCertContent).Error; err != nil {
 		return fmt.Errorf("[DB] update cert content failed: %s", err.Error())
 	}
