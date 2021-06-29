@@ -86,7 +86,7 @@ func TestGenCertByCsr(t *testing.T) {
 	if err != nil {
 		log.Fatalf("gen csr failed: %s", err.Error())
 	}
-	fmt.Printf(certContent)
+	fmt.Println(certContent)
 }
 
 func TestQueryCerts(t *testing.T) {

@@ -60,10 +60,6 @@ func rootCertConfFromConfig() []*utils.CertConf {
 	return allConfig.GetRootCertConf()
 }
 
-func rootCsrConfFromConfig() *utils.CsrConf {
-	return allConfig.GetRootCsrConf()
-}
-
 func isUseAccessControlFromConfig() bool {
 	return allConfig.IsAccessControl()
 }

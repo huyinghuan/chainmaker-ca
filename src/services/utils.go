@@ -271,8 +271,7 @@ func searchIssuerCa(orgId string, userType db.UserType, certUsage db.CertUsage) 
 	if err != nil {
 		return
 	}
-	var deIssuerPK []byte
-	deIssuerPK = []byte(issuerKeyPair.PrivateKey)
+	deIssuerPK := []byte(issuerKeyPair.PrivateKey)
 	if err != nil {
 		return
 	}
@@ -423,7 +422,7 @@ func checkAccessControlConf() ([]*AppInfo, error) {
 		return nil, nil
 	}
 	confs := accessControlFromConfig()
-	if confs == nil || len(confs) == 0 {
+	if len(confs) == 0 {
 		return nil, fmt.Errorf("the access control config can't be empty")
 	}
 	var appInfos []*AppInfo

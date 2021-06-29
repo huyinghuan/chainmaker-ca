@@ -61,8 +61,8 @@ func LoadRootCaFromConfig() error {
 		}
 	case utils.SIGN:
 		signCertConf, err := checkRootSignConf()
-		if signCertConf == nil {
-			return fmt.Errorf("load root ca from config failed: the correct path to sign the cert was not found")
+		if err != nil {
+			return err
 		}
 		logger.Info("load double root ca", zap.Any("sign cert conf", signCertConf))
 		err = LoadSingleRootCa(signCertConf, db.SIGN)
@@ -71,14 +71,10 @@ func LoadRootCaFromConfig() error {
 		}
 	case utils.TLS:
 		tlsCertConf, err := checkRootSignConf()
-		if tlsCertConf == nil {
-			return fmt.Errorf("load root ca from config failed: the correct path to sign the cert was not found")
+		if err != nil {
+			return err
 		}
-
 		logger.Info("load double root ca", zap.Any("tls cert conf", tlsCertConf))
-		if tlsCertConf == nil {
-			return fmt.Errorf("load root ca from config failed: the correct path to tls the cert was not found")
-		}
 		err = LoadSingleRootCa(tlsCertConf, db.TLS)
 		if err != nil {
 			return err
@@ -252,8 +248,10 @@ func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr string, certU
 	if err != nil {
 		return err
 	}
+
 	logger.Info("generate root ca", zap.Any("root csr", rootCsrConf))
-	certInfo, err := models.FindCertInfo(rootCsrConf.CN, rootCsrConf.O, certUsage, db.ROOT_CA)
+
+	_, err = models.FindCertInfo(rootCsrConf.CN, rootCsrConf.O, certUsage, db.ROOT_CA)
 	if err != nil {
 		privateKey, keyPair, err := CreateKeyPairNoEnc(keyTypeStr, hashTypeStr)
 		if err != nil {
@@ -282,7 +280,7 @@ func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr string, certU
 			UserId:    rootCsrConf.CN,
 			OrgId:     rootCsrConf.O,
 		}
-		certInfo, err = CreateCertInfo(certContent, keyPair.Ski, certConditions)
+		certInfo, err := CreateCertInfo(certContent, keyPair.Ski, certConditions)
 		if err != nil {
 			return err
 		}

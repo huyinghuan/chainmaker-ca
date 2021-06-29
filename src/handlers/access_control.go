@@ -29,7 +29,6 @@ func Login() gin.HandlerFunc {
 			AccessToken: token,
 			ExpiressIn:  services.TokenExpireSeconds,
 		}, c)
-		return
 	}
 }
 

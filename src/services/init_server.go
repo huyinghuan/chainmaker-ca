@@ -22,6 +22,7 @@ func InitServer() {
 	logger = loggers.GetLogger()
 	logger.Info("init server start")
 	allConfig = utils.GetAllConfig()
+	checkBaseConf()
 	err := CreateRootCa()
 	if err != nil {
 		panic(err)
