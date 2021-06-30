@@ -1,0 +1,3 @@
+[submodule "src/common"]
+	path = src/common
+	url = https://git.chainmaker.org.cn/chainmaker/chainmaker-common.git
