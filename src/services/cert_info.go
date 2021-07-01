@@ -39,7 +39,7 @@ func createCertInfo(certContent *db.CertContent, privateKeyId string,
 	conditions *CertConditions) (*db.CertInfo, error) {
 	aki := certContent.Aki
 	var issueCertSn int64
-	if len(aki) != 0 {
+	if len(aki) != 0 && conditions.UserType != db.ROOT_CA {
 
 		issueCertInfo, err := models.FindCertInfoByPrivateKey(aki)
 		if err != nil {
