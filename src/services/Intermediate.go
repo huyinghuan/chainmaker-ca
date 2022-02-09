@@ -8,11 +8,10 @@ package services
 
 import (
 	"fmt"
-	"io/ioutil"
 
+	"chainmaker.org/chainmaker-ca-backend/src/conf"
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
-	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"chainmaker.org/chainmaker-go/common/crypto"
 	"go.uber.org/zap"
 )
@@ -47,24 +46,24 @@ func CreateIntermediateCA() error {
 }
 
 //Check if intermediate CA already exists
-func exsitIntermediateCA(csrConf *utils.CsrConf) bool {
+func exsitIntermediateCA(csrConf *conf.CsrConf) bool {
 	_, err := models.FindCertInfo(csrConf.CN, csrConf.O, 0, db.INTERMRDIARY_CA)
 	return err == nil
 }
 
-func createIntermediateCA(caConfig *utils.ImCaConfig) error {
+func createIntermediateCA(caConfig *conf.ImCaConfig) error {
 	caType, err := getCaType()
 	if err != nil {
 		return err
 	}
-	logger.Info("create intermediate ca", zap.String("ca type", utils.CaType2NameMap[caType]))
-	if caType == utils.SINGLE_ROOT || caType == utils.SIGN || caType == utils.TLS {
+	logger.Info("create intermediate ca", zap.String("ca type", conf.CaType2NameMap[caType]))
+	if caType == conf.SINGLE_ROOT || caType == conf.SIGN || caType == conf.TLS {
 		err := GenSingleIntermediateCA(caConfig, caType)
 		if err != nil {
 			return err
 		}
 	}
-	if caType == utils.DOUBLE_ROOT {
+	if caType == conf.DOUBLE_ROOT {
 		err := GenDoubleIntermediateCA(caConfig)
 		if err != nil {
 			return err
@@ -74,8 +73,8 @@ func createIntermediateCA(caConfig *utils.ImCaConfig) error {
 }
 
 //Generate intermediate CA if catype is single_root
-func GenSingleIntermediateCA(caConfig *utils.ImCaConfig, caType utils.CaType) error {
-	if caType == utils.TLS {
+func GenSingleIntermediateCA(caConfig *conf.ImCaConfig, caType conf.CaType) error {
+	if caType == conf.TLS {
 		tlsCertConf, err := checkRootTlsConf()
 		if err != nil {
 			return err
@@ -99,7 +98,7 @@ func GenSingleIntermediateCA(caConfig *utils.ImCaConfig, caType utils.CaType) er
 }
 
 //Generate intermediate CA if catype is double_root
-func GenDoubleIntermediateCA(caConfig *utils.ImCaConfig) error {
+func GenDoubleIntermediateCA(caConfig *conf.ImCaConfig) error {
 	signCertConf, err := checkRootSignConf()
 	if err != nil {
 		return err
@@ -121,7 +120,7 @@ func GenDoubleIntermediateCA(caConfig *utils.ImCaConfig) error {
 	return nil
 }
 
-func genIntermediateCA(caConfig *utils.ImCaConfig, certUsage db.CertUsage, rootKeyPath string) error {
+func genIntermediateCA(caConfig *conf.ImCaConfig, certUsage db.CertUsage, rootKeyPath string) error {
 	keyTypeStr := keyTypeFromConfig()
 	hashTypeStr := hashTypeFromConfig()
 	generatePrivateKey, generateKeyPair, err := CreateKeyPair(keyTypeStr, hashTypeStr, caConfig.PrivateKeyPwd)
@@ -162,7 +161,7 @@ func genIntermediateCA(caConfig *utils.ImCaConfig, certUsage db.CertUsage, rootK
 	return nil
 }
 
-func createCsrReqConf(csrConfig *utils.CsrConf, privateKey crypto.PrivateKey) *CSRRequestConfig {
+func createCsrReqConf(csrConfig *conf.CsrConf, privateKey crypto.PrivateKey) *CSRRequestConfig {
 	return &CSRRequestConfig{
 		PrivateKey:         privateKey,
 		Country:            csrConfig.Country,
@@ -183,7 +182,7 @@ func createIMCACertReqConf(csrByte []byte, certUsage db.CertUsage, rootKeyPath s
 	if err != nil {
 		return nil, err
 	}
-	issuerPrivateKeyBytes, err := ioutil.ReadFile(rootKeyPath)
+	issuerPrivateKeyBytes, err := conf.ReadFile(rootKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("create intermediate ca cert req config failed: %s", err.Error())
 	}

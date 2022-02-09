@@ -13,8 +13,8 @@ import (
 	"encoding/pem"
 	"fmt"
 
+	"chainmaker.org/chainmaker-ca-backend/src/conf"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
-	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"chainmaker.org/chainmaker-go/common/cert"
 	"chainmaker.org/chainmaker-go/common/crypto"
 	"chainmaker.org/chainmaker-go/common/crypto/asym"
@@ -37,7 +37,7 @@ func createPrivKey(keyTypeStr string) (crypto.PrivateKey, error) {
 //EncryptPrivKey encrypt private key
 func encryptPrivKey(privKey crypto.PrivateKey, hashPwd string) ([]byte, error) {
 	//slice encryption of the key
-	pwd := utils.DefaultPrivateKeyPwd + hashPwd
+	pwd := conf.DefaultPrivateKeyPwd + hashPwd
 	privKeyBytes, err := privKey.Bytes()
 	if err != nil {
 		return nil, fmt.Errorf("encrypt private key failed: %s", err.Error())
@@ -51,7 +51,7 @@ func encryptPrivKey(privKey crypto.PrivateKey, hashPwd string) ([]byte, error) {
 
 //DecryptPrivKey decrypt private key
 func decryptPrivKey(privKeyRaw []byte, hashPwd string) (crypto.PrivateKey, error) {
-	privatePwd := utils.DefaultPrivateKeyPwd + hashPwd
+	privatePwd := conf.DefaultPrivateKeyPwd + hashPwd
 	issuerPrivKey, err := asym.PrivateKeyFromPEM(privKeyRaw, []byte(privatePwd))
 	if err != nil {
 		return nil, fmt.Errorf("decrypt private Key from PEM failed: %s", err.Error())
@@ -104,7 +104,7 @@ func CreateKeyPair(privateKeyTypeStr, hashTypeStr, privateKeyPwd string) (privat
 		PrivateKey:    privateKeyPem,
 		PublicKey:     publicKeyPem,
 		PrivateKeyPwd: hexHashPwd,
-		HashType:      utils.Name2HashTypeMap[hashTypeStr],
+		HashType:      conf.Name2HashTypeMap[hashTypeStr],
 		KeyType:       crypto.Name2KeyTypeMap[privateKeyTypeStr],
 	}
 	return
@@ -133,7 +133,7 @@ func CreateKeyPairNoEnc(privateKeyTypeStr, hashTypeStr string) (privateKey crypt
 		PrivateKey:    privateKeyPem,
 		PublicKey:     publicKeyPem,
 		PrivateKeyPwd: "",
-		HashType:      utils.Name2HashTypeMap[hashTypeStr],
+		HashType:      conf.Name2HashTypeMap[hashTypeStr],
 		KeyType:       crypto.Name2KeyTypeMap[privateKeyTypeStr],
 	}
 	return

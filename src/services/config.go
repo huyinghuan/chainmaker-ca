@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 package services
 
-import "chainmaker.org/chainmaker-ca-backend/src/utils"
+import "chainmaker.org/chainmaker-ca-backend/src/conf"
 
 const (
 	//DEFAULT_CSR_COUNTRIY default csr country
@@ -25,11 +25,11 @@ func ServerPortFromConfig() string {
 	return ":" + allConfig.GetServerPort()
 }
 
-func rootCaConfFromConfig() *utils.CaConfig {
+func rootCaConfFromConfig() *conf.CaConfig {
 	return allConfig.GetRootConf()
 }
 
-func imCaConfFromConfig() []*utils.ImCaConfig {
+func imCaConfFromConfig() []*conf.ImCaConfig {
 	return allConfig.GetIntermediateConf()
 }
 
@@ -61,7 +61,7 @@ func IsAccessControlFromConfig() bool {
 	return allConfig.IsAccessControl()
 }
 
-func rootCertConfFromConfig() []*utils.CertConf {
+func rootCertConfFromConfig() []*conf.CertConf {
 	return allConfig.GetRootCertConf()
 }
 
@@ -69,6 +69,6 @@ func isUseAccessControlFromConfig() bool {
 	return allConfig.IsAccessControl()
 }
 
-func accessControlFromConfig() []*utils.AccessControlConf {
+func accessControlFromConfig() []*conf.AccessControlConf {
 	return allConfig.GetAccessControlConf()
 }

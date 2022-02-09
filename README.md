@@ -20,7 +20,7 @@
 #### 环境依赖
 
 * golang
-  * 版本为1.15或以上
+  * 版本为1.17或以上
   * 下载地址：https://golang.org/dl/
 * mysql
   * 版本8.0及以上
@@ -29,16 +29,22 @@
 ### 代码下载
 
 ```sh
-$ git clone --rescursive https://git.chainmaker.org.cn/chainmaker/chainmaker-ca.git
+$ git clone --rescursive git@github.com:huyinghuan/chainmaker-ca.git
+cd chainmaker-ca
+git submodule init && git submodule update
 ```
+
+源地址为：`https://git.chainmaker.org.cn/chainmaker/chainmaker-ca.git`
 
 ### 运行启动
 
 ```sh
 $ cd src/
 $ go build -o chainmaker-ca
-$ ./chainmaker-ca -config ../conf/config.yaml
+$ ./chainmaker-ca
 ```
+
+vscode运行: 打开`启动调试即可`
 
 现在可通过配置的端口访问服务接口：
 
@@ -48,18 +54,18 @@ $ ./chainmaker-ca -config ../conf/config.yaml
 
 ### docker 部署
 
-* 环境准备：mysql:8.0镜像，ubuntu18.04镜像
-
-```sh
-$ cd deploy/
-$ sh deploy.sh
-```
-
-
+直接打包编译完成后的 二进制文件即可
 
 ## 配置文件详解
 
-目录：```src/conf/config.yaml```
+配置文件使用了 `go 1.17`的`go:embed` 特性，将配置文件打包进了二进制执行文件
+
+目录：默认为测试环境
+正式环境为: ```src/conf/asserts/config.yaml``` 
+测试环境为: ```src/conf/asserts/config.dev.yaml```
+
+可以通过设置环境变量 `RUN_MODE='product'` 切换配置到正式配置。
+或者通过编译时制定编译参数: `-ldflags="-X 'chainmaker.org/chainmaker-ca-backend/conf.RunMode=product'"` 来制定正式配置
 
 配置文件主要是以下几部分构成：
 

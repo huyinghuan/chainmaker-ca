@@ -1,0 +1,61 @@
+# log config
+log_config:
+  level: info # The log level
+  filename: ./log/ca.log # The path to the log file
+  max_size: 1 # The maximum size of the log file before cutting (MB)
+  max_age: 30 # The maximum number of days to retain old log files
+  max_backups: 5 # Maximum number of old log files to keep
+
+# db config
+db_config:
+  user: root
+  password: 12345678
+  ip: 127.0.0.1
+  port: 3306
+  dbname: chainmaker_ca
+
+# Base config
+base_config:
+  server_port: 9000 # Server port configuration
+  ca_type: single_root # Ca server type : double_root/single_root/tls/sign
+  expire_year: 2 # The expiration time of the certificate (year)
+  hash_type: SHA256 # SHA256/SHA3_256/SM3
+  key_type: ECC_NISTP256 # ECC_NISTP256/SM2
+  can_issue_ca: false # Whether can continue to issue CA cert
+  provide_service_for: [wx-org1.chainmaker.org] # A list of organizations that provide services
+  key_encrypt: false # Whether the key is stored in encryption
+#  access_control: false # Whether to enable permission control
+
+# Root CA config
+root_config:
+  cert:
+    - cert_type: sign
+      cert_path: asserts/rootCA/root-sign.crt
+      private_key_path: asserts/rootCA/root-sign.key
+
+  # csr:
+  #   CN: root.org-wx
+  #   O: org-wx
+  #   OU: root
+  #   country: CN
+  #   locality: Beijing
+  #   province: Beijing
+# intermediate config
+# intermediate_config:
+#   - csr:
+#       CN: imca
+#       O: org1
+#       OU: ca
+#       country: CN
+#       locality: Beijing
+#       province: Beijing
+#     private_key_pwd: wx1234
+
+#access control config:
+# access_control_config:
+#   - app_role: admin
+#     app_id: admin
+#     app_key: passw0rd
+#   - app_role: user
+#     app_id: user1
+#     app_key: passw0rd

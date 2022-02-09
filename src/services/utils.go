@@ -16,9 +16,9 @@ import (
 	"path"
 	"strconv"
 
+	"chainmaker.org/chainmaker-ca-backend/src/conf"
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
-	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"chainmaker.org/chainmaker-go/common/crypto"
 	"chainmaker.org/chainmaker-go/common/crypto/asym"
 	bcx509 "chainmaker.org/chainmaker-go/common/crypto/x509"
@@ -159,7 +159,7 @@ func checkHashType(hashTypeStr string) (crypto.HashType, error) {
 	return hashType, nil
 }
 
-func checkIntermediateCaConf() []*utils.ImCaConfig {
+func checkIntermediateCaConf() []*conf.ImCaConfig {
 	if len(imCaConfFromConfig()) == 0 {
 		return nil
 	}
@@ -182,12 +182,12 @@ func checkParamsOfCertReq(orgId, userId string, userType db.UserType, certUsage 
 	}
 
 	if certUsage == db.TLS || certUsage == db.TLS_ENC || certUsage == db.TLS_SIGN {
-		if caType == utils.SIGN {
+		if caType == conf.SIGN {
 			return fmt.Errorf("check params of req failed: sign CA cannot issue a tls certificate")
 		}
 	}
 	if certUsage == db.SIGN {
-		if caType == utils.TLS {
+		if caType == conf.TLS {
 			return fmt.Errorf("check params of req failed: tls CA cannot issue a sign certificate")
 		}
 	}
@@ -226,12 +226,12 @@ func checkParametersCertUsage(certUsageStr string) (db.CertUsage, error) {
 	return certUsage, nil
 }
 
-func getCaType() (utils.CaType, error) {
+func getCaType() (conf.CaType, error) {
 	var (
-		caType utils.CaType
+		caType conf.CaType
 		ok     bool
 	)
-	if caType, ok = utils.Name2CaTypeMap[allConfig.GetCaType()]; !ok {
+	if caType, ok = conf.Name2CaTypeMap[allConfig.GetCaType()]; !ok {
 		return caType, fmt.Errorf("ca type is unsupport,supported types: [tls],[sign],[single_root],[double_root]")
 	}
 	return caType, nil
@@ -297,7 +297,7 @@ func searchRootCa(certUsage db.CertUsage) (rootKey crypto.PrivateKey, rootCertBy
 		return
 	}
 	rootCertBytes = []byte(rootCertContent.Content)
-	var rootConf *utils.CertConf
+	var rootConf *conf.CertConf
 	if certUsage == db.SIGN {
 		rootConf, err = checkRootSignConf()
 		if err != nil {
@@ -311,7 +311,7 @@ func searchRootCa(certUsage db.CertUsage) (rootKey crypto.PrivateKey, rootCertBy
 		}
 	}
 	var issuerPrivateKeyBytes []byte
-	issuerPrivateKeyBytes, err = ioutil.ReadFile(rootConf.PrivateKeyPath)
+	issuerPrivateKeyBytes, err = conf.ReadFile(rootConf.PrivateKeyPath)
 	if err != nil {
 		return
 	}
@@ -322,14 +322,14 @@ func searchRootCa(certUsage db.CertUsage) (rootKey crypto.PrivateKey, rootCertBy
 	return
 }
 
-func covertCertUsage(certUsage db.CertUsage, caType utils.CaType) db.CertUsage {
-	if caType == utils.DOUBLE_ROOT {
+func covertCertUsage(certUsage db.CertUsage, caType conf.CaType) db.CertUsage {
+	if caType == conf.DOUBLE_ROOT {
 		if certUsage == db.SIGN {
 			return db.SIGN
 		}
 		return db.TLS
 	}
-	if caType == utils.SINGLE_ROOT || caType == utils.SIGN {
+	if caType == conf.SINGLE_ROOT || caType == conf.SIGN {
 		return db.SIGN
 	}
 	return db.TLS
@@ -367,7 +367,7 @@ func searchCertChain(certSn, issueSn int64) (bool, error) {
 	return searchCertChain(certSn, issueSn)
 }
 
-func checkCsrConf(csrConf *utils.CsrConf) error {
+func checkCsrConf(csrConf *conf.CsrConf) error {
 	if len(csrConf.Country) == 0 {
 		csrConf.Country = DEFAULT_CSR_COUNTRIY
 	}
@@ -389,7 +389,7 @@ func checkCsrConf(csrConf *utils.CsrConf) error {
 	return nil
 }
 
-func checkRootSignConf() (*utils.CertConf, error) {
+func checkRootSignConf() (*conf.CertConf, error) {
 	certConf := rootCertConfFromConfig()
 	for _, v := range certConf {
 		if v == nil {
@@ -402,7 +402,7 @@ func checkRootSignConf() (*utils.CertConf, error) {
 	return nil, fmt.Errorf("the correct path to sign the cert was not found")
 }
 
-func checkRootTlsConf() (*utils.CertConf, error) {
+func checkRootTlsConf() (*conf.CertConf, error) {
 	certConf := rootCertConfFromConfig()
 	for _, v := range certConf {
 		if v == nil {

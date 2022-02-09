@@ -4,4 +4,4 @@ log/
 conf/
 !src/conf/
 !deploy/chainmaker-ca/conf
-.vscode
+vendor

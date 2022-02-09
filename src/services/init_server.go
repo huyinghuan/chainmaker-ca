@@ -9,19 +9,19 @@ package services
 import (
 	"fmt"
 
+	"chainmaker.org/chainmaker-ca-backend/src/conf"
 	"chainmaker.org/chainmaker-ca-backend/src/loggers"
-	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"go.uber.org/zap"
 )
 
 var logger *zap.Logger
-var allConfig *utils.AllConfig
+var allConfig *conf.AllConfig
 
 //Init server
 func InitServer() {
 	logger = loggers.GetLogger()
 	logger.Info("init server start")
-	allConfig = utils.GetAllConfig()
+	allConfig = conf.GetAllConfig()
 	checkBaseConf()
 	err := CreateRootCa()
 	if err != nil {

@@ -8,11 +8,10 @@ package services
 
 import (
 	"fmt"
-	"io/ioutil"
 
+	"chainmaker.org/chainmaker-ca-backend/src/conf"
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
-	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"chainmaker.org/chainmaker-go/common/crypto"
 	"go.uber.org/zap"
 )
@@ -40,14 +39,14 @@ func LoadRootCaFromConfig() error {
 	if err != nil {
 		return err
 	}
-	logger.Info("load root ca from config", zap.String("ca type", utils.CaType2NameMap[caType]))
+	logger.Info("load root ca from config", zap.String("ca type", conf.CaType2NameMap[caType]))
 	switch caType {
-	case utils.DOUBLE_ROOT:
+	case conf.DOUBLE_ROOT:
 		err := LoadDoubleRootCa()
 		if err != nil {
 			return err
 		}
-	case utils.SINGLE_ROOT:
+	case conf.SINGLE_ROOT:
 		signCertConf, err := checkRootSignConf()
 		if err != nil {
 			return err
@@ -59,7 +58,7 @@ func LoadRootCaFromConfig() error {
 		if err != nil {
 			return err
 		}
-	case utils.SIGN:
+	case conf.SIGN:
 		signCertConf, err := checkRootSignConf()
 		if err != nil {
 			return err
@@ -69,7 +68,7 @@ func LoadRootCaFromConfig() error {
 		if err != nil {
 			return err
 		}
-	case utils.TLS:
+	case conf.TLS:
 		tlsCertConf, err := checkRootSignConf()
 		if err != nil {
 			return err
@@ -84,11 +83,11 @@ func LoadRootCaFromConfig() error {
 }
 
 func loadRootCaFromConfig(certPath, privateKeyPath string, certUsage db.CertUsage) error {
-	keyBytes, err := ioutil.ReadFile(privateKeyPath)
+	keyBytes, err := conf.ReadFile(privateKeyPath)
 	if err != nil {
 		return fmt.Errorf("load root ca failed: %s", err.Error())
 	}
-	certBytes, err := ioutil.ReadFile(certPath)
+	certBytes, err := conf.ReadFile(certPath)
 	if err != nil {
 		return fmt.Errorf("load root ca failed: %s", err.Error())
 	}
@@ -154,26 +153,26 @@ func LoadDoubleRootCa() error {
 }
 
 //Load single root CA from the path in the configuration file
-func LoadSingleRootCa(certConf *utils.CertConf, certUsage db.CertUsage) error {
+func LoadSingleRootCa(certConf *conf.CertConf, certUsage db.CertUsage) error {
 	return loadRootCaFromConfig(certConf.CertPath, certConf.PrivateKeyPath, certUsage)
 }
 
 //Generate root CA
-func GenerateRootCa(rootCaConf *utils.CaConfig) error {
+func GenerateRootCa(rootCaConf *conf.CaConfig) error {
 	caType, err := getCaType()
 	if err != nil {
 		return err
 	}
 
-	logger.Info("generate root ca", zap.String("ca type", utils.CaType2NameMap[caType]))
+	logger.Info("generate root ca", zap.String("ca type", conf.CaType2NameMap[caType]))
 
 	switch caType {
-	case utils.DOUBLE_ROOT:
+	case conf.DOUBLE_ROOT:
 		err := GenerateDoubleRootCa(rootCaConf.CsrConf)
 		if err != nil {
 			return err
 		}
-	case utils.SINGLE_ROOT:
+	case conf.SINGLE_ROOT:
 		signCertConf, err := checkRootSignConf()
 		if err != nil {
 			return err
@@ -183,7 +182,7 @@ func GenerateRootCa(rootCaConf *utils.CaConfig) error {
 		if err != nil {
 			return err
 		}
-	case utils.SIGN:
+	case conf.SIGN:
 		signCertConf, err := checkRootSignConf()
 		if err != nil {
 			return err
@@ -193,7 +192,7 @@ func GenerateRootCa(rootCaConf *utils.CaConfig) error {
 		if err != nil {
 			return err
 		}
-	case utils.TLS:
+	case conf.TLS:
 		tlsCertConf, err := checkRootTlsConf()
 		if err != nil {
 			return err
@@ -208,7 +207,7 @@ func GenerateRootCa(rootCaConf *utils.CaConfig) error {
 }
 
 //Generate double root CA
-func GenerateDoubleRootCa(rootCsrConf *utils.CsrConf) error {
+func GenerateDoubleRootCa(rootCsrConf *conf.CsrConf) error {
 	signCertConf, err := checkRootSignConf()
 	if err != nil {
 		return err
@@ -233,7 +232,7 @@ func GenerateDoubleRootCa(rootCsrConf *utils.CsrConf) error {
 }
 
 //Generate single root CA
-func GenerateSingleRootCa(rootCsrConf *utils.CsrConf, rootCertConf *utils.CertConf, certUsage db.CertUsage) error {
+func GenerateSingleRootCa(rootCsrConf *conf.CsrConf, rootCertConf *conf.CertConf, certUsage db.CertUsage) error {
 	keyTypeStr := keyTypeFromConfig()
 	hashTypeStr := hashTypeFromConfig()
 	err := genRootCa(rootCsrConf, keyTypeStr, hashTypeStr, certUsage, rootCertConf.PrivateKeyPath, rootCertConf.CertPath)
@@ -243,7 +242,7 @@ func GenerateSingleRootCa(rootCsrConf *utils.CsrConf, rootCertConf *utils.CertCo
 	return nil
 }
 
-func genRootCa(rootCsrConf *utils.CsrConf, keyTypeStr, hashTypeStr string,
+func genRootCa(rootCsrConf *conf.CsrConf, keyTypeStr, hashTypeStr string,
 	certUsage db.CertUsage, keyPath, certPath string) error {
 	err := checkCsrConf(rootCsrConf)
 	if err != nil {
@@ -322,7 +321,7 @@ func GetRootPrivateKey(certUsage db.CertUsage) (crypto.PrivateKey, error) {
 			err = fmt.Errorf("get root tls key path failed: %s", err.Error())
 			return nil, err
 		}
-		issuerPrivateKeyBytes, err := ioutil.ReadFile(tlsCertConf.PrivateKeyPath)
+		issuerPrivateKeyBytes, err := conf.ReadFile(tlsCertConf.PrivateKeyPath)
 		if err != nil {
 			err = fmt.Errorf("get root tls key file failed: %s", err.Error())
 			return nil, err
@@ -340,7 +339,7 @@ func GetRootPrivateKey(certUsage db.CertUsage) (crypto.PrivateKey, error) {
 			err = fmt.Errorf("get root sign key path failed: %s", err.Error())
 			return nil, err
 		}
-		issuerPrivateKeyBytes, err := ioutil.ReadFile(signCertConf.PrivateKeyPath)
+		issuerPrivateKeyBytes, err := conf.ReadFile(signCertConf.PrivateKeyPath)
 		if err != nil {
 			err = fmt.Errorf("get root sign key file failed: %s", err.Error())
 			return nil, err

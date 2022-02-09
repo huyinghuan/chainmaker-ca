@@ -14,9 +14,9 @@ import (
 	"math/big"
 	"time"
 
+	"chainmaker.org/chainmaker-ca-backend/src/conf"
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
-	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"chainmaker.org/chainmaker-go/common/crypto"
 	"chainmaker.org/chainmaker-go/common/crypto/x509"
 	"go.uber.org/zap"
@@ -374,7 +374,7 @@ func GenCrl(genCrlReq *GenCrlReq) ([]byte, error) {
 		revokedCerts = append(revokedCerts, revoked)
 	}
 	now := time.Now()
-	next := now.Add(utils.DefaultCRLNextTime)
+	next := now.Add(conf.DefaultCRLNextTime)
 	crlBytes, err := x509.CreateCRL(rand.Reader, issueCertUse, issuePrivateKey.ToStandardKey(), revokedCerts, now, next)
 	if err != nil {
 		logger.Error("crl list get failed", zap.Error(err))

@@ -12,7 +12,7 @@ import (
 	"os"
 	"time"
 
-	"chainmaker.org/chainmaker-ca-backend/src/utils"
+	"chainmaker.org/chainmaker-ca-backend/src/conf"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -35,7 +35,7 @@ func GormInit() {
 		},
 	)
 	DB, err = gorm.Open(mysql.New(mysql.Config{
-		DSN: utils.GetDBConfig(),
+		DSN: conf.GetDBConfig(),
 		// The default length of a field of type string
 		DefaultStringSize: 256,
 		// Disable datetime accuracy, which is not supported by databases prior to MySQL 5.6

@@ -10,8 +10,8 @@ import (
 	"log"
 	"testing"
 
+	"chainmaker.org/chainmaker-ca-backend/src/conf"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
-	"chainmaker.org/chainmaker-ca-backend/src/utils"
 )
 
 const (
@@ -23,15 +23,15 @@ const (
 )
 
 func TestInit(t *testing.T) {
-	utils.SetConfig(configPath)
+
 	db.GormInit()
-	allConfig = utils.GetAllConfig()
+	allConfig = conf.GetAllConfig()
 	InitServer()
 }
 
 func TestGenRootCa(t *testing.T) {
 	TestInit(t)
-	rootCsrConf := &utils.CsrConf{
+	rootCsrConf := &conf.CsrConf{
 		CN:       "test.com",
 		O:        "test",
 		OU:       "root",

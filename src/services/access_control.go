@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"time"
 
+	"chainmaker.org/chainmaker-ca-backend/src/conf"
 	"chainmaker.org/chainmaker-ca-backend/src/models"
 	"chainmaker.org/chainmaker-ca-backend/src/models/db"
-	"chainmaker.org/chainmaker-ca-backend/src/utils"
 	"github.com/dgrijalva/jwt-go"
 	"go.uber.org/zap"
 )
@@ -44,13 +44,13 @@ func GenToken(appId string, appRole db.AccessRole) (string, error) {
 			ExpiresAt: time.Now().Add(time.Second * time.Duration(TokenExpireSeconds)).Unix(),
 		},
 	})
-	return token.SignedString([]byte(utils.DefaultTokenSecretKey))
+	return token.SignedString([]byte(conf.DefaultTokenSecretKey))
 }
 
 //JWT parse token
 func ParseToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (interface{}, error) {
-		return []byte(utils.DefaultTokenSecretKey), nil
+		return []byte(conf.DefaultTokenSecretKey), nil
 	})
 	if err != nil {
 		if ve, ok := err.(*jwt.ValidationError); ok {
